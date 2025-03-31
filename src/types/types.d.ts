@@ -101,7 +101,7 @@ declare interface APIMedia {
 }
 
 declare interface APIPhoto extends APIMedia {
-  type: 'photo';
+  type: 'photo' | 'gif';
   altText: string;
 }
 

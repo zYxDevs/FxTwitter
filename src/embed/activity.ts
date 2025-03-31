@@ -87,7 +87,7 @@ const linkifyMentions = (text: string, status: APIStatus) => {
     status.provider === DataProvider.Bsky
       ? `${Constants.BSKY_ROOT}/profile`
       : `${Constants.TWITTER_ROOT}`;
-  const matches = text.match(/(?<!https?:\/\/[\w.:/]+)@([\w.]+)(?=\W|$)/g);
+  const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)/g);
 
   console.log('matches', matches);
   // deduplicate mentions
@@ -106,7 +106,7 @@ const linkifyHashtags = (text: string, status: APIStatus) => {
     status.provider === DataProvider.Bsky
       ? `${Constants.BSKY_ROOT}/hashtag`
       : `${Constants.TWITTER_ROOT}/hashtag`;
-  const matches = text.match(/(?<!https?:\/\/[\w.:/]+)#([\w.]+)(?=\W|$)/g);
+  const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)/g);
   console.log('matches', matches);
   // deduplicate hashtags
   [...new Set(matches ?? [])]?.forEach(hashtag => {
@@ -406,8 +406,7 @@ export const handleActivity = async (
               sizeMultiplier = 2;
             }
             if (
-              experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
-              (userAgent?.includes('Discord') || userAgent?.includes('Telegram'))
+              experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST)
             ) {
               video.url = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(video.url)}`;
             }

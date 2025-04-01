@@ -27,7 +27,7 @@ import {
   ResponseInstructions,
   SocialThread
 } from '../types/types';
-
+import { shouldTranscodeGif } from '../helpers/giftranscode';
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
@@ -226,6 +226,10 @@ export const handleStatus = async (
       redirectUrl = selectedMedia.url;
     } else if (all.length > 0) {
       redirectUrl = all[0].url;
+    }
+
+    if (selectedMedia?.type === 'gif' && shouldTranscodeGif(c)) {
+      redirectUrl = (selectedMedia as APIPhoto).transcode_url ?? redirectUrl;
     }
 
     if (redirectUrl) {

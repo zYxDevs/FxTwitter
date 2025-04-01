@@ -11,7 +11,7 @@ import {
   ResponseInstructions
 } from '../types/types';
 import { getBranding } from '../helpers/branding';
-import { getGIFTranscodeDomain } from '../helpers/giftranscode';
+import { getGIFTranscodeDomain, shouldTranscodeGif } from '../helpers/giftranscode';
 
 export const renderVideo = (
   properties: RenderProperties,
@@ -68,8 +68,7 @@ export const renderVideo = (
 
   if (
     status.provider !== DataProvider.Bsky &&
-    experimentCheck(Experiment.TRANSCODE_GIFS, !!Constants.GIF_TRANSCODE_DOMAIN_LIST) &&
-    !userAgent?.includes('Telegram') &&
+    shouldTranscodeGif(properties.context) &&
     video.type === 'gif'
   ) {
     url = video.url.replace(

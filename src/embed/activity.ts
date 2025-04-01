@@ -22,6 +22,7 @@ import {
   SocialThread
 } from '../types/types';
 import { Context } from 'hono';
+import { shouldTranscodeGif } from '../helpers/giftranscode';
 
 const generatePoll = (poll: APIPoll): string => {
   let str = '<blockquote>';
@@ -383,10 +384,7 @@ export const handleActivity = async (
           if (media.type === 'gif') {
             const videoMedia = media as APIVideo;
             const photoMedia = media as APIPhoto;
-            const shouldTranscodeGifs = experimentCheck(
-              Experiment.TRANSCODE_GIFS,
-              !!Constants.GIF_TRANSCODE_DOMAIN_LIST
-            );
+            const shouldTranscodeGifs = shouldTranscodeGif(c);
 
             if (videoMedia.format === 'image/gif') {
               media.type = 'photo';

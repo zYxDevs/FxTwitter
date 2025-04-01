@@ -1,4 +1,6 @@
+import { Context } from 'hono';
 import { Constants } from '../constants';
+import { experimentCheck, Experiment } from '../experiments';
 
 export const getGIFTranscodeDomain = (twitterId: string): string | null => {
   const gifTranscoderList = Constants.GIF_TRANSCODE_DOMAIN_LIST;
@@ -13,4 +15,12 @@ export const getGIFTranscodeDomain = (twitterId: string): string | null => {
     hash = (hash << 5) - hash + char;
   }
   return gifTranscoderList[Math.abs(hash) % gifTranscoderList.length];
+};
+
+export const shouldTranscodeGif = (c: Context) => {
+  return (
+    experimentCheck(Experiment.TRANSCODE_GIFS, !!Constants.GIF_TRANSCODE_DOMAIN_LIST) &&
+    !c.req.header('user-agent')?.includes('Telegram') &&
+    !Constants.OLD_EMBED_DOMAINS.includes(new URL(c.req.url).hostname)
+  );
 };

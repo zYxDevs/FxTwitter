@@ -1,16 +1,12 @@
 import { Context } from 'hono';
 import { APIPhoto, APIVideo } from '../types/types';
 import { Constants } from '../constants';
-import { experimentCheck, Experiment } from '../experiments';
-import { getGIFTranscodeDomain } from './giftranscode';
+import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
 
 /* Help populate API response for media */
 export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo | null => {
-  const shouldTranscodeGifs = experimentCheck(
-    Experiment.TRANSCODE_GIFS,
-    !!Constants.GIF_TRANSCODE_DOMAIN_LIST
-  )  && !c.req.header('user-agent')?.includes('Telegram');
-  if (media.type === 'photo') { 
+  const shouldTranscodeGifs = shouldTranscodeGif(c);
+  if (media.type === 'photo') {
     return {
       type: 'photo',
       url: media.media_url_https,
@@ -47,10 +43,9 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
         url: media.media_url_https,
         width: media.original_info?.width,
         height: media.original_info?.height,
-        transcode_url: bestVariant?.url.replace(
-          Constants.TWITTER_VIDEO_BASE,
-          `https://${getGIFTranscodeDomain(media.id_str)}`
-        ).replace('.mp4', '.gif'),
+        transcode_url: bestVariant?.url
+          .replace(Constants.TWITTER_VIDEO_BASE, `https://${getGIFTranscodeDomain(media.id_str)}`)
+          .replace('.mp4', '.gif'),
         altText: media.ext_alt_text
       };
     }

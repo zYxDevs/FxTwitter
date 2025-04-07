@@ -4,7 +4,7 @@ import { DataProvider, returnError } from './status';
 import { constructTwitterThread } from '../providers/twitter/conversation';
 import { constructBlueskyThread } from '../providers/bsky/conversation';
 import { Constants } from '../constants';
-import { getSocialProof } from '../helpers/socialproof';
+import { getActivitySocialProof } from '../helpers/socialproof';
 import i18next from 'i18next';
 import icu from 'i18next-icu';
 import { escapeRegex } from '../helpers/utils';
@@ -75,9 +75,9 @@ const getStatusText = (status: APIStatus) => {
   if (status.poll) {
     text += `${generatePoll(status.poll)}`;
   }
-  const socialProof = getSocialProof(status);
+  const socialProof = getActivitySocialProof(status);
   if (socialProof) {
-    text += `<b>${socialProof.replace(/ {3}/g, '&ensp;')}</b>`;
+    text += socialProof;
   }
   return text;
 };

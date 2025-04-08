@@ -19,6 +19,11 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
 
   console.log('cacheUrl', cacheUrl);
 
+  // Ignore caching on workers.dev
+  if (cacheUrl.hostname.includes('workers.dev')) {
+    await next();
+  }
+
   let cacheKey: Request;
   const returnAsJson = Constants.API_HOST_LIST.includes(cacheUrl.hostname);
 

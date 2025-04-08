@@ -56,8 +56,13 @@ export const app = new Hono<{
     }
     /* Defaults to Twitter realm if unknown domain specified (such as the *.workers.dev hostname) */
 
-    console.log(`/${realm}${url.pathname}`);
-    return `/${realm}${url.pathname}`;
+    if (realm) {
+      console.log(`/${realm}${url.pathname}`);
+      return `/${realm}${url.pathname}`;
+    } else {
+      console.log(`${url.pathname}`);
+      return `${url.pathname}`;
+    }
   }
 });
 
@@ -150,11 +155,11 @@ app.route(`/bsky`, bsky);
 app.all('/error', async c => {
   c.header('cache-control', noCache);
 
+  /* We return it as a 200 so embedded applications can display the error */
   if (c.req.header('User-Agent')?.match(embeddingClientRegex)) {
     const branding = getBranding(c);
     return c.html(Strings.ERROR_HTML.format({ brandingName: branding.name }), 200);
   }
-  /* We return it as a 200 so embedded applications can display the error */
   return c.body('', 400);
 });
 

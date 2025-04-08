@@ -48,6 +48,9 @@ export const app = new Hono<{
     } else if (Constants.STANDARD_BSKY_DOMAIN_LIST.includes(baseHostName)) {
       realm = 'bsky';
       console.log('Bluesky realm');
+    } else if (baseHostName.includes('workers.dev')) {
+      realm = '';
+      console.log(`Domain not assigned to realm, falling back to root as we are on workers.dev: ${url.hostname}`);
     } else {
       console.log(`Domain not assigned to realm, falling back to Twitter: ${url.hostname}`);
     }

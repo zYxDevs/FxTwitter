@@ -17,6 +17,7 @@ jobs:
     # Only run if the workflow_run event was successful (when triggered by tests workflow)
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    environment: production
     name: Deploy
     steps:
       - uses: actions/checkout@v4
@@ -77,5 +78,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          environment: production
           command: deploy --no-bundle

@@ -17,8 +17,8 @@ jobs:
     # Only run if the workflow_run event was successful (when triggered by tests workflow)
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: production
-    name: Deploy
+    environment: Production
+    name: Deploy to Cloudflare Workers
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,7 +53,7 @@ jobs:
           command = "npm run build"
           EOF
 
-      - name: Deploy Worker
+      - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

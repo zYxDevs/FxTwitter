@@ -129,7 +129,7 @@ export const twitterFetch = async (
     headers['x-csrf-token'] = csrfToken;
     headers['x-twitter-active-user'] = 'yes';
     headers['x-guest-token'] = guestToken;
-
+    headers['x-client-uuid'] = crypto.randomUUID();
     let response: unknown;
     let apiRequest: Response | null = null;
 
@@ -137,10 +137,12 @@ export const twitterFetch = async (
       if (useElongator && typeof c.env?.TwitterProxy !== 'undefined') {
         console.log('Fetching using elongator');
         const performanceStart = performance.now();
+        const headers2 = headers;
+        headers2['x-twitter-auth-type'] = 'OAuth2Session';
         apiRequest = await withTimeout((signal: AbortSignal) =>
           c.env?.TwitterProxy.fetch(url, {
             method: 'GET',
-            headers: headers,
+            headers: headers2,
             signal: signal
           })
         );

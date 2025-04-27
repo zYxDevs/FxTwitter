@@ -52,12 +52,12 @@ export const fetchTweetDetail = async (
         focalTweetId: status,
         with_rux_injections: false,
         rankingMode: "Relevance",
-        includePromotedContent: true,
-        withCommunity: true,
-        withQuickPromoteEligibilityTweetFields: true,
+        includePromotedContent: false,
+        withCommunity: false,
+        withQuickPromoteEligibilityTweetFields: false,
         withBirdwatchNotes: true,
-        withVoice: true,
-        // cursor: cursor
+        withVoice: false,
+        cursor: cursor
       })
     )}&features=${encodeURIComponent(
       JSON.stringify({

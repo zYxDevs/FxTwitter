@@ -180,6 +180,7 @@ declare interface APITwitterCommunityNote {
 
 declare interface APITwitterStatus extends APIStatus {
   views?: number | null;
+  bookmarks?: number | null;
   translation?: APITranslate;
 
   is_note_tweet: boolean;

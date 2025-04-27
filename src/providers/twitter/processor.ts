@@ -9,7 +9,6 @@ import { translateStatus } from '../../helpers/translate';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
 import { APIUser, APITwitterStatus, FetchResults, APIVideo, APIPhoto } from '../../types/types';
-import { experimentCheck, Experiment } from '../../experiments';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 
 export const buildAPITwitterStatus = async (
@@ -105,6 +104,7 @@ export const buildAPITwitterStatus = async (
     apiStatus.reposts = status.legacy.retweet_count;
   }
   apiStatus.likes = status.legacy.favorite_count;
+  apiStatus.bookmarks = status.legacy.bookmark_count;
   apiStatus.embed_card = 'tweet';
   apiStatus.created_at = status.legacy.created_at;
   apiStatus.created_timestamp = new Date(status.legacy.created_at).getTime() / 1000;

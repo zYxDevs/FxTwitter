@@ -401,6 +401,7 @@ type GraphQLTwitterStatus = {
     };
   };
   tweet?: {
+    quoted_status_result?: GraphQLTwitterStatus;
     legacy: GraphQLTwitterStatusLegacy;
     views: {
       count: string; // "562"

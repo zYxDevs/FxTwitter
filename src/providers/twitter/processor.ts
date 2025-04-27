@@ -237,7 +237,7 @@ export const buildAPITwitterStatus = async (
   apiStatus.media = {};
 
   /* We found a quote, let's process that too */
-  const quote = status.quoted_status_result;
+  const quote = status.quoted_status_result ?? status.tweet?.quoted_status_result;
   if (quote) {
     const buildQuote = await buildAPITwitterStatus(c, quote, language, threadAuthor, legacyAPI);
     if ((buildQuote as FetchResults).status) {

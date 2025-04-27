@@ -83,6 +83,7 @@ test('API fetch basic Status', async () => {
   // @ts-expect-error retweets only in legacy API
   expect(status.retweets).toBeGreaterThan(0);
   expect(status.likes).toBeGreaterThan(0);
+  expect(status.bookmarks).toBeGreaterThan(0);
   // @ts-expect-error twitter_card only in legacy API
   expect(status.twitter_card).toEqual('tweet');
   expect(status.created_at).toEqual('Tue Mar 21 20:50:14 +0000 2006');

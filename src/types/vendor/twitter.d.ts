@@ -604,6 +604,24 @@ type TweetResultsByRestIdResult = {
     };
   };
 };
+type TweetResultsByIdsResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data?: {
+    tweet_results?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    }[];
+  };
+};
+type TweetResultByIdResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data?: {
+    tweet_result?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    };
+  };
+};
 
 type TweetStub = {
   __typename: 'TweetUnavailable';

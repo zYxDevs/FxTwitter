@@ -193,7 +193,7 @@ export const twitterFetch = async (
       !wasElongatorDisabled &&
       !useElongator &&
       typeof c.env?.TwitterProxy !== 'undefined' &&
-      (response as TweetResultsByRestIdResult)?.data?.tweetResult?.result?.reason ===
+      (response as TweetResultsByRestIdResponse)?.data?.tweetResult?.result?.reason ===
         'NsfwLoggedOut'
     ) {
       console.log(`nsfw tweet detected, it's elongator time`);

@@ -147,13 +147,14 @@ export const TweetResultByIdQuery: GraphQLQuery = {
   queryId: 'FwLfaByYlUhvhcLp3nWINQ',
   queryName: 'TweetResultByIdQuery',
   requiresAccount: true,
+  forceTwitterEndpoint: true,
   variables: {
     includeTweetImpression: true,
     includeHasBirdwatchNotes: false,
     includeEditPerspective: false,
     includeEditControl: true,
     includeCommunityTweetRelationship: true,
-    rest_id: "",
+    // rest_id: "",
     includeTweetVisibilityNudge: true
   },
   features: {

@@ -6,16 +6,13 @@ import { Context } from 'hono';
 
 export const statusAPIRequest = async (c: Context) => {
   const id = c.req.param('id') as string;
-  const useRestId = c.req.query('useRestId') === 'true';
-  console.log('useRestId', useRestId);
 
   const processedResponse = await constructTwitterThread(
     id,
     false,
     c,
     undefined,
-    undefined,
-    useRestId
+    undefined
   );
 
   c.status(processedResponse.code as ContentfulStatusCode);

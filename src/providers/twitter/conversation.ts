@@ -402,8 +402,7 @@ export const constructTwitterThread = async (
   processThread = false,
   c: Context,
   language: string | undefined,
-  legacyAPI = false,
-  useRestId = false
+  legacyAPI = false
 ): Promise<SocialThread> => {
   console.log('language', language);
 
@@ -473,8 +472,6 @@ export const constructTwitterThread = async (
       return { status: null, thread: null, author: null, code: 404 };
     }
   }
-
-  console.log('Lets make sure we have our data')
 
   // Handle TweetResultsByRestId response format
   if (response && response.data && !usedTweetDetail) {

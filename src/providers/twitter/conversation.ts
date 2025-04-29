@@ -5,7 +5,12 @@ import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { APITwitterStatus, FetchResults, InputFlags, SocialThread } from '../../types/types';
-import { TweetDetailQuery, TweetResultByIdQuery, TweetResultByRestIdQuery, TweetResultsByIdsQuery } from './graphql/queries';
+import {
+  TweetDetailQuery,
+  TweetResultByIdQuery,
+  TweetResultByRestIdQuery,
+  TweetResultsByIdsQuery
+} from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
 
 const writeDataPoint = (
@@ -75,46 +80,44 @@ export const fetchByRestId = async (
     typeof c.env?.TwitterProxy !== 'undefined'
   )
 ): Promise<TweetResultsByRestIdResponse> => {
-  return graphqlRequest(
-    c, {
-      query: TweetResultByRestIdQuery,
-      variables: {
-        tweetId: status
-      },
-      useElongator: useElongator,
-      validator: (_conversation: unknown) => {
-        const conversation = _conversation as TweetResultsByRestIdResponse;
-        // If we get a not found error it's still a valid response
-        const tweet = conversation.data?.tweetResult?.result;
-        if (isGraphQLTwitterStatus(tweet)) {
-          return true;
-        }
-        console.log('invalid graphql tweet');
-        if (
-          !tweet &&
-          typeof conversation.data?.tweetResult === 'object' &&
-          Object.keys(conversation.data?.tweetResult || {}).length === 0
-        ) {
-          console.log('tweet was not found');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'NsfwLoggedOut') {
-          console.log('tweet is nsfw');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'Protected') {
-          console.log('tweet is protected');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable') {
-          console.log('generic tweet unavailable error');
-          return true;
-        }
-        // Final clause for checking if it's valid is if there's errors
-        return Array.isArray(conversation.errors);
-      }
+  return graphqlRequest(c, {
+    query: TweetResultByRestIdQuery,
+    variables: {
+      tweetId: status
     },
-  ) as Promise<TweetResultsByRestIdResponse>;
+    useElongator: useElongator,
+    validator: (_conversation: unknown) => {
+      const conversation = _conversation as TweetResultsByRestIdResponse;
+      // If we get a not found error it's still a valid response
+      const tweet = conversation.data?.tweetResult?.result;
+      if (isGraphQLTwitterStatus(tweet)) {
+        return true;
+      }
+      console.log('invalid graphql tweet');
+      if (
+        !tweet &&
+        typeof conversation.data?.tweetResult === 'object' &&
+        Object.keys(conversation.data?.tweetResult || {}).length === 0
+      ) {
+        console.log('tweet was not found');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'NsfwLoggedOut') {
+        console.log('tweet is nsfw');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'Protected') {
+        console.log('tweet is protected');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable') {
+        console.log('generic tweet unavailable error');
+        return true;
+      }
+      // Final clause for checking if it's valid is if there's errors
+      return Array.isArray(conversation.errors);
+    }
+  }) as Promise<TweetResultsByRestIdResponse>;
 };
 
 export const fetchByIds = async (
@@ -125,49 +128,46 @@ export const fetchByIds = async (
     typeof c.env?.TwitterProxy !== 'undefined'
   )
 ): Promise<TweetResultsByIdsResponse> => {
-  return graphqlRequest(
-    c, {
-      query: TweetResultsByIdsQuery,
-      variables: {
-        rest_ids: statuses
-      },
-      useElongator: useElongator,
-      validator: (_conversation: unknown) => {
-        const conversation = _conversation as TweetResultsByIdsResponse;
-        // If we get a not found error it's still a valid response
-        const tweet = conversation.data?.tweet_results?.[0]?.result;
-        console.log('result', conversation.data?.tweet_results?.[0]?.result);
-        if (isGraphQLTwitterStatus(tweet)) {
-          return true;
-        }
-        console.log('invalid graphql tweet');
-        if (
-          !tweet &&
-          typeof conversation.data?.tweet_results === 'object' &&
-          Object.keys(conversation.data?.tweet_results || {}).length === 0
-        ) {
-          console.log('tweet was not found');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'NsfwLoggedOut') {
-          console.log('tweet is nsfw');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'Protected') {
-          console.log('tweet is protected');
-          return true;
-        }
-        if (tweet?.__typename === 'TweetUnavailable') {
-          console.log('generic tweet unavailable error');
-          return true;
-        }
-        // Final clause for checking if it's valid is if there's errors
-        return Array.isArray(conversation.errors);
-      }
+  return graphqlRequest(c, {
+    query: TweetResultsByIdsQuery,
+    variables: {
+      rest_ids: statuses
     },
-  ) as Promise<TweetResultsByIdsResponse>;
+    useElongator: useElongator,
+    validator: (_conversation: unknown) => {
+      const conversation = _conversation as TweetResultsByIdsResponse;
+      // If we get a not found error it's still a valid response
+      const tweet = conversation.data?.tweet_results?.[0]?.result;
+      console.log('result', conversation.data?.tweet_results?.[0]?.result);
+      if (isGraphQLTwitterStatus(tweet)) {
+        return true;
+      }
+      console.log('invalid graphql tweet');
+      if (
+        !tweet &&
+        typeof conversation.data?.tweet_results === 'object' &&
+        Object.keys(conversation.data?.tweet_results || {}).length === 0
+      ) {
+        console.log('tweet was not found');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'NsfwLoggedOut') {
+        console.log('tweet is nsfw');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'Protected') {
+        console.log('tweet is protected');
+        return true;
+      }
+      if (tweet?.__typename === 'TweetUnavailable') {
+        console.log('generic tweet unavailable error');
+        return true;
+      }
+      // Final clause for checking if it's valid is if there's errors
+      return Array.isArray(conversation.errors);
+    }
+  }) as Promise<TweetResultsByIdsResponse>;
 };
-
 
 export const fetchById = async (
   status: string,
@@ -177,35 +177,33 @@ export const fetchById = async (
     typeof c.env?.TwitterProxy !== 'undefined'
   )
 ): Promise<TweetResultByIdResponse> => {
-  return graphqlRequest(
-    c, {
-      query: TweetResultByIdQuery,
-      variables: {
-        rest_id: status
-      },
-      useElongator: useElongator,
-      validator: (_conversation: unknown) => {
-        const conversation = _conversation as TweetResultByIdResponse;
-        // If we get a not found error it's still a valid response
-        const tweet = conversation.data?.tweet_result?.result;
-        console.log('result', conversation.data?.tweet_result?.result);
-        if (isGraphQLTwitterStatus(tweet)) {
-          return true;
-        }
-        console.log('invalid graphql tweet');
-        if (
-          !tweet &&
-          typeof conversation.data?.tweet_result === 'object' &&
-          Object.keys(conversation.data?.tweet_result || {}).length === 0
-        ) {
-          console.log('tweet was not found');
-          return true;
-        }
-        // Final clause for checking if it's valid is if there's errors
-        return Array.isArray(conversation.errors);
-      }
+  return graphqlRequest(c, {
+    query: TweetResultByIdQuery,
+    variables: {
+      rest_id: status
     },
-  ) as Promise<TweetResultByIdResponse>;
+    useElongator: useElongator,
+    validator: (_conversation: unknown) => {
+      const conversation = _conversation as TweetResultByIdResponse;
+      // If we get a not found error it's still a valid response
+      const tweet = conversation.data?.tweet_result?.result;
+      console.log('result', conversation.data?.tweet_result?.result);
+      if (isGraphQLTwitterStatus(tweet)) {
+        return true;
+      }
+      console.log('invalid graphql tweet');
+      if (
+        !tweet &&
+        typeof conversation.data?.tweet_result === 'object' &&
+        Object.keys(conversation.data?.tweet_result || {}).length === 0
+      ) {
+        console.log('tweet was not found');
+        return true;
+      }
+      // Final clause for checking if it's valid is if there's errors
+      return Array.isArray(conversation.errors);
+    }
+  }) as Promise<TweetResultByIdResponse>;
 };
 
 const processResponse = (instructions: ThreadInstruction[]): GraphQLProcessBucket => {
@@ -293,13 +291,17 @@ const findPreviousStatus = (id: string, bucket: GraphQLProcessBucket): number =>
     console.log('uhhh, we could not even find that tweet, dunno how that happened');
     return -1;
   }
-  if ((status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str) === status.legacy?.in_reply_to_status_id_str) {
+  if (
+    (status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str) ===
+    status.legacy?.in_reply_to_status_id_str
+  ) {
     console.log('Tweet does not have a parent');
     return 0;
   }
   return bucket.allStatuses.findIndex(
     _status =>
-      (_status.rest_id ?? _status.legacy?.id_str ?? _status.legacy?.conversation_id_str) === status.legacy?.in_reply_to_status_id_str
+      (_status.rest_id ?? _status.legacy?.id_str ?? _status.legacy?.conversation_id_str) ===
+      status.legacy?.in_reply_to_status_id_str
   );
 };
 
@@ -324,24 +326,32 @@ const filterBucketStatuses = (tweets: GraphQLTwitterStatus[], original: GraphQLT
   );
 };
 
-const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsByRestIdResponse | TweetResultsByIdsResponse | null> => {
+const fetchSingleStatus = async (
+  id: string,
+  c: Context
+): Promise<TweetResultsByRestIdResponse | TweetResultsByIdsResponse | null> => {
   // Weights determined by rate limit. We should use their weights to randomly determine which endpoint to first try
   // Otherwise we can fall back to the next endpoint
   // We will need to see if the tweet results exist and try the next endpoint if they don't
   const endpointWeights: Record<string, number> = {
     TweetResultsByRestId: 50,
     TweetResultsByIds: 500
-  }
+  };
 
   // Calculate total weight and normalized weights
   const totalWeight = Object.values(endpointWeights).reduce((sum, weight) => sum + weight, 0);
-  const normalizedWeights = Object.entries(endpointWeights).reduce((acc, [key, weight]) => {
-    acc[key] = weight / totalWeight;
-    return acc;
-  }, {} as Record<string, number>);
+  const normalizedWeights = Object.entries(endpointWeights).reduce(
+    (acc, [key, weight]) => {
+      acc[key] = weight / totalWeight;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   // If we're not using Elongator, we are only able to use TweetResultsByRestId
-  if (!experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined')) {
+  if (
+    !experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined')
+  ) {
     console.log('Elongator not available, using TweetResultsByRestId only');
     normalizedWeights.TweetResultsByRestId = 1;
     normalizedWeights.TweetResultsByIds = 0;
@@ -386,8 +396,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
 
   console.log('All endpoints failed to fetch tweet');
   return null;
-}
-
+};
 
 /* Fetch and construct a Twitter thread */
 export const constructTwitterThread = async (
@@ -400,17 +409,19 @@ export const constructTwitterThread = async (
 ): Promise<SocialThread> => {
   console.log('language', language);
 
-  let response: TweetDetailResponse | TweetResultsByRestIdResponse | TweetResultsByIdsResponse | TweetResultByIdResponse | null = null;
+  let response:
+    | TweetDetailResponse
+    | TweetResultsByRestIdResponse
+    | TweetResultsByIdsResponse
+    | TweetResultByIdResponse
+    | null = null;
   let status: APITwitterStatus;
 
   console.log('env', c.env);
 
   // Try TweetDetail first under these conditions
   const tryTweetDetailFirst =
-    typeof c.env?.TwitterProxy !== 'undefined' &&
-    !language &&
-    !useRestId &&
-    processThread;
+    typeof c.env?.TwitterProxy !== 'undefined' && !language && !useRestId && processThread;
 
   // First attempt with preferred API
   if (tryTweetDetailFirst) {
@@ -436,11 +447,14 @@ export const constructTwitterThread = async (
 
     let result: GraphQLTwitterStatus | null = null;
     if ((response as TweetResultsByRestIdResponse).data?.tweetResult?.result) {
-      result = (response as TweetResultsByRestIdResponse).data?.tweetResult?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultsByRestIdResponse).data?.tweetResult
+        ?.result as GraphQLTwitterStatus;
     } else if ((response as TweetResultsByIdsResponse).data?.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse).data?.tweet_results?.[0]?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultsByIdsResponse).data?.tweet_results?.[0]
+        ?.result as GraphQLTwitterStatus;
     } else if ((response as TweetResultByIdResponse).data?.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse).data?.tweet_result?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultByIdResponse).data?.tweet_result
+        ?.result as GraphQLTwitterStatus;
     }
 
     // If TweetResultsByRestId failed and we have TwitterProxy available, try TweetDetail as fallback
@@ -464,11 +478,14 @@ export const constructTwitterThread = async (
   if (response && response.data) {
     let result: GraphQLTwitterStatus | null = null;
     if ((response as TweetResultsByRestIdResponse).data.tweetResult?.result) {
-      result = (response as TweetResultsByRestIdResponse).data.tweetResult?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultsByRestIdResponse).data.tweetResult
+        ?.result as GraphQLTwitterStatus;
     } else if ((response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultsByIdsResponse).data.tweet_results?.[0]
+        ?.result as GraphQLTwitterStatus;
     } else if ((response as TweetResultByIdResponse).data.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse).data.tweet_result?.result as GraphQLTwitterStatus;
+      result = (response as TweetResultByIdResponse).data.tweet_result
+        ?.result as GraphQLTwitterStatus;
     }
 
     if (!result) {
@@ -515,7 +532,11 @@ export const constructTwitterThread = async (
   // Process TweetDetail response for thread data
   // Type guard to ensure we're working with TweetDetailResponse
   const isTweetDetailResponse = (
-    resp: TweetDetailResponse | TweetResultsByRestIdResponse | TweetResultsByIdsResponse | TweetResultByIdResponse
+    resp:
+      | TweetDetailResponse
+      | TweetResultsByRestIdResponse
+      | TweetResultsByIdsResponse
+      | TweetResultByIdResponse
   ): resp is TweetDetailResponse => {
     return (
       resp &&
@@ -640,7 +661,8 @@ export const constructTwitterThread = async (
   while (findPreviousStatus(currentId, bucket) !== -1) {
     const index = findPreviousStatus(currentId, bucket);
     const status = bucket.allStatuses[index];
-    const newCurrentId = status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str;
+    const newCurrentId =
+      status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str;
 
     console.log(
       'adding previous status to thread',

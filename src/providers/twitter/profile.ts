@@ -1,6 +1,5 @@
 import { Context } from 'hono';
 import { Constants } from '../../constants';
-import { fetchUser } from './fetch';
 import { linkFixer } from '../../helpers/linkFixer';
 import { APIUser, UserAPIResponse } from '../../types/types';
 import { UserByScreenNameQuery } from './graphql/queries';
@@ -89,7 +88,7 @@ export const userAPI = async (
   c: Context
   // flags?: InputFlags
 ): Promise<UserAPIResponse> => {
-  const userResponse: GraphQLUserResponse = await graphqlRequest(c, {
+  const userResponse: GraphQLUserResponse = (await graphqlRequest(c, {
     query: UserByScreenNameQuery,
     variables: {
       screen_name: username
@@ -101,7 +100,7 @@ export const userAPI = async (
         typeof userResponse?.data?.user?.result?.legacy === 'undefined'
       );
     }
-  }) as GraphQLUserResponse;
+  })) as GraphQLUserResponse;
   if (!userResponse || !Object.keys(userResponse).length) {
     return {
       code: 404,

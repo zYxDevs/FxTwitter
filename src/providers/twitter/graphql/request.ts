@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Context } from "hono";
-import { Constants } from "../../../constants";
-import { twitterFetch } from "../fetch";
+import { Context } from 'hono';
+import { Constants } from '../../../constants';
+import { twitterFetch } from '../fetch';
 
 export interface GraphQLQuery {
   httpMethod: string;
   queryId: string;
   queryName: string;
   requiresAccount: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variables: Record<string, any>;
   features?: Record<string, boolean>;
   fieldToggles?: Record<string, boolean>;
@@ -34,5 +33,5 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
   if (query.fieldToggles) {
     url += `&fieldToggles=${encodeURIComponent(JSON.stringify(query.fieldToggles))}`;
   }
-  return twitterFetch(c, url, request.useElongator ?? query.requiresAccount, validator)
-}
+  return twitterFetch(c, url, request.useElongator ?? query.requiresAccount, validator);
+};

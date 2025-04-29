@@ -1,4 +1,4 @@
-import { GraphQLQuery } from "./request"
+import { GraphQLQuery } from './request';
 
 export const TweetResultByRestIdQuery: GraphQLQuery = {
   httpMethod: 'GET',
@@ -11,7 +11,7 @@ export const TweetResultByRestIdQuery: GraphQLQuery = {
     withVoice: false
   },
   features: {
-    creator_subscriptions_tweet_preview_api_enabled :true,
+    creator_subscriptions_tweet_preview_api_enabled: true,
     premium_content_api_read_enabled: false,
     communities_web_enable_tweet_community_results_fetch: true,
     c9s_tweet_anatomy_moderator_badge_enabled: true,
@@ -45,7 +45,7 @@ export const TweetResultByRestIdQuery: GraphQLQuery = {
   fieldToggles: {
     withArticleRichContentState: true
   }
-}
+};
 
 export const TweetDetailQuery: GraphQLQuery = {
   httpMethod: 'GET',
@@ -55,7 +55,7 @@ export const TweetDetailQuery: GraphQLQuery = {
   variables: {
     focalTweetId: 0,
     with_rux_injections: false,
-    rankingMode: "Relevance",
+    rankingMode: 'Relevance',
     includePromotedContent: false,
     withCommunity: false,
     withQuickPromoteEligibilityTweetFields: false,
@@ -97,12 +97,12 @@ export const TweetDetailQuery: GraphQLQuery = {
     responsive_web_enhance_cards_enabled: false
   },
   fieldToggles: {
-    withArticleRichContentState:true,
-    withArticlePlainText:false,
-    withGrokAnalyze:false,
-    withDisallowedReplyControls:false
+    withArticleRichContentState: true,
+    withArticlePlainText: false,
+    withGrokAnalyze: false,
+    withDisallowedReplyControls: false
   }
-}
+};
 
 export const TweetResultsByIdsQuery: GraphQLQuery = {
   httpMethod: 'GET',
@@ -140,7 +140,7 @@ export const TweetResultsByIdsQuery: GraphQLQuery = {
     profile_label_improvements_pcf_label_in_post_enabled: true,
     super_follow_exclusive_tweet_notifications_enabled: true
   }
-}
+};
 
 export const TweetResultByIdQuery: GraphQLQuery = {
   httpMethod: 'GET',
@@ -178,7 +178,7 @@ export const TweetResultByIdQuery: GraphQLQuery = {
     profile_label_improvements_pcf_label_in_post_enabled: true,
     super_follow_exclusive_tweet_notifications_enabled: true
   }
-}
+};
 
 export const UserByScreenNameQuery: GraphQLQuery = {
   httpMethod: 'GET',
@@ -195,4 +195,4 @@ export const UserByScreenNameQuery: GraphQLQuery = {
     responsive_web_graphql_timeline_navigation_enabled: false,
     verified_phone_label_enabled: true
   }
-}
+};

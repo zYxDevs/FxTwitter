@@ -231,6 +231,7 @@ export const UserByScreenNameQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: '1VOOyvKkiI3FMmkeDNxM9A',
   queryName: 'UserByScreenName',
+  requiresAccount: false,
   variables: {
     screen_name: ''
   },

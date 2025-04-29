@@ -93,6 +93,7 @@ export const userAPI = async (
     variables: {
       screen_name: username
     },
+    useElongator: typeof c.env?.TwitterProxy !== 'undefined',
     validator: (response: unknown) => {
       const userResponse = response as GraphQLUserResponse;
       return !(

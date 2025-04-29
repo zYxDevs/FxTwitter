@@ -147,7 +147,6 @@ export const TweetResultByIdQuery: GraphQLQuery = {
   queryId: 'FwLfaByYlUhvhcLp3nWINQ',
   queryName: 'TweetResultByIdQuery',
   requiresAccount: true,
-  forceTwitterEndpoint: true,
   variables: {
     includeTweetImpression: true,
     includeHasBirdwatchNotes: false,
@@ -178,5 +177,22 @@ export const TweetResultByIdQuery: GraphQLQuery = {
     immersive_video_status_linkable_timestamps: true,
     profile_label_improvements_pcf_label_in_post_enabled: true,
     super_follow_exclusive_tweet_notifications_enabled: true
+  }
+}
+
+export const UserByScreenNameQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'sLVLhk0bGj3MVFEKTdax1w',
+  queryName: 'UserByScreenName',
+  variables: {
+    screen_name: '',
+    withSafetyModeUserFields: true
+  },
+  features: {
+    blue_business_profile_image_shape_enabled: true,
+    responsive_web_graphql_exclude_directive_enabled: true,
+    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+    responsive_web_graphql_timeline_navigation_enabled: false,
+    verified_phone_label_enabled: true
   }
 }

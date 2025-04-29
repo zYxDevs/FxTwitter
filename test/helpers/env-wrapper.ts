@@ -52,6 +52,17 @@ export default {
             console.error('Error loading mock:', error);
           }
           return new Response(JSON.stringify({ data: {} }));
+        case 'TweetResultsByIds':
+          const tweetIds = variables.tweetIds;
+          // load mock based on tweet ids
+          try {
+            const mock = await import(`../mocks/TweetResultsByIds/${tweetIds}.json`);
+            console.log('Mock data:', mock);
+            return new Response(JSON.stringify(mock));
+          } catch (error) {
+            console.error('Error loading mock:', error);
+          }
+          return new Response(JSON.stringify({ data: {} }));
         default:
           throw new Error('Invalid request');
       }

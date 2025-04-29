@@ -304,6 +304,71 @@ const filterBucketStatuses = (tweets: GraphQLTwitterStatus[], original: GraphQLT
   );
 };
 
+const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsByRestIdResponse | TweetResultsByIdsResponse | null> => {
+  // Weights determined by rate limit. We should use their weights to randomly determine which endpoint to first try
+  // Otherwise we can fall back to the next endpoint
+  // We will need to see if the tweet results exist and try the next endpoint if they don't
+  const endpointWeights: Record<string, number> = {
+    TweetResultsByRestId: 50,
+    TweetResultsByIds: 500
+  }
+
+  // Calculate total weight and normalized weights
+  const totalWeight = Object.values(endpointWeights).reduce((sum, weight) => sum + weight, 0);
+  const normalizedWeights = Object.entries(endpointWeights).reduce((acc, [key, weight]) => {
+    acc[key] = weight / totalWeight;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // If we're not using Elongator, we are only able to use TweetResultsByRestId
+  if (!experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined')) {
+    console.log('Elongator not available, using TweetResultsByRestId only');
+    normalizedWeights.TweetResultsByRestId = 1;
+    normalizedWeights.TweetResultsByIds = 0;
+  }
+
+  const random = Math.random();
+  console.log('Random value:', random);
+  console.log('Normalized weights:', normalizedWeights);
+
+  try {
+    if (random < normalizedWeights.TweetResultsByRestId) {
+      console.log('Trying TweetResultsByRestId (weighted selection)...');
+      const response = await fetchByRestId(id, c);
+      if (response.data?.tweetResult?.result) {
+        console.log('Successfully fetched tweet using TweetResultsByRestId');
+        return response;
+      }
+      console.log('TweetResultsByRestId failed to return valid result');
+    }
+
+    console.log('Trying TweetResultsByIds...');
+    const response = await fetchByIds([id], c);
+    if (response.data?.tweet_results?.[0]?.result) {
+      console.log('Successfully fetched tweet using TweetResultsByIds');
+      return response;
+    }
+    console.log('TweetResultsByIds failed to return valid result');
+
+    // Only try again if we didn't already try the other endpoint
+    if (random >= normalizedWeights.TweetResultsByRestId) {
+      console.log('Trying TweetResultsByRestId as fallback...');
+      const response = await fetchByRestId(id, c);
+      if (response.data?.tweetResult?.result) {
+        console.log('Successfully fetched tweet using TweetResultsByRestId (fallback)');
+        return response;
+      }
+      console.log('TweetResultsByRestId fallback failed to return valid result');
+    }
+  } catch (error) {
+    console.error('Error fetching tweet:', error);
+  }
+
+  console.log('All endpoints failed to fetch tweet');
+  return null;
+}
+
+
 /* Fetch and construct a Twitter thread */
 export const constructTwitterThread = async (
   id: string,
@@ -317,14 +382,6 @@ export const constructTwitterThread = async (
 
   let response: TweetDetailResponse | TweetResultsByRestIdResponse | TweetResultsByIdsResponse | TweetResultByIdResponse | null = null;
   let status: APITwitterStatus;
-  let url: URL;
-
-  try {
-    url = new URL(c.req.url);
-  } catch (e) {
-    console.log('Error parsing URL', e);
-    url = new URL('https://api.fxtwitter.com/');
-  }
 
   console.log('env', c.env);
 
@@ -333,7 +390,7 @@ export const constructTwitterThread = async (
     typeof c.env?.TwitterProxy !== 'undefined' &&
     !language &&
     !useRestId &&
-    (processThread || url.hostname.includes('api'));
+    processThread;
 
   // First attempt with preferred API
   if (tryTweetDetailFirst) {
@@ -343,7 +400,7 @@ export const constructTwitterThread = async (
     // If TweetDetail failed, try TweetResultsByRestId as fallback
     if (!response?.data) {
       console.log('TweetDetail failed, falling back to TweetResultsByRestId...');
-      response = (await fetchByRestId(id, c)) as TweetResultsByRestIdResponse;
+      response = (await fetchSingleStatus(id, c)) as TweetResultsByRestIdResponse;
 
       // If both APIs failed, return 404
       if (!response?.data?.tweetResult?.result) {
@@ -355,24 +412,32 @@ export const constructTwitterThread = async (
     // Start with TweetResultsByRestId
     // console.log('Using TweetResultsByRestId for primary request...');
     // response = (await fetchByRestId(id, c)) as TweetResultsByRestIdResponse;
-    console.log('Using TweetResultsByIdsQuery for primary request...');
-    response = (await fetchByIds([id], c)) as TweetResultsByIdsResponse;
+    response = (await fetchSingleStatus(id, c)) as TweetResultsByIdsResponse;
+
+    let result: GraphQLTwitterStatus | null = null;
+    if ((response as TweetResultsByRestIdResponse).data.tweetResult?.result) {
+      result = (response as TweetResultsByRestIdResponse).data.tweetResult?.result as GraphQLTwitterStatus;
+    } else if ((response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result) {
+      result = (response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result as GraphQLTwitterStatus;
+    } else if ((response as TweetResultByIdResponse).data.tweet_result?.result) {
+      result = (response as TweetResultByIdResponse).data.tweet_result?.result as GraphQLTwitterStatus;
+    }
 
     // If TweetResultsByRestId failed and we have TwitterProxy available, try TweetDetail as fallback
-    // if (!response?.data?.tweetResult?.result && typeof c.env?.TwitterProxy !== 'undefined') {
-    //   console.log('TweetResultsByRestId failed, falling back to TweetDetail...');
-    //   response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+    if (!result && typeof c.env?.TwitterProxy !== 'undefined') {
+      console.log('TweetResultsByRestId failed, falling back to TweetDetail...');
+      response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
 
-    //   // If both APIs failed, return 404
-    //   if (!response?.data) {
-    //     writeDataPoint(c, language, null, '404');
-    //     return { status: null, thread: null, author: null, code: 404 };
-    //   }
-    // } else if (!response?.data?.tweetResult?.result) {
-    //   // No fallback available or both failed
-    //   writeDataPoint(c, language, null, '404');
-    //   return { status: null, thread: null, author: null, code: 404 };
-    // }
+      // If both APIs failed, return 404
+      if (!response?.data) {
+        writeDataPoint(c, language, null, '404');
+        return { status: null, thread: null, author: null, code: 404 };
+      }
+    } else if (!result) {
+      // No fallback available or both failed
+      writeDataPoint(c, language, null, '404');
+      return { status: null, thread: null, author: null, code: 404 };
+    }
   }
 
   // Handle TweetResultsByRestId response format

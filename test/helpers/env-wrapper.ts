@@ -53,10 +53,13 @@ export default {
           }
           return new Response(JSON.stringify({ data: {} }));
         case 'TweetResultsByIds':
-          const tweetIds = variables.tweetIds;
           // load mock based on tweet ids
           try {
-            const mock = await import(`../mocks/TweetResultsByIds/${tweetIds}.json`);
+            const ids = Array.isArray(variables.rest_ids)
+              ? variables.rest_ids
+              : [variables.rest_ids];
+            const filename = ids.join(',');
+            const mock = await import(`../mocks/TweetResultsByIds/${filename}.json`);
             console.log('Mock data:', mock);
             return new Response(JSON.stringify(mock));
           } catch (error) {

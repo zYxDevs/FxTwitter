@@ -53,7 +53,7 @@ export default {
             console.error('Error loading mock:', error);
           }
           return new Response(JSON.stringify({ data: {} }));
-        case 'TweetResultsByIds':
+        case 'TweetResultsByIdsQuery':
           // load mock based on tweet ids
           try {
             const ids = Array.isArray(variables.rest_ids)

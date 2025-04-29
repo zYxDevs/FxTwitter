@@ -158,7 +158,7 @@ export const TweetResultsByIdsQuery: GraphQLQuery = {
   requiresAccount: true,
   variables: {
     includeTweetImpression: true,
-    includeHasBirdwatchNotes: false,
+    includeHasBirdwatchNotes: true,
     includeEditPerspective: false,
     rest_ids: [],
     includeEditControl: true,
@@ -196,7 +196,7 @@ export const TweetResultByIdQuery: GraphQLQuery = {
   requiresAccount: true,
   variables: {
     includeTweetImpression: true,
-    includeHasBirdwatchNotes: false,
+    includeHasBirdwatchNotes: true,
     includeEditPerspective: false,
     includeEditControl: true,
     includeCommunityTweetRelationship: true,
@@ -229,17 +229,26 @@ export const TweetResultByIdQuery: GraphQLQuery = {
 
 export const UserByScreenNameQuery: GraphQLQuery = {
   httpMethod: 'GET',
-  queryId: 'sLVLhk0bGj3MVFEKTdax1w',
+  queryId: '1VOOyvKkiI3FMmkeDNxM9A',
   queryName: 'UserByScreenName',
   variables: {
-    screen_name: '',
-    withSafetyModeUserFields: true
+    screen_name: ''
   },
   features: {
-    blue_business_profile_image_shape_enabled: true,
-    responsive_web_graphql_exclude_directive_enabled: true,
+    hidden_profile_subscriptions_enabled: true,
+    profile_label_improvements_pcf_label_in_post_enabled: true,
+    rweb_tipjar_consumption_enabled: true,
+    verified_phone_label_enabled: false,
+    subscriptions_verification_info_is_identity_verified_enabled: true,
+    subscriptions_verification_info_verified_since_enabled: true,
+    highlights_tweets_tab_ui_enabled: true,
+    responsive_web_twitter_article_notes_tab_enabled: true,
+    subscriptions_feature_can_gift_premium: true,
+    creator_subscriptions_tweet_preview_api_enabled: true,
     responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-    responsive_web_graphql_timeline_navigation_enabled: false,
-    verified_phone_label_enabled: true
+    responsive_web_graphql_timeline_navigation_enabled: true
+  },
+  fieldToggles: {
+    withAuxiliaryUserLabels: true
   }
 };

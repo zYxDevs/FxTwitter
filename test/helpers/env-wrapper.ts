@@ -12,7 +12,7 @@ export default {
       const url = new URL(request);
       const apiMethod = url.pathname.match(/(?<=(\/i\/api\/)?graphql\/\w+\/)\w+/)?.[0];
       if (!apiMethod) {
-        throw new Error('Invalid request');
+        throw new Error(`Invalid request: ${url}`);
       }
       const variables = JSON.parse(decodeURIComponent(url.searchParams.get('variables') ?? '{}'));
       console.log('Method:', apiMethod);

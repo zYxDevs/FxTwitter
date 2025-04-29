@@ -138,7 +138,6 @@ export const fetchByIds = async (
       const conversation = _conversation as TweetResultsByIdsResponse;
       // If we get a not found error it's still a valid response
       const tweet = conversation.data?.tweet_results?.[0]?.result;
-      console.log('result', conversation.data?.tweet_results?.[0]?.result);
       if (isGraphQLTwitterStatus(tweet)) {
         return true;
       }
@@ -187,7 +186,6 @@ export const fetchById = async (
       const conversation = _conversation as TweetResultByIdResponse;
       // If we get a not found error it's still a valid response
       const tweet = conversation.data?.tweet_result?.result;
-      console.log('result', conversation.data?.tweet_result?.result);
       if (isGraphQLTwitterStatus(tweet)) {
         return true;
       }

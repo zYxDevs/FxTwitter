@@ -89,7 +89,7 @@ export const fetchByRestId = async (
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultsByRestIdResponse;
       // If we get a not found error it's still a valid response
-      const tweet = conversation.data?.tweetResult?.result;
+      const tweet = conversation?.data?.tweetResult?.result;
       if (isGraphQLTwitterStatus(tweet)) {
         return true;
       }
@@ -445,14 +445,14 @@ export const constructTwitterThread = async (
     response = (await fetchSingleStatus(id, c)) as TweetResultsByIdsResponse;
 
     let result: GraphQLTwitterStatus | null = null;
-    if ((response as TweetResultsByRestIdResponse).data?.tweetResult?.result) {
-      result = (response as TweetResultsByRestIdResponse).data?.tweetResult
+    if ((response as TweetResultsByRestIdResponse)?.data?.tweetResult?.result) {
+      result = (response as TweetResultsByRestIdResponse)?.data?.tweetResult
         ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByIdsResponse).data?.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse).data?.tweet_results?.[0]
+    } else if ((response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]?.result) {
+      result = (response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]
         ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultByIdResponse).data?.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse).data?.tweet_result
+    } else if ((response as TweetResultByIdResponse)?.data?.tweet_result?.result) {
+      result = (response as TweetResultByIdResponse)?.data?.tweet_result
         ?.result as GraphQLTwitterStatus;
     }
 

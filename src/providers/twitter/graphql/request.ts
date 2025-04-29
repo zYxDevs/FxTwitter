@@ -24,7 +24,7 @@ interface GraphQLRequest {
 
 export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promise<unknown> => {
   const { query, validator, variables } = request;
-  const allVariables = { ...query.variables, ...(variables ?? []) };
+  const allVariables = { ...query.variables, ...(variables ?? {}) };
 
   let url = `${Constants.TWITTER_ROOT}/i/api/graphql/${query.queryId}/${query.queryName}`;
   url += `?variables=${encodeURIComponent(JSON.stringify(allVariables))}`;

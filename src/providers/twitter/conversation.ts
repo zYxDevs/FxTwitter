@@ -141,6 +141,26 @@ export const fetchByIds = async (
           return true;
         }
         console.log('invalid graphql tweet');
+        if (
+          !tweet &&
+          typeof conversation.data?.tweet_results === 'object' &&
+          Object.keys(conversation.data?.tweet_results || {}).length === 0
+        ) {
+          console.log('tweet was not found');
+          return true;
+        }
+        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'NsfwLoggedOut') {
+          console.log('tweet is nsfw');
+          return true;
+        }
+        if (tweet?.__typename === 'TweetUnavailable' && tweet.reason === 'Protected') {
+          console.log('tweet is protected');
+          return true;
+        }
+        if (tweet?.__typename === 'TweetUnavailable') {
+          console.log('generic tweet unavailable error');
+          return true;
+        }
         // Final clause for checking if it's valid is if there's errors
         return Array.isArray(conversation.errors);
       }

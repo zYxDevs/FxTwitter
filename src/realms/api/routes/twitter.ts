@@ -7,13 +7,7 @@ import { Context } from 'hono';
 export const statusAPIRequest = async (c: Context) => {
   const id = c.req.param('id') as string;
 
-  const processedResponse = await constructTwitterThread(
-    id,
-    false,
-    c,
-    undefined,
-    undefined
-  );
+  const processedResponse = await constructTwitterThread(id, false, c, undefined, undefined);
 
   c.status(processedResponse.code as ContentfulStatusCode);
   // Add every header from Constants.API_RESPONSE_HEADERS

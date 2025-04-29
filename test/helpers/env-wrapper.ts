@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 /* eslint-disable no-case-declarations */
 // Wrapper for elongator TwitterProxy to handle mock requests for testing
 export default {
@@ -12,7 +13,7 @@ export default {
       const url = new URL(request);
       const apiMethod = url.pathname.match(/(?<=(\/i\/api\/)?graphql\/\w+\/)\w+/)?.[0];
       if (!apiMethod) {
-        throw new Error('Invalid request');
+        throw new Error(`Invalid request: ${url}`);
       }
       const variables = JSON.parse(decodeURIComponent(url.searchParams.get('variables') ?? '{}'));
       console.log('Method:', apiMethod);
@@ -46,6 +47,20 @@ export default {
           // load mock based on tweet id
           try {
             const mock = await import(`../mocks/TweetResultByRestId/${tweetId}.json`);
+            console.log('Mock data:', mock);
+            return new Response(JSON.stringify(mock));
+          } catch (error) {
+            console.error('Error loading mock:', error);
+          }
+          return new Response(JSON.stringify({ data: {} }));
+        case 'TweetResultsByIdsQuery':
+          // load mock based on tweet ids
+          try {
+            const ids = Array.isArray(variables.rest_ids)
+              ? variables.rest_ids
+              : [variables.rest_ids];
+            const filename = ids.join(',');
+            const mock = await import(`../mocks/TweetResultsByIds/${filename}.json`);
             console.log('Mock data:', mock);
             return new Response(JSON.stringify(mock));
           } catch (error) {

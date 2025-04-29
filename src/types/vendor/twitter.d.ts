@@ -396,7 +396,10 @@ type GraphQLTwitterStatus = {
     };
   };
   core: {
-    user_results: {
+    user_results?: {
+      result: GraphQLUser;
+    };
+    user_result?: {
       result: GraphQLUser;
     };
   };
@@ -587,7 +590,7 @@ type GraphQLTwitterStatusNotFoundResponse = {
   ];
   data: Record<string, never>;
 };
-type TweetDetailResult = {
+type TweetDetailResponse = {
   errors?: unknown[];
   data: {
     threaded_conversation_with_injections_v2: {
@@ -595,11 +598,29 @@ type TweetDetailResult = {
     };
   };
 };
-type TweetResultsByRestIdResult = {
+type TweetResultsByRestIdResponse = {
   guestToken?: string;
   errors?: unknown[];
-  data?: {
+  data: {
     tweetResult?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    };
+  };
+};
+type TweetResultsByIdsResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweet_results?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    }[];
+  };
+};
+type TweetResultByIdResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweet_result?: {
       result?: TweetStub | GraphQLTwitterStatus;
     };
   };

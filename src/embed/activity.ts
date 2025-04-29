@@ -64,7 +64,7 @@ const getStatusText = (status: APIStatus) => {
     text = formatStatus(convertedStatusText, status) + '<br><br>';
   }
   if (status.quote) {
-    console.log('quote!!', status.quote);
+    // console.log('quote!!', status.quote);
     text += `<blockquote><b>${i18next.t('ivQuoteHeader').format({
       authorName: status.quote.author.name,
       authorURL: status.quote.author.url,

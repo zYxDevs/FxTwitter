@@ -335,7 +335,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
     if (random < normalizedWeights.TweetResultsByRestId) {
       console.log('Trying TweetResultsByRestId (weighted selection)...');
       const response = await fetchByRestId(id, c);
-      if (response.data?.tweetResult?.result?.__typename) {
+      if (response?.data?.tweetResult?.result?.__typename) {
         console.log('Successfully fetched tweet using TweetResultsByRestId');
         return response;
       }
@@ -344,7 +344,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
 
     console.log('Trying TweetResultsByIds...');
     const response = await fetchByIds([id], c);
-    if (response.data?.tweet_results?.[0]?.result?.__typename) {
+    if (response?.data?.tweet_results?.[0]?.result?.__typename) {
       console.log('Successfully fetched tweet using TweetResultsByIds');
       return response;
     }
@@ -354,7 +354,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
     if (random >= normalizedWeights.TweetResultsByRestId) {
       console.log('Trying TweetResultsByRestId as fallback...');
       const response = await fetchByRestId(id, c);
-      if (response.data?.tweetResult?.result?.__typename) {
+      if (response?.data?.tweetResult?.result?.__typename) {
         console.log('Successfully fetched tweet using TweetResultsByRestId (fallback)');
         return response;
       }

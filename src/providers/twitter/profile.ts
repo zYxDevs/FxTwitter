@@ -1,8 +1,10 @@
 import { Context } from 'hono';
 import { Constants } from '../../constants';
-import { fetchUser } from '../../fetch';
+import { fetchUser } from './fetch';
 import { linkFixer } from '../../helpers/linkFixer';
 import { APIUser, UserAPIResponse } from '../../types/types';
+import { UserByScreenNameQuery } from './graphql/queries';
+import { graphqlRequest } from './graphql/request';
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
@@ -87,7 +89,19 @@ export const userAPI = async (
   c: Context
   // flags?: InputFlags
 ): Promise<UserAPIResponse> => {
-  const userResponse = await fetchUser(username, c);
+  const userResponse: GraphQLUserResponse = await graphqlRequest(c, {
+    query: UserByScreenNameQuery,
+    variables: {
+      screen_name: username
+    },
+    validator: (response: unknown) => {
+      const userResponse = response as GraphQLUserResponse;
+      return !(
+        userResponse?.data?.user?.result?.__typename !== 'User' ||
+        typeof userResponse?.data?.user?.result?.legacy === 'undefined'
+      );
+    }
+  }) as GraphQLUserResponse;
   if (!userResponse || !Object.keys(userResponse).length) {
     return {
       code: 404,

@@ -335,7 +335,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
     if (random < normalizedWeights.TweetResultsByRestId) {
       console.log('Trying TweetResultsByRestId (weighted selection)...');
       const response = await fetchByRestId(id, c);
-      if (response.data?.tweetResult?.result) {
+      if (response.data?.tweetResult?.result?.__typename) {
         console.log('Successfully fetched tweet using TweetResultsByRestId');
         return response;
       }
@@ -344,7 +344,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
 
     console.log('Trying TweetResultsByIds...');
     const response = await fetchByIds([id], c);
-    if (response.data?.tweet_results?.[0]?.result) {
+    if (response.data?.tweet_results?.[0]?.result?.__typename) {
       console.log('Successfully fetched tweet using TweetResultsByIds');
       return response;
     }
@@ -354,7 +354,7 @@ const fetchSingleStatus = async (id: string, c: Context): Promise<TweetResultsBy
     if (random >= normalizedWeights.TweetResultsByRestId) {
       console.log('Trying TweetResultsByRestId as fallback...');
       const response = await fetchByRestId(id, c);
-      if (response.data?.tweetResult?.result) {
+      if (response.data?.tweetResult?.result?.__typename) {
         console.log('Successfully fetched tweet using TweetResultsByRestId (fallback)');
         return response;
       }
@@ -415,12 +415,12 @@ export const constructTwitterThread = async (
     response = (await fetchSingleStatus(id, c)) as TweetResultsByIdsResponse;
 
     let result: GraphQLTwitterStatus | null = null;
-    if ((response as TweetResultsByRestIdResponse).data.tweetResult?.result) {
-      result = (response as TweetResultsByRestIdResponse).data.tweetResult?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultByIdResponse).data.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse).data.tweet_result?.result as GraphQLTwitterStatus;
+    if ((response as TweetResultsByRestIdResponse).data?.tweetResult?.result) {
+      result = (response as TweetResultsByRestIdResponse).data?.tweetResult?.result as GraphQLTwitterStatus;
+    } else if ((response as TweetResultsByIdsResponse).data?.tweet_results?.[0]?.result) {
+      result = (response as TweetResultsByIdsResponse).data?.tweet_results?.[0]?.result as GraphQLTwitterStatus;
+    } else if ((response as TweetResultByIdResponse).data?.tweet_result?.result) {
+      result = (response as TweetResultByIdResponse).data?.tweet_result?.result as GraphQLTwitterStatus;
     }
 
     // If TweetResultsByRestId failed and we have TwitterProxy available, try TweetDetail as fallback

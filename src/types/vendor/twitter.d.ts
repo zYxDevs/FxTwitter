@@ -406,7 +406,11 @@ type GraphQLTwitterStatus = {
   tweet?: {
     quoted_status_result?: GraphQLTwitterStatus;
     legacy: GraphQLTwitterStatusLegacy;
-    views: {
+    views?: {
+      count: string; // "562"
+      state: string; // "EnabledWithCount"
+    };
+    view_count_info?: {
       count: string; // "562"
       state: string; // "EnabledWithCount"
     };
@@ -419,7 +423,11 @@ type GraphQLTwitterStatus = {
   edit_control: unknown;
   edit_perspective: unknown;
   is_translatable: false;
-  views: {
+  views?: {
+    count: string; // "562"
+    state: string; // "EnabledWithCount"
+  };
+  view_count_info?: {
     count: string; // "562"
     state: string; // "EnabledWithCount"
   };
@@ -598,13 +606,22 @@ type TweetDetailResponse = {
     };
   };
 };
-type TweetResultsByRestIdResponse = {
+type TweetResultByRestIdResponse = {
   guestToken?: string;
   errors?: unknown[];
   data: {
     tweetResult?: {
       result?: TweetStub | GraphQLTwitterStatus;
     };
+  };
+};
+type TweetResultsByRestIdsResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweetResult?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    }[];
   };
 };
 type TweetResultsByIdsResponse = {

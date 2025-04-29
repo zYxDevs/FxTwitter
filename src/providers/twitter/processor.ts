@@ -38,6 +38,12 @@ export const buildAPITwitterStatus = async (
   if (typeof status.views === 'undefined' && typeof status?.tweet?.views !== 'undefined') {
     status.views = status?.tweet?.views;
   }
+  if (typeof status.view_count_info === 'undefined' && typeof status?.tweet?.view_count_info !== 'undefined') {
+    status.views = status?.tweet?.view_count_info;
+  }
+  if (typeof status.views === 'undefined' && typeof status?.view_count_info !== 'undefined') {
+    status.views = status?.view_count_info;
+  }
 
   if (typeof status.core === 'undefined') {
     console.log('Status still not valid', status);

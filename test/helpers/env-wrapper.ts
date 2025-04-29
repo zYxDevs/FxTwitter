@@ -53,13 +53,27 @@ export default {
             console.error('Error loading mock:', error);
           }
           return new Response(JSON.stringify({ data: {} }));
+        case 'TweetResultsByRestIds':
+          const tweetIds = Array.isArray(variables.tweetIds)
+          ? variables.tweetIds
+          : [variables.tweetIds];
+          const filename = tweetIds[0];
+          // load mock based on tweet id
+          try {
+            const mock = await import(`../mocks/TweetResultsByRestIds/${filename}.json`);
+            console.log('Mock data:', mock);
+            return new Response(JSON.stringify(mock));
+          } catch (error) {
+            console.error('Error loading mock:', error);
+          }
+          return new Response(JSON.stringify({ data: {} }));
         case 'TweetResultsByIdsQuery':
           // load mock based on tweet ids
           try {
             const ids = Array.isArray(variables.rest_ids)
               ? variables.rest_ids
               : [variables.rest_ids];
-            const filename = ids.join(',');
+            const filename = ids[0];
             const mock = await import(`../mocks/TweetResultsByIds/${filename}.json`);
             console.log('Mock data:', mock);
             return new Response(JSON.stringify(mock));

@@ -419,7 +419,8 @@ export const constructTwitterThread = async (
 
   // Try TweetDetail first under these conditions
   const tryTweetDetailFirst =
-    typeof c.env?.TwitterProxy !== 'undefined' && !language && !useRestId && processThread;
+    typeof c.env?.TwitterProxy !== 'undefined' && !language && processThread;
+  let usedTweetDetail = false;
 
   // First attempt with preferred API
   if (tryTweetDetailFirst) {
@@ -437,6 +438,7 @@ export const constructTwitterThread = async (
         return { status: null, thread: null, author: null, code: 404 };
       }
     }
+    usedTweetDetail = true;
   } else {
     // Start with TweetResultsByRestId
     // console.log('Using TweetResultsByRestId for primary request...');
@@ -459,7 +461,7 @@ export const constructTwitterThread = async (
     if (!result && typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('TweetResultsByRestId failed, falling back to TweetDetail...');
       response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
-
+      usedTweetDetail = true;
       // If both APIs failed, return 404
       if (!response?.data) {
         writeDataPoint(c, language, null, '404');
@@ -472,8 +474,10 @@ export const constructTwitterThread = async (
     }
   }
 
+  console.log('Lets make sure we have our data')
+
   // Handle TweetResultsByRestId response format
-  if (response && response.data) {
+  if (response && response.data && !usedTweetDetail) {
     let result: GraphQLTwitterStatus | null = null;
     if ((response as TweetResultsByRestIdResponse).data.tweetResult?.result) {
       result = (response as TweetResultsByRestIdResponse).data.tweetResult

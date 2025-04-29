@@ -267,19 +267,19 @@ const findNextStatus = (id: string, bucket: GraphQLProcessBucket): number => {
 
 const findPreviousStatus = (id: string, bucket: GraphQLProcessBucket): number => {
   const status = bucket.allStatuses.find(
-    status => (status.rest_id ?? status.legacy?.id_str) === id
+    status => (status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str) === id
   );
   if (!status) {
     console.log('uhhh, we could not even find that tweet, dunno how that happened');
     return -1;
   }
-  if ((status.rest_id ?? status.legacy?.id_str) === status.legacy?.in_reply_to_status_id_str) {
+  if ((status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str) === status.legacy?.in_reply_to_status_id_str) {
     console.log('Tweet does not have a parent');
     return 0;
   }
   return bucket.allStatuses.findIndex(
     _status =>
-      (_status.rest_id ?? _status.legacy?.id_str) === status.legacy?.in_reply_to_status_id_str
+      (_status.rest_id ?? _status.legacy?.id_str ?? _status.legacy?.conversation_id_str) === status.legacy?.in_reply_to_status_id_str
   );
 };
 
@@ -555,7 +555,7 @@ export const constructTwitterThread = async (
   while (findPreviousStatus(currentId, bucket) !== -1) {
     const index = findPreviousStatus(currentId, bucket);
     const status = bucket.allStatuses[index];
-    const newCurrentId = status.rest_id ?? status.legacy?.id_str;
+    const newCurrentId = status.rest_id ?? status.legacy?.id_str ?? status.legacy?.conversation_id_str;
 
     console.log(
       'adding previous status to thread',

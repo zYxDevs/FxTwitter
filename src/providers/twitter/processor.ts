@@ -17,7 +17,6 @@ export const buildAPITwitterStatus = async (
   language: string | undefined,
   threadAuthor: null | APIUser,
   legacyAPI = false
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<APITwitterStatus | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
 

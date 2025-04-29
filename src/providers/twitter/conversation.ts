@@ -51,7 +51,7 @@ export const fetchTweetDetail = async (
       JSON.stringify({
         focalTweetId: status,
         with_rux_injections: false,
-        rankingMode: "Relevance",
+        rankingMode: 'Relevance',
         includePromotedContent: false,
         withCommunity: false,
         withQuickPromoteEligibilityTweetFields: false,
@@ -94,10 +94,12 @@ export const fetchTweetDetail = async (
         responsive_web_enhance_cards_enabled: false
       })
     )}&fieldToggles=${encodeURIComponent(
-      JSON.stringify({withArticleRichContentState:true,
-        withArticlePlainText:false,
-        withGrokAnalyze:false,
-        withDisallowedReplyControls:false})
+      JSON.stringify({
+        withArticleRichContentState: true,
+        withArticlePlainText: false,
+        withGrokAnalyze: false,
+        withDisallowedReplyControls: false
+      })
     )}`,
     useElongator,
     (_conversation: unknown) => {
@@ -140,7 +142,7 @@ export const fetchByRestId = async (
       })
     )}&features=${encodeURIComponent(
       JSON.stringify({
-        creator_subscriptions_tweet_preview_api_enabled :true,
+        creator_subscriptions_tweet_preview_api_enabled: true,
         premium_content_api_read_enabled: false,
         communities_web_enable_tweet_community_results_fetch: true,
         c9s_tweet_anatomy_moderator_badge_enabled: true,

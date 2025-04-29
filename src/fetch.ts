@@ -109,7 +109,7 @@ export const twitterFetch = async (
 
     try {
       activateJson = (await activate?.clone().json()) as { guest_token: string };
-    } catch (e: unknown) {
+    } catch (_e) {
       continue;
     }
 

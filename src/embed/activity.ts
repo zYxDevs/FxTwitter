@@ -31,7 +31,6 @@ const generatePoll = (poll: APIPoll): string => {
 
   poll.choices.forEach(choice => {
     const bar = '█'.repeat((choice.percentage / 100) * barLength);
-    // eslint-disable-next-line no-irregular-whitespace
     str += `${bar}<br><b>${choice.label}</b>&emsp;${choice.percentage}%<br>︀︀︀<br>︀`;
   });
 
@@ -232,7 +231,6 @@ export const handleActivity = async (
   c: Context,
   snowcode: string,
   provider: DataProvider
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<Response> => {
   let language: string | null = null;
   let authorHandle: string | null = null;

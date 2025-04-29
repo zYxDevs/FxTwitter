@@ -187,7 +187,7 @@ const wrapForeignLinks = (url: string) => {
     if (!whitelistedDomains.includes(urlObj.hostname)) {
       unwrap = true;
     }
-  } catch (error) {
+  } catch (_e) {
     unwrap = true;
   }
 
@@ -255,7 +255,6 @@ const generatePoll = (poll: APIPoll, language: string): string => {
 
   poll.choices.forEach(choice => {
     const bar = '█'.repeat((choice.percentage / 100) * barLength);
-    // eslint-disable-next-line no-irregular-whitespace
     str += `${bar}<br>${choice.label}<br>${i18next.t('ivPollChoice', { voteCount: intlFormat.format(choice.count), percentage: intlFormat.format(choice.percentage) })}<br>`;
   });
   /* Finally, add the footer of the poll with # of votes and time left */

@@ -9,7 +9,6 @@ export const buildAPIBskyPost = async (
   c: Context,
   status: BlueskyPost,
   language: string | undefined
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<APIStatus> => {
   const apiStatus: APIStatus = {} as APIStatus;
   apiStatus.id = status.cid;

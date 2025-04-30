@@ -129,7 +129,6 @@ export const twitterFetch = async (
     headers['x-csrf-token'] = csrfToken;
     headers['x-twitter-active-user'] = 'yes';
     headers['x-guest-token'] = guestToken;
-    headers['x-client-uuid'] = crypto.randomUUID();
     let response: unknown;
     let apiRequest: Response | null = null;
 

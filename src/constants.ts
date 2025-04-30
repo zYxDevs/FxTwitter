@@ -51,11 +51,11 @@ export const Constants = {
     'x-twitter-active-user': `yes`,
     'sec-ch-ua-platform': `"Windows"`,
     'Accept': `*/*`,
-    'Origin': `https://twitter.com`,
+    'Origin': `https://x.com`,
     'Sec-Fetch-Site': `same-site`,
     'Sec-Fetch-Mode': `cors`,
     'Sec-Fetch-Dest': `empty`,
-    'Referer': `https://twitter.com/`,
+    'Referer': `https://x.com/`,
     'Accept-Encoding': `gzip, deflate`,
     'Accept-Language': `en`
   },

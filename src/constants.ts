@@ -47,7 +47,8 @@ export const Constants = {
     'DNT': `1`,
     'x-twitter-client-language': `en`,
     'sec-ch-ua-mobile': `?0`,
-    'content-type': `application/x-www-form-urlencoded`,
+    'content-type': `application/json`,
+    'cache-control': `no-cache`,
     'x-twitter-active-user': `yes`,
     'sec-ch-ua-platform': `"Windows"`,
     'Accept': `*/*`,
@@ -57,8 +58,9 @@ export const Constants = {
     'Sec-Fetch-Dest': `empty`,
     'Sec-Gpc': `1`,
     'Permissions-Policy': `browsing-topics=()`,
+    'Pragma': `no-cache`,
     'Referer': `https://x.com/home`,
-    'Accept-Encoding': `gzip, deflate`,
+    'Accept-Encoding': `gzip, deflate, br, zstd`,
     'Accept-Language': `en`
   },
   RESPONSE_HEADERS: {

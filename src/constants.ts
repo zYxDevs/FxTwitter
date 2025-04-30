@@ -57,7 +57,7 @@ export const Constants = {
     'Sec-Fetch-Dest': `empty`,
     'Sec-Gpc': `1`,
     'Permissions-Policy': `browsing-topics=()`,
-    'Referer': `https://x.com/`,
+    'Referer': `https://x.com/home`,
     'Accept-Encoding': `gzip, deflate`,
     'Accept-Language': `en`
   },

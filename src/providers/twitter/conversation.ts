@@ -511,7 +511,7 @@ export const constructTwitterThread = async (
       result = (response as TweetResultByIdResponse)?.data?.tweet_result
         ?.result as GraphQLTwitterStatus;
     }
-    console.log('result', result);
+    // console.log('result', JSON.stringify(result));
     // If TweetResultByRestId failed and we have TwitterProxy available, try TweetDetail as fallback
     if (!result && typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('TweetResultByRestId failed, falling back to TweetDetail...');

@@ -55,6 +55,8 @@ export const Constants = {
     'Sec-Fetch-Site': `same-site`,
     'Sec-Fetch-Mode': `cors`,
     'Sec-Fetch-Dest': `empty`,
+    'Sec-Gpc': `1`,
+    'Permissions-Policy': `browsing-topics=()`,
     'Referer': `https://x.com/`,
     'Accept-Encoding': `gzip, deflate`,
     'Accept-Language': `en`

@@ -55,8 +55,8 @@ export default {
           return new Response(JSON.stringify({ data: {} }));
         case 'TweetResultsByRestIds':
           const tweetIds = Array.isArray(variables.tweetIds)
-          ? variables.tweetIds
-          : [variables.tweetIds];
+            ? variables.tweetIds
+            : [variables.tweetIds];
           const filename = tweetIds[0];
           // load mock based on tweet id
           try {

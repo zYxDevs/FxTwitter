@@ -329,6 +329,9 @@ type GraphQLTwitterStatusLegacy = {
   };
   reply_count: number; // 1
   retweet_count: number; // 4
+  retweeted_status_result?: {
+    result: GraphQLTwitterStatus;
+  };
   lang: string; // "en"
   possibly_sensitive: boolean; // false
   possibly_sensitive_editable: boolean; // false
@@ -415,14 +418,22 @@ type GraphQLTwitterStatus = {
       state: string; // "EnabledWithCount"
     };
     core: {
-      user_results: {
+      user_results?: {
+        result: GraphQLUser;
+      };
+      user_result?: {
         result: GraphQLUser;
       };
     };
   };
-  edit_control: unknown;
-  edit_perspective: unknown;
-  is_translatable: false;
+  edit_control: {
+    edit_tweet_ids: string[];
+    editable_until_msecs: string;
+    edits_remaining: string;
+    is_edit_eligible: boolean;
+  };
+  edit_perspective?: unknown;
+  is_translatable: boolean;
   views?: {
     count: string; // "562"
     state: string; // "EnabledWithCount"

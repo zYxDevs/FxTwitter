@@ -27,7 +27,7 @@ export const buildAPITwitterStatus = async (
     status = status.result;
   }
   /* This status is actually a retweet, so let's use the original status we are retweeting instead */
-  if (typeof status.legacy?.retweeted_status_result !== 'undefined') {
+  if (typeof status.legacy?.retweeted_status_result?.result !== 'undefined') {
     status = status.legacy.retweeted_status_result.result;
   }
 

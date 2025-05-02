@@ -121,7 +121,6 @@ export const fetchByRestId = async (
   }) as Promise<TweetResultByRestIdResponse>;
 };
 
-
 export const fetchByRestIds = async (
   statuses: string[],
   c: Context,
@@ -377,71 +376,119 @@ const filterBucketStatuses = (tweets: GraphQLTwitterStatus[], original: GraphQLT
 const fetchSingleStatus = async (
   id: string,
   c: Context
-): Promise<TweetResultByRestIdResponse | TweetResultsByIdsResponse | null> => {
-  // Weights determined by rate limit. We should use their weights to randomly determine which endpoint to first try
-  // Otherwise we can fall back to the next endpoint
-  // We will need to see if the tweet results exist and try the next endpoint if they don't
-  const endpointWeights: Record<string, number> = {
-    TweetResultByRestId: 50, // Lowest rate limit, available logged out
-    // Higher rate limits, required to be logged in
-    TweetResultsByRestIds: 500,
-    TweetResultsByIds: 500
-  };
-
-  // Calculate total weight and normalized weights
-  const totalWeight = Object.values(endpointWeights).reduce((sum, weight) => sum + weight, 0);
-  const normalizedWeights = Object.entries(endpointWeights).reduce(
-    (acc, [key, weight]) => {
-      acc[key] = weight / totalWeight;
-      return acc;
+): Promise<
+  TweetResultByRestIdResponse | TweetResultsByIdsResponse | TweetResultsByRestIdsResponse | null
+> => {
+  // Define endpoints and their weights based on rate limits
+  const endpoints = [
+    {
+      name: 'TweetResultByRestId',
+      weight: 50, // Lowest rate limit, available logged out
+      handler: async () => await fetchByRestId(id, c),
+      resultCheck: (response: any) => response?.data?.tweetResult?.result?.__typename
     },
-    {} as Record<string, number>
-  );
+    {
+      name: 'TweetResultsByIds',
+      weight: 500, // Higher rate limit, requires login
+      handler: async () => await fetchByIds([id], c),
+      resultCheck: (response: any) => response?.data?.tweet_results?.[0]?.result?.__typename
+    },
+    {
+      name: 'TweetResultsByRestIds',
+      weight: 500, // Higher rate limit, requires login
+      handler: async () => await fetchByRestIds([id], c),
+      resultCheck: (response: any) => response?.data?.tweetResult?.[0]?.result?.__typename
+    }
+  ];
 
-  // If we're not using Elongator, we are only able to use TweetResultByRestId
+  try {
+    const url = new URL(c.req.url);
+    if (Constants.API_HOST_LIST.includes(url.hostname)) {
+      for (const endpoint of endpoints) {
+        /* Avoid TweetResultsByIds for API if possible because it lacks Source parameter */
+        if (endpoint.name === 'TweetResultsByIds') {
+          endpoint.weight = 0;
+        }
+      }
+    }
+  } catch (_e) {}
+
+  // If not using Elongator, filter to only use TweetResultByRestId
   if (
     !experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined')
   ) {
     console.log('Elongator not available, using TweetResultByRestId only');
-    normalizedWeights.TweetResultByRestId = 1;
-    normalizedWeights.TweetResultsByIds = 0;
+    const filteredEndpoints = endpoints.filter(endpoint => endpoint.name === 'TweetResultByRestId');
+    if (filteredEndpoints.length > 0) {
+      try {
+        console.log(`Trying ${filteredEndpoints[0].name}...`);
+        const response = await filteredEndpoints[0].handler();
+        if (filteredEndpoints[0].resultCheck(response)) {
+          console.log(`Successfully fetched tweet using ${filteredEndpoints[0].name}`);
+          return response;
+        }
+      } catch (error) {
+        console.error(`Error fetching tweet with ${filteredEndpoints[0].name}:`, error);
+      }
+      console.log('Failed to fetch tweet with available endpoint');
+      return null;
+    }
   }
 
-  const random = Math.random();
-  console.log('Random value:', random);
-  console.log('Normalized weights:', normalizedWeights);
+  // Calculate total weight for normalization
+  const totalWeight = endpoints.reduce((sum, endpoint) => sum + endpoint.weight, 0);
 
-  try {
-    if (random < normalizedWeights.TweetResultByRestId) {
-      console.log('Trying TweetResultByRestId (weighted selection)...');
-      const response = await fetchByRestId(id, c);
-      if (response?.data?.tweetResult?.result?.__typename) {
-        console.log('Successfully fetched tweet using TweetResultByRestId');
-        return response;
-      }
-      console.log('TweetResultByRestId failed to return valid result');
+  // Create a weighted order of endpoints to try
+  const weightedOrder = [...endpoints].sort(() => Math.random() - 0.5);
+
+  // Try endpoints in weighted random order, then any remaining as fallbacks
+  const triedEndpoints = new Set<string>();
+
+  // First try a weighted random selection
+  const random = Math.random() * totalWeight;
+  let cumulativeWeight = 0;
+
+  let selectedEndpoint = endpoints[0]; // Default to first endpoint
+  for (const endpoint of endpoints) {
+    cumulativeWeight += endpoint.weight;
+    if (random <= cumulativeWeight) {
+      selectedEndpoint = endpoint;
+      break;
     }
+  }
 
-    console.log('Trying TweetResultsByIds...');
-    const response = await fetchByIds([id], c);
-    if (response?.data?.tweet_results?.[0]?.result?.__typename) {
-      console.log('Successfully fetched tweet using TweetResultsByIds');
+  console.log(`Selected ${selectedEndpoint.name} as first endpoint (weighted selection)`);
+
+  // Try the selected endpoint first
+  try {
+    triedEndpoints.add(selectedEndpoint.name);
+    console.log(`Trying ${selectedEndpoint.name}...`);
+    const response = await selectedEndpoint.handler();
+    if (selectedEndpoint.resultCheck(response)) {
+      console.log(`Successfully fetched tweet using ${selectedEndpoint.name}`);
       return response;
     }
-    console.log('TweetResultsByIds failed to return valid result');
+    console.log(`${selectedEndpoint.name} failed to return valid result`);
+  } catch (error) {
+    console.error(`Error fetching tweet with ${selectedEndpoint.name}:`, error);
+  }
 
-    // Only try again if we didn't already try the other endpoint
-    if (random >= normalizedWeights.TweetResultByRestId) {
-      console.log('Trying TweetResultByRestId as fallback...');
-      const response = await fetchByRestId(id, c);
-      if (response?.data?.tweetResult?.result?.__typename) {
-        console.log('Successfully fetched tweet using TweetResultByRestId (fallback)');
+  // Try remaining endpoints as fallbacks
+  for (const endpoint of endpoints) {
+    if (triedEndpoints.has(endpoint.name)) continue;
+
+    try {
+      triedEndpoints.add(endpoint.name);
+      console.log(`Trying ${endpoint.name} as fallback...`);
+      const response = await endpoint.handler();
+      if (endpoint.resultCheck(response)) {
+        console.log(`Successfully fetched tweet using ${endpoint.name} (fallback)`);
         return response;
       }
-      console.log('TweetResultByRestId fallback failed to return valid result');
+      console.log(`${endpoint.name} fallback failed to return valid result`);
+    } catch (error) {
+      console.error(`Error fetching tweet with ${endpoint.name}:`, error);
     }
-  } catch (error) {
-    console.error('Error fetching tweet:', error);
   }
 
   console.log('All endpoints failed to fetch tweet');

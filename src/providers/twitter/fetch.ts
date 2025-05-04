@@ -180,6 +180,10 @@ export const twitterFetch = async (
         console.error((error as Error).stack);
       }
       if (useElongator) {
+        if (elongatorRequired) {
+          console.log('Elongator was required, but we failed to fetch a valid response');
+          return {};
+        }
         console.log('Elongator request failed, trying again without it');
         wasElongatorDisabled = true;
       }

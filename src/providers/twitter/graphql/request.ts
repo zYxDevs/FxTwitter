@@ -33,5 +33,11 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
   if (query.fieldToggles) {
     url += `&fieldToggles=${encodeURIComponent(JSON.stringify(query.fieldToggles))}`;
   }
-  return twitterFetch(c, url, request.useElongator ?? query.requiresAccount, validator);
+  return twitterFetch(
+    c,
+    url,
+    request.useElongator ?? query.requiresAccount,
+    validator,
+    query.requiresAccount
+  );
 };

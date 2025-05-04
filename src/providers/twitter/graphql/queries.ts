@@ -51,7 +51,7 @@ export const TweetResultsByRestIdsQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: 'XM66WIszpd1XC97myrIS0w',
   queryName: 'TweetResultsByRestIds',
-  requiresAccount: false,
+  requiresAccount: true,
   variables: {
     withCommunity: false,
     includePromotedContent: false,
@@ -231,7 +231,7 @@ export const UserByScreenNameQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: '1VOOyvKkiI3FMmkeDNxM9A',
   queryName: 'UserByScreenName',
-  requiresAccount: false,
+  requiresAccount: true,
   variables: {
     screen_name: ''
   },

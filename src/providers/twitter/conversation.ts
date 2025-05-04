@@ -44,6 +44,31 @@ const writeDataPoint = (
   }
 };
 
+const getResultFromResponse = (
+  response:
+    | TweetResultByRestIdResponse
+    | TweetResultsByRestIdsResponse
+    | TweetResultsByIdsResponse
+    | TweetResultByIdResponse
+    | TweetDetailResponse
+    | null
+) => {
+  if ((response as TweetResultByRestIdResponse)?.data?.tweetResult?.result) {
+    return (response as TweetResultByRestIdResponse)?.data?.tweetResult
+      ?.result as GraphQLTwitterStatus;
+  } else if ((response as TweetResultsByRestIdsResponse)?.data?.tweetResult?.[0]?.result) {
+    return (response as TweetResultsByRestIdsResponse)?.data?.tweetResult?.[0]
+      ?.result as GraphQLTwitterStatus;
+  } else if ((response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]?.result) {
+    return (response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]
+      ?.result as GraphQLTwitterStatus;
+  } else if ((response as TweetResultByIdResponse)?.data?.tweet_result?.result) {
+    return (response as TweetResultByIdResponse)?.data?.tweet_result
+      ?.result as GraphQLTwitterStatus;
+  }
+  return null;
+};
+
 export const fetchTweetDetail = async (
   c: Context,
   status: string,
@@ -186,7 +211,7 @@ export const fetchByIds = async (
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultsByIdsResponse;
       // If we get a not found error it's still a valid response
-      const tweet = conversation.data?.tweet_results?.[0]?.result;
+      const tweet = getResultFromResponse(conversation) as GraphQLTwitterStatus;
       if (isGraphQLTwitterStatus(tweet)) {
         return true;
       }
@@ -519,25 +544,48 @@ export const constructTwitterThread = async (
   // Try TweetDetail first under these conditions
   const tryTweetDetailFirst =
     typeof c.env?.TwitterProxy !== 'undefined' && !language && processThread;
-  let usedTweetDetail = false;
+  let triedTweetDetail = false;
 
   // First attempt with preferred API
   if (tryTweetDetailFirst) {
+    triedTweetDetail = true;
     console.log('Using TweetDetail for primary request...');
-    response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+    try {
+      response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+    } catch (e) {
+      console.log('Error fetching TweetDetail', e);
+    }
 
-    // If TweetDetail failed, try TweetResultByRestId as fallback
+    // If TweetDetail failed, try one of the single status queries as fallback
     if (!response?.data) {
-      console.log('TweetDetail failed, falling back to TweetResultByRestId...');
-      response = (await fetchSingleStatus(id, c)) as TweetResultByRestIdResponse;
+      console.log('TweetDetail failed, falling back to single status...');
+      response = await fetchSingleStatus(id, c);
 
       // If both APIs failed, return 404
-      if (!response?.data?.tweetResult?.result) {
+      if (!getResultFromResponse(response)) {
+        console.log('Single status failed, returning 404');
         writeDataPoint(c, language, null, '404');
         return { status: null, thread: null, author: null, code: 404 };
       }
+
+      let result: GraphQLTwitterStatus | null = null;
+      result = getResultFromResponse(response);
+      if (!result) {
+        writeDataPoint(c, language, null, '404');
+        return { status: null, thread: null, author: null, code: 404 };
+      }
+
+      const buildStatus = await buildAPITwitterStatus(c, result, language, null, legacyAPI);
+      if (buildStatus === null) {
+        writeDataPoint(c, language, null, '404');
+        return { status: null, thread: null, author: null, code: 404 };
+      }
+
+      status = buildStatus as APITwitterStatus;
+
+      // If not processing thread, return single tweet
+      return { status: status, thread: null, author: status.author, code: 200 };
     }
-    usedTweetDetail = true;
   } else {
     // Start with TweetResultByRestId
     // console.log('Using TweetResultByRestId for primary request...');
@@ -545,25 +593,13 @@ export const constructTwitterThread = async (
     response = (await fetchSingleStatus(id, c)) as TweetResultByRestIdResponse;
 
     let result: GraphQLTwitterStatus | null = null;
-    if ((response as TweetResultByRestIdResponse)?.data?.tweetResult?.result) {
-      result = (response as TweetResultByRestIdResponse)?.data?.tweetResult
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByRestIdsResponse)?.data?.tweetResult?.[0]?.result) {
-      result = (response as TweetResultsByRestIdsResponse)?.data?.tweetResult?.[0]
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultByIdResponse)?.data?.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse)?.data?.tweet_result
-        ?.result as GraphQLTwitterStatus;
-    }
+    result = getResultFromResponse(response);
     // console.log('result', JSON.stringify(result));
     // If TweetResultByRestId failed and we have TwitterProxy available, try TweetDetail as fallback
     if (!result && typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('TweetResultByRestId failed, falling back to TweetDetail...');
       response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
-      usedTweetDetail = true;
+      triedTweetDetail = true;
       // If both APIs failed, return 404
       if (!response?.data) {
         writeDataPoint(c, language, null, '404');
@@ -576,21 +612,9 @@ export const constructTwitterThread = async (
     }
   }
 
-  if (response && response.data && !usedTweetDetail) {
+  if (response && response.data && !triedTweetDetail) {
     let result: GraphQLTwitterStatus | null = null;
-    if ((response as TweetResultByRestIdResponse).data.tweetResult?.result) {
-      result = (response as TweetResultByRestIdResponse).data.tweetResult
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByRestIdsResponse).data.tweetResult?.[0]?.result) {
-      result = (response as TweetResultsByRestIdsResponse).data.tweetResult?.[0]
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultsByIdsResponse).data.tweet_results?.[0]?.result) {
-      result = (response as TweetResultsByIdsResponse).data.tweet_results?.[0]
-        ?.result as GraphQLTwitterStatus;
-    } else if ((response as TweetResultByIdResponse).data.tweet_result?.result) {
-      result = (response as TweetResultByIdResponse).data.tweet_result
-        ?.result as GraphQLTwitterStatus;
-    }
+    result = getResultFromResponse(response);
 
     if (!result) {
       writeDataPoint(c, language, null, '404');
@@ -639,9 +663,11 @@ export const constructTwitterThread = async (
     resp:
       | TweetDetailResponse
       | TweetResultByRestIdResponse
+      | TweetResultsByRestIdsResponse
       | TweetResultsByIdsResponse
       | TweetResultByIdResponse
-  ): resp is TweetDetailResponse => {
+      | null
+  ) => {
     return (
       resp &&
       'data' in resp &&
@@ -650,13 +676,14 @@ export const constructTwitterThread = async (
     );
   };
 
-  if (!isTweetDetailResponse(response)) {
+  if (response && !isTweetDetailResponse(response)) {
     writeDataPoint(c, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
   const bucket = processResponse(
-    response.data.threaded_conversation_with_injections_v2?.instructions ?? []
+    (response as TweetDetailResponse).data?.threaded_conversation_with_injections_v2
+      ?.instructions ?? []
   );
   const originalStatus = findStatusInBucket(id, bucket);
 

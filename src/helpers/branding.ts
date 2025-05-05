@@ -27,7 +27,9 @@ export const getBranding = (c: Context | Request): Branding => {
     }
     if (url.searchParams.get('brandingIcon')) {
       branding.activityIcons = {
-        default: url.searchParams.get('brandingIcon') ?? branding.activityIcons?.default ?? ''
+        default: decodeURIComponent(
+          url.searchParams.get('brandingIcon') ?? branding.activityIcons?.default ?? ''
+        )
       };
     }
     return branding;

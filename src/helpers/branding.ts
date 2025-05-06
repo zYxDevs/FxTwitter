@@ -32,6 +32,11 @@ export const getBranding = (c: Context | Request): Branding => {
         )
       };
     }
+    if (url.searchParams.get('brandingRedirectUrl')) {
+      branding.redirect = decodeURIComponent(
+        url.searchParams.get('brandingRedirectUrl') ?? branding.activityIcons?.default ?? ''
+      );
+    }
     return branding;
   } catch (_e) {
     return defaultBranding;

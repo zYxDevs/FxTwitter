@@ -61,7 +61,7 @@ export const translateStatus = async (
 
   try {
     const url = `${Constants.TWITTER_ROOT}/i/api/1.1/strato/column/None/tweetId=${
-      tweet.rest_id ?? tweet.legacy?.id_str
+      tweet.rest_id ?? tweet.legacy?.id_str ?? tweet.legacy?.conversation_id_str
     },destinationLanguage=None,translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet`;
     console.log(url, headers);
     translationApiResponse = (await withTimeout((signal: AbortSignal) =>

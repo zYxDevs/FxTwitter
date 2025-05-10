@@ -21,7 +21,23 @@ export const getBranding = (c: Context | Request): Branding => {
     const url = new URL(c instanceof Request ? c.url : c.req.url);
     // get domain name, without subdomains
     const domain = url.hostname.split('.').slice(-2).join('.');
-    return zones.find(zone => zone.domains.includes(domain)) ?? defaultBranding;
+    const branding = zones.find(zone => zone.domains.includes(domain)) ?? defaultBranding;
+    if (url.searchParams.get('brandingName')) {
+      branding.name = url.searchParams.get('brandingName') ?? branding.name;
+    }
+    if (url.searchParams.get('brandingIcon')) {
+      branding.activityIcons = {
+        default: decodeURIComponent(
+          url.searchParams.get('brandingIcon') ?? branding.activityIcons?.default ?? ''
+        )
+      };
+    }
+    if (url.searchParams.get('brandingRedirectUrl')) {
+      branding.redirect = decodeURIComponent(
+        url.searchParams.get('brandingRedirectUrl') ?? branding.activityIcons?.default ?? ''
+      );
+    }
+    return branding;
   } catch (_e) {
     return defaultBranding;
   }

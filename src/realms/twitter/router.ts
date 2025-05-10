@@ -21,7 +21,7 @@ export const getBaseRedirectUrl = (c: Context) => {
     console.log('Found base redirect', baseRedirect);
     try {
       new URL(baseRedirect);
-    } catch (e) {
+    } catch (_e) {
       return Constants.TWITTER_ROOT;
     }
     return baseRedirect.endsWith('/') ? baseRedirect.slice(0, -1) : baseRedirect;
@@ -39,7 +39,7 @@ export const faviconRoute = async (c: Context) => {
       'Content-Type': response.headers.get('Content-Type') || 'image/x-icon',
       'Content-Length': response.headers.get('Content-Length') || body.byteLength.toString()
     });
-  } catch (e) {
+  } catch (_e) {
     return c.redirect(branding.favicon, 302);
   }
 };

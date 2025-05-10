@@ -17,7 +17,6 @@ export const buildAPITwitterStatus = async (
   language: string | undefined,
   threadAuthor: null | APIUser,
   legacyAPI = false
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<APITwitterStatus | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
 
@@ -26,6 +25,10 @@ export const buildAPITwitterStatus = async (
 
   if (typeof status.core === 'undefined' && typeof status.result !== 'undefined') {
     status = status.result;
+  }
+  /* This status is actually a retweet, so let's use the original status we are retweeting instead */
+  if (typeof status.legacy?.retweeted_status_result?.result !== 'undefined') {
+    status = status.legacy.retweeted_status_result.result;
   }
 
   if (typeof status.core === 'undefined' && typeof status.tweet?.core !== 'undefined') {
@@ -39,6 +42,15 @@ export const buildAPITwitterStatus = async (
   if (typeof status.views === 'undefined' && typeof status?.tweet?.views !== 'undefined') {
     status.views = status?.tweet?.views;
   }
+  if (
+    typeof status.view_count_info === 'undefined' &&
+    typeof status?.tweet?.view_count_info !== 'undefined'
+  ) {
+    status.views = status?.tweet?.view_count_info;
+  }
+  if (typeof status.views === 'undefined' && typeof status?.view_count_info !== 'undefined') {
+    status.views = status?.view_count_info;
+  }
 
   if (typeof status.core === 'undefined') {
     console.log('Status still not valid', status);
@@ -51,11 +63,12 @@ export const buildAPITwitterStatus = async (
 
   // console.log('status', JSON.stringify(status));
 
-  const graphQLUser = status.core.user_results.result;
+  const graphQLUser = (status.core.user_results?.result ??
+    status.core.user_result?.result) as GraphQLUser;
   const apiUser = convertToApiUser(graphQLUser);
 
   /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FixTweet/FxTwitter/issues/416 */
-  const id = status.rest_id ?? status.legacy.id_str;
+  const id = status.rest_id ?? status.legacy.id_str ?? status.legacy?.conversation_id_str;
 
   /* Populating a lot of the basics */
   apiStatus.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}/status/${id}`;

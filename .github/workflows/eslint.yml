@@ -5,11 +5,8 @@ on:
     branches:
       - main
   pull_request:
-    # The branches below must be a subset of the branches above
     branches:
       - main
-  schedule:
-    - cron: 43 16 * * 6
 
 jobs:
   eslint:
@@ -32,8 +29,8 @@ jobs:
       - run: npm install
 
       - name: Run ESLint
-        run: npx eslint .
-          --config .eslintrc
+        run: npx eslint ./src
+          --config eslint.config.mjs
           --ext .js,.jsx,.ts,.tsx
           --format @microsoft/eslint-formatter-sarif
           --output-file eslint-results.sarif

@@ -52,7 +52,6 @@ export const handleStatus = async (
   flags: InputFlags,
   language: string | undefined,
   provider: DataProvider
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<Response> => {
   console.log('Direct?', flags?.direct);
 

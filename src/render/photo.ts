@@ -17,7 +17,6 @@ export const renderPhoto = (
   const instructions: ResponseInstructions = { addHeaders: [] };
 
   if ((status.media?.photos?.length || 0) > 1 && (!status.media?.mosaic || isOverrideMedia)) {
-
     const all = status.media?.all as APIMedia[];
     const baseString =
       all.length === status.media?.photos?.length

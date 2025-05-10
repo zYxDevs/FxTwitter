@@ -42,12 +42,10 @@ export const setRedirectRequest = async (c: Context) => {
   if (!url) {
     /* Remove redirect URL */
     c.header(
-      // eslint-disable-next-line sonarjs/no-duplicate-string
       'set-cookie',
       `base_redirect=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; HttpOnly`
     );
     c.header(
-      // eslint-disable-next-line sonarjs/no-duplicate-string
       'content-security-policy',
       `frame-ancestors ${Constants.STANDARD_DOMAIN_LIST.join(' ')};`
     );
@@ -63,10 +61,10 @@ export const setRedirectRequest = async (c: Context) => {
 
   try {
     new URL(url);
-  } catch (e) {
+  } catch (_e) {
     try {
       new URL(`https://${url}`);
-    } catch (e) {
+    } catch (_e) {
       /* URL is not well-formed, remove */
       console.log('Invalid base redirect URL, removing cookie before redirect');
 

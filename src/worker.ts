@@ -33,7 +33,7 @@ export const app = new Hono<{
 
     try {
       url = new URL(req.url);
-    } catch (err) {
+    } catch (_e) {
       return '/error';
     }
     const baseHostName = url.hostname.split('.').slice(-2).join('.');
@@ -50,7 +50,9 @@ export const app = new Hono<{
       console.log('Bluesky realm');
     } else if (baseHostName.includes('workers.dev')) {
       realm = '';
-      console.log(`Domain not assigned to realm, falling back to root as we are on workers.dev: ${url.hostname}`);
+      console.log(
+        `Domain not assigned to realm, falling back to root as we are on workers.dev: ${url.hostname}`
+      );
     } else {
       console.log(`Domain not assigned to realm, falling back to Twitter: ${url.hostname}`);
     }

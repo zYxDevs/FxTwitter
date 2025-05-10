@@ -329,6 +329,9 @@ type GraphQLTwitterStatusLegacy = {
   };
   reply_count: number; // 1
   retweet_count: number; // 4
+  retweeted_status_result?: {
+    result: GraphQLTwitterStatus;
+  };
   lang: string; // "en"
   possibly_sensitive: boolean; // false
   possibly_sensitive_editable: boolean; // false
@@ -396,27 +399,46 @@ type GraphQLTwitterStatus = {
     };
   };
   core: {
-    user_results: {
+    user_results?: {
+      result: GraphQLUser;
+    };
+    user_result?: {
       result: GraphQLUser;
     };
   };
   tweet?: {
     quoted_status_result?: GraphQLTwitterStatus;
     legacy: GraphQLTwitterStatusLegacy;
-    views: {
+    views?: {
+      count: string; // "562"
+      state: string; // "EnabledWithCount"
+    };
+    view_count_info?: {
       count: string; // "562"
       state: string; // "EnabledWithCount"
     };
     core: {
-      user_results: {
+      user_results?: {
+        result: GraphQLUser;
+      };
+      user_result?: {
         result: GraphQLUser;
       };
     };
   };
-  edit_control: unknown;
-  edit_perspective: unknown;
-  is_translatable: false;
-  views: {
+  edit_control: {
+    edit_tweet_ids: string[];
+    editable_until_msecs: string;
+    edits_remaining: string;
+    is_edit_eligible: boolean;
+  };
+  edit_perspective?: unknown;
+  is_translatable: boolean;
+  views?: {
+    count: string; // "562"
+    state: string; // "EnabledWithCount"
+  };
+  view_count_info?: {
     count: string; // "562"
     state: string; // "EnabledWithCount"
   };
@@ -587,7 +609,7 @@ type GraphQLTwitterStatusNotFoundResponse = {
   ];
   data: Record<string, never>;
 };
-type TweetDetailResult = {
+type TweetDetailResponse = {
   errors?: unknown[];
   data: {
     threaded_conversation_with_injections_v2: {
@@ -595,11 +617,38 @@ type TweetDetailResult = {
     };
   };
 };
-type TweetResultsByRestIdResult = {
+type TweetResultByRestIdResponse = {
   guestToken?: string;
   errors?: unknown[];
-  data?: {
+  data: {
     tweetResult?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    };
+  };
+};
+type TweetResultsByRestIdsResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweetResult?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    }[];
+  };
+};
+type TweetResultsByIdsResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweet_results?: {
+      result?: TweetStub | GraphQLTwitterStatus;
+    }[];
+  };
+};
+type TweetResultByIdResponse = {
+  guestToken?: string;
+  errors?: unknown[];
+  data: {
+    tweet_result?: {
       result?: TweetStub | GraphQLTwitterStatus;
     };
   };

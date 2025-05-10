@@ -1,8 +1,8 @@
 import { Context } from 'hono';
-import { Constants } from './constants';
-import { Experiment, experimentCheck } from './experiments';
-import { generateUserAgent } from './helpers/useragent';
-import { generateSnowflake, withTimeout } from './helpers/utils';
+import { Constants } from '../../constants';
+import { Experiment, experimentCheck } from '../../experiments';
+import { generateUserAgent } from '../../helpers/useragent';
+import { generateSnowflake, withTimeout } from '../../helpers/utils';
 
 const API_ATTEMPTS = 3;
 let wasElongatorDisabled = false;
@@ -109,7 +109,7 @@ export const twitterFetch = async (
 
     try {
       activateJson = (await activate?.clone().json()) as { guest_token: string };
-    } catch (e: unknown) {
+    } catch (_e) {
       continue;
     }
 
@@ -129,7 +129,6 @@ export const twitterFetch = async (
     headers['x-csrf-token'] = csrfToken;
     headers['x-twitter-active-user'] = 'yes';
     headers['x-guest-token'] = guestToken;
-    headers['x-client-uuid'] = crypto.randomUUID();
     let response: unknown;
     let apiRequest: Response | null = null;
 
@@ -181,6 +180,10 @@ export const twitterFetch = async (
         console.error((error as Error).stack);
       }
       if (useElongator) {
+        if (elongatorRequired) {
+          console.log('Elongator was required, but we failed to fetch a valid response');
+          return {};
+        }
         console.log('Elongator request failed, trying again without it');
         wasElongatorDisabled = true;
       }
@@ -193,7 +196,7 @@ export const twitterFetch = async (
       !wasElongatorDisabled &&
       !useElongator &&
       typeof c.env?.TwitterProxy !== 'undefined' &&
-      (response as TweetResultsByRestIdResult)?.data?.tweetResult?.result?.reason ===
+      (response as TweetResultByRestIdResponse)?.data?.tweetResult?.result?.reason ===
         'NsfwLoggedOut'
     ) {
       console.log(`nsfw tweet detected, it's elongator time`);
@@ -256,55 +259,4 @@ export const twitterFetch = async (
   console.log('Twitter has repeatedly denied our requests, so we give up now');
 
   return null;
-};
-
-export const fetchUser = async (
-  username: string,
-  c: Context,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_PROFILE_API,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  )
-): Promise<GraphQLUserResponse> => {
-  return (await twitterFetch(
-    c,
-    `${
-      Constants.TWITTER_ROOT
-    }/i/api/graphql/sLVLhk0bGj3MVFEKTdax1w/UserByScreenName?variables=${encodeURIComponent(
-      JSON.stringify({
-        screen_name: username,
-        withSafetyModeUserFields: true
-      })
-    )}&features=${encodeURIComponent(
-      JSON.stringify({
-        blue_business_profile_image_shape_enabled: true,
-        responsive_web_graphql_exclude_directive_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        responsive_web_graphql_timeline_navigation_enabled: false,
-        verified_phone_label_enabled: true
-      })
-    )}`,
-    useElongator,
-    // Validator function
-    (_res: unknown) => {
-      const response = _res as GraphQLUserResponse;
-      // If _res.data is an empty object, we have no user
-      if (!Object.keys(response?.data || {}).length) {
-        console.log(`response.data is empty, can't continue`);
-        return false;
-      }
-      return !(
-        response?.data?.user?.result?.__typename !== 'User' ||
-        typeof response?.data?.user?.result?.legacy === 'undefined'
-      );
-      /*
-      return !(
-        typeof conversation.globalObjects === 'undefined' &&
-        (typeof conversation.errors === 'undefined' ||
-          conversation.errors?.[0]?.code === 239)
-      );
-      */
-    },
-    false
-  )) as GraphQLUserResponse;
 };

@@ -12,7 +12,6 @@ export const statusRequest = async (c: Context) => {
   const url = new URL(c.req.url);
   const flags: InputFlags = {};
 
-  // eslint-disable-next-line sonarjs/no-duplicate-string
   const userAgent = c.req.header('User-Agent') || '';
 
   /* Let's return our HTML version for wayback machine (we can add other archivers too in future) */
@@ -129,7 +128,6 @@ export const statusRequest = async (c: Context) => {
     const cacheControl = baseUrl !== Constants.TWITTER_ROOT ? 'max-age=0' : undefined;
 
     if (cacheControl) {
-      // eslint-disable-next-line sonarjs/no-duplicate-string
       c.header('cache-control', cacheControl);
     }
 

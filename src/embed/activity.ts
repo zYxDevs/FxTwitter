@@ -31,7 +31,6 @@ const generatePoll = (poll: APIPoll): string => {
 
   poll.choices.forEach(choice => {
     const bar = '█'.repeat((choice.percentage / 100) * barLength);
-    // eslint-disable-next-line no-irregular-whitespace
     str += `${bar}<br><b>${choice.label}</b>&emsp;${choice.percentage}%<br>︀︀︀<br>︀`;
   });
 
@@ -64,7 +63,7 @@ const getStatusText = (status: APIStatus) => {
     text = formatStatus(convertedStatusText, status) + '<br><br>';
   }
   if (status.quote) {
-    console.log('quote!!', status.quote);
+    // console.log('quote!!', status.quote);
     text += `<blockquote><b>${i18next.t('ivQuoteHeader').format({
       authorName: status.quote.author.name,
       authorURL: status.quote.author.url,
@@ -232,7 +231,6 @@ export const handleActivity = async (
   c: Context,
   snowcode: string,
   provider: DataProvider
-  // eslint-disable-next-line sonarjs/cognitive-complexity
 ): Promise<Response> => {
   let language: string | null = null;
   let authorHandle: string | null = null;

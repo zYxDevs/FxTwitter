@@ -16,7 +16,6 @@ export const activityRequest = async (c: Context) => {
   const cacheControl = baseUrl !== Constants.TWITTER_ROOT ? 'max-age=0' : undefined;
 
   if (cacheControl) {
-    // eslint-disable-next-line sonarjs/no-duplicate-string
     c.header('cache-control', cacheControl);
   }
 

@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

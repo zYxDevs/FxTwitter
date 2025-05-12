@@ -9,13 +9,13 @@
       "redirect": "https://github.com/FxEmbed/FxEmbed",
       "color": "#6363ff",
       "activityIcons": {
-        "default": "https://assets.fxembed.com/logos/fxtwitter-trans32.png",
+        "default": "https://assets.fxembed.com/logos/fxtwitter-pride32.png",
         "svg": "https://assets.fxembed.com/logos/fxtwitter.svg",
-        "16": "https://assets.fxembed.com/logos/fxtwitter-trans16.png",
-        "24": "https://assets.fxembed.com/logos/fxtwitter-trans24.png",
-        "32": "https://assets.fxembed.com/logos/fxtwitter-trans32.png",
-        "48": "https://assets.fxembed.com/logos/fxtwitter-trans48.png",
-        "64": "https://assets.fxembed.com/logos/fxtwitter-trans64.png"
+        "16": "https://assets.fxembed.com/logos/fxtwitter-pride16.png",
+        "24": "https://assets.fxembed.com/logos/fxtwitter-pride24.png",
+        "32": "https://assets.fxembed.com/logos/fxtwitter-pride32.png",
+        "48": "https://assets.fxembed.com/logos/fxtwitter-pride48.png",
+        "64": "https://assets.fxembed.com/logos/fxtwitter-pride64.png"
       }
     },
     {
@@ -26,13 +26,13 @@
       "redirect": "https://github.com/FxEmbed/FxEmbed",
       "color": "#6363ff",
       "activityIcons": {
-        "default": "https://assets.fxembed.com/logos/fixupx-trans32.png",
+        "default": "https://assets.fxembed.com/logos/fixupx-pride32.png",
         "svg": "https://assets.fxembed.com/logos/fixupx.svg",
-        "16": "https://assets.fxembed.com/logos/fixupx-trans16.png",
-        "24": "https://assets.fxembed.com/logos/fixupx-trans24.png",
-        "32": "https://assets.fxembed.com/logos/fixupx-trans32.png",
-        "48": "https://assets.fxembed.com/logos/fixupx-trans48.png",
-        "64": "https://assets.fxembed.com/logos/fixupx-trans64.png"
+        "16": "https://assets.fxembed.com/logos/fixupx-pride16.png",
+        "24": "https://assets.fxembed.com/logos/fixupx-pride24.png",
+        "32": "https://assets.fxembed.com/logos/fixupx-pride32.png",
+        "48": "https://assets.fxembed.com/logos/fixupx-pride48.png",
+        "64": "https://assets.fxembed.com/logos/fixupx-pride64.png"
       }
     },
     {
@@ -42,13 +42,13 @@
       "redirect": "https://bsky.app/profile/fxbsky.app",
       "color": "#6363ff",
       "activityIcons": {
-        "default": "https://assets.fxembed.com/logos/fxbluesky-trans32.png",
+        "default": "https://assets.fxembed.com/logos/fxbluesky-pride32.png",
         "svg": "https://assets.fxembed.com/logos/fxbluesky.svg",
-        "16": "https://assets.fxembed.com/logos/fxbluesky-trans16.png",
-        "24": "https://assets.fxembed.com/logos/fxbluesky-trans24.png",
-        "32": "https://assets.fxembed.com/logos/fxbluesky-trans32.png",
-        "48": "https://assets.fxembed.com/logos/fxbluesky-trans48.png",
-        "64": "https://assets.fxembed.com/logos/fxbluesky-trans64.png"
+        "16": "https://assets.fxembed.com/logos/fxbluesky-pride16.png",
+        "24": "https://assets.fxembed.com/logos/fxbluesky-pride24.png",
+        "32": "https://assets.fxembed.com/logos/fxbluesky-pride32.png",
+        "48": "https://assets.fxembed.com/logos/fxbluesky-pride48.png",
+        "64": "https://assets.fxembed.com/logos/fxbluesky-pride64.png"
       }
     }
   ]

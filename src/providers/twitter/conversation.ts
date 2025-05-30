@@ -597,9 +597,10 @@ export const constructTwitterThread = async (
     // console.log('result', JSON.stringify(result));
     // If TweetResultByRestId failed and we have TwitterProxy available, try TweetDetail as fallback
     if (!result && typeof c.env?.TwitterProxy !== 'undefined') {
-      console.log('TweetResultByRestId failed, falling back to TweetDetail...');
-      response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
-      triedTweetDetail = true;
+      // console.log('TweetResultByRestId failed, falling back to TweetDetail...');
+      console.log('Single tweet fetch failed');
+      // response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+      // triedTweetDetail = true;
       // If both APIs failed, return 404
       if (!response?.data) {
         writeDataPoint(c, language, null, '404');

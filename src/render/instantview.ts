@@ -26,7 +26,7 @@ const populateUserLinks = (text: string, status: APIStatus): string => {
   let usernamePattern = /@(\w{1,15})/g;
 
   if (status.provider === DataProvider.Bsky) {
-    usernamePattern = /@([\w.]+)/g;
+    usernamePattern = /@(?!-)([\w.-]+(?<!-))/g;
   }
 
   text.match(usernamePattern)?.forEach(match => {

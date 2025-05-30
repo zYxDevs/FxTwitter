@@ -602,10 +602,10 @@ export const constructTwitterThread = async (
       // response = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
       // triedTweetDetail = true;
       // If both APIs failed, return 404
-      if (!response?.data) {
-        writeDataPoint(c, language, null, '404');
-        return { status: null, thread: null, author: null, code: 404 };
-      }
+      // if (!response?.data) {
+      writeDataPoint(c, language, null, '404');
+      return { status: null, thread: null, author: null, code: 404 };
+      // }
     } else if (!result) {
       // No fallback available or both failed
       writeDataPoint(c, language, null, '404');

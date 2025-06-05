@@ -501,7 +501,7 @@ export const handleStatus = async (
     /* Finally, add the footer of the poll with # of votes and time left */
     str += '\n'; /* TODO: Localize time left */
     str += i18next.t('pollVotes', {
-      voteCount: formatNumber(poll.total_votes),
+      voteCount: poll.total_votes,
       timeLeft: poll.time_left_en
     });
 

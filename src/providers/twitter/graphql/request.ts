@@ -25,7 +25,7 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
   const { query, validator, variables } = request;
   const allVariables = { ...query.variables, ...(variables ?? {}) };
 
-  let url = `${Constants.TWITTER_ROOT}/i/api/graphql/${query.queryId}/${query.queryName}`;
+  let url = `${Constants.TWITTER_API_ROOT}/graphql/${query.queryId}/${query.queryName}`;
   url += `?variables=${encodeURIComponent(JSON.stringify(allVariables))}`;
   if (query.features) {
     url += `&features=${encodeURIComponent(JSON.stringify(query.features))}`;

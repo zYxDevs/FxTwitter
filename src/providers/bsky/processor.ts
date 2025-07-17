@@ -4,6 +4,10 @@ import { DataProvider } from '../../enum';
 import { handleMosaic } from '../../helpers/mosaic';
 import { linkFixerBsky } from '../../helpers/linkFixer';
 import { APIStatus, APIMedia } from '../../types/types';
+import i18next from 'i18next';
+import { translateStatusAI } from '../../helpers/translateAI';
+import { translateStatusDeepLX } from '../../helpers/translateDeepLX';
+import { unescapeText } from '../../helpers/utils';
 
 export const buildAPIBskyPost = async (
   c: Context,
@@ -186,6 +190,50 @@ export const buildAPIBskyPost = async (
   apiStatus.source = 'Bluesky Social';
   apiStatus.url = `${Constants.BSKY_ROOT}/profile/${status.author.handle}/post/${status.uri.match(/(?<=post\/)(\w*)/g)?.[0]}`;
   apiStatus.provider = DataProvider.Bsky;
+
+  /* If a language is specified by user, let's try translating it! */
+  if (
+    typeof language === 'string' &&
+    (language.length === 2 || language.length === 5) &&
+    language !== status.record?.langs?.[0]
+  ) {
+    console.log(`Attempting to translate status to ${language}...`);
+    let didTranslate = false;
+    if (Constants.DEEPLX_DOMAIN_LIST.length > 0) {
+      const translateDeepLX = await translateStatusDeepLX(apiStatus, language, c);
+      if (translateDeepLX !== null) {
+        apiStatus.translation = {
+          text: unescapeText(linkFixerBsky(status.record?.facets, translateDeepLX?.data || '')),
+          source_lang: translateDeepLX?.source_lang.toLowerCase() ?? 'en',
+          target_lang: language.toLowerCase(),
+          source_lang_en: i18next.t(`language_${translateDeepLX?.source_lang.toLowerCase()}`, {
+            lng: 'en'
+          }),
+          provider: 'deepl'
+        };
+        didTranslate = true;
+      }
+    }
+    if (c.env.AI && !didTranslate) {
+      console.log('Falling back to LLM translation');
+      const translateAPI = await translateStatusAI(apiStatus, language, c);
+      if (translateAPI !== null && translateAPI?.translated_text) {
+        apiStatus.translation = {
+          text: unescapeText(
+            linkFixerBsky(status.record?.facets, translateAPI?.translated_text || '')
+          ),
+          source_lang: apiStatus.lang ?? 'en',
+          target_lang: language,
+          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+          provider: 'llm'
+        };
+      }
+      didTranslate = true;
+    }
+    if (!didTranslate) {
+      console.log('No translation was successful, skipping');
+    }
+  }
 
   console.log('quote', apiStatus.quote);
 

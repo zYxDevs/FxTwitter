@@ -1,12 +1,13 @@
 import { Context } from 'hono';
 import { Constants } from '../constants';
 import { withTimeout } from './utils';
+import { normalizeLanguage } from './language';
 
 /* Handles translating statuses when asked! */
 export const translateStatus = async (
   tweet: GraphQLTwitterStatus,
   guestToken: string,
-  language: string,
+  _language: string,
   c: Context
 ): Promise<TranslationPartial | null> => {
   const csrfToken = crypto.randomUUID().replace(/-/g, ''); // Generate a random CSRF token, this doesn't matter, Twitter just cares that header and cookie match
@@ -29,28 +30,7 @@ export const translateStatus = async (
   let translationApiResponse;
   let translationResults: TranslationPartial;
 
-  /* Clean up language codes so we can use them with Twitter API */
-  switch (language) {
-    /* Twitter does not accept plain zh, requires either zh-cn or zh-tw. https://github.com/FixTweet/FxTwitter/issues/580 */
-    case 'zh':
-    case 'cn':
-      language = 'zh-cn';
-      break;
-    case 'tw':
-      language = 'zh-tw';
-      break;
-    case 'jp':
-      language = 'ja';
-      break;
-    case 'kr':
-      language = 'ko';
-      break;
-    case 'ua':
-      language = 'uk';
-      break;
-    default:
-      break;
-  }
+  const language = normalizeLanguage(_language);
 
   headers['x-twitter-client-language'] = language;
 

@@ -542,8 +542,7 @@ export const constructTwitterThread = async (
   console.log('env', c.env);
 
   // Try TweetDetail first under these conditions
-  const tryTweetDetailFirst =
-    typeof c.env?.TwitterProxy !== 'undefined' && !language && processThread;
+  const tryTweetDetailFirst = typeof c.env?.TwitterProxy !== 'undefined' && processThread;
   let triedTweetDetail = false;
 
   // First attempt with preferred API

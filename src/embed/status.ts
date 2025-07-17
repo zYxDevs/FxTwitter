@@ -4,7 +4,7 @@ import i18next from 'i18next';
 import icu from 'i18next-icu';
 import { Constants } from '../constants';
 import { handleQuote } from '../helpers/quote';
-import { formatNumber, sanitizeText, truncateWithEllipsis } from '../helpers/utils';
+import { sanitizeText, truncateWithEllipsis } from '../helpers/utils';
 import { Strings } from '../strings';
 import { getSocialProof } from '../helpers/socialproof';
 import { renderPhoto } from '../render/photo';
@@ -28,6 +28,7 @@ import {
   SocialThread
 } from '../types/types';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
+import { normalizeLanguage } from '../helpers/language';
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
@@ -198,7 +199,7 @@ export const handleStatus = async (
   let overrideMedia: APIMedia | undefined;
 
   await i18next.use(icu).init({
-    lng: language ?? status.lang ?? 'en',
+    lng: normalizeLanguage(language ?? status.lang ?? 'en'),
     resources: translationResources,
     fallbackLng: 'en'
   });

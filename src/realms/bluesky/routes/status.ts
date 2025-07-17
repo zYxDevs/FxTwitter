@@ -8,13 +8,12 @@ import { InputFlags } from '../../../types/types';
 
 export const bskyStatusRequest = async (c: Context) => {
   console.log('bluesky status request!!!');
-  const { handle, id } = c.req.param();
+  const { handle, id, language } = c.req.param();
   const actualId = id.match(/\w+/g)?.[0] ?? '';
 
   const userAgent = c.req.header('User-Agent') || '';
   const url = new URL(c.req.url);
   const flags: InputFlags = {};
-  // const language = null;
 
   /* User Agent matching for embed generators, bots, crawlers, and other automated
      tools. It's pretty all-encompassing. Note that Firefox/92 is in here because 
@@ -68,7 +67,7 @@ export const bskyStatusRequest = async (c: Context) => {
       undefined, //mediaNumber ? parseInt(mediaNumber) : undefined,
       userAgent,
       flags,
-      undefined,
+      language,
       DataProvider.Bsky
     );
 

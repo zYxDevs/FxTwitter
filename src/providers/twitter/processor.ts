@@ -5,11 +5,13 @@ import { handleMosaic } from '../../helpers/mosaic';
 import { unescapeText } from '../../helpers/utils';
 import { processMedia } from '../../helpers/media';
 import { convertToApiUser } from './profile';
-import { translateStatus } from '../../helpers/translate';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
 import { APIUser, APITwitterStatus, FetchResults, APIVideo, APIPhoto } from '../../types/types';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
+import { translateStatusAI } from '../../helpers/translateAI';
+import { translateStatusDeepLX } from '../../helpers/translateDeepLX';
+import i18next from 'i18next';
 
 export const buildAPITwitterStatus = async (
   c: Context,
@@ -408,16 +410,40 @@ export const buildAPITwitterStatus = async (
     language !== status.legacy.lang
   ) {
     console.log(`Attempting to translate status to ${language}...`);
-    const translateAPI = await translateStatus(status, '', language, c);
-    if (translateAPI !== null && translateAPI?.translation) {
-      apiStatus.translation = {
-        text: unescapeText(
-          linkFixer(status.legacy?.entities?.urls, translateAPI?.translation || '')
-        ),
-        source_lang: translateAPI?.sourceLanguage || '',
-        target_lang: translateAPI?.destinationLanguage || '',
-        source_lang_en: translateAPI?.localizedSourceLanguage || ''
-      };
+    let didTranslate = false;
+    if (Constants.DEEPLX_DOMAIN_LIST.length > 0) {
+      const translateDeepLX = await translateStatusDeepLX(apiStatus, language, c);
+      if (translateDeepLX !== null) {
+        apiStatus.translation = {
+          text: unescapeText(linkFixer(status.legacy?.entities?.urls, translateDeepLX?.data || '')),
+          source_lang: translateDeepLX?.source_lang.toLowerCase() ?? 'en',
+          target_lang: language.toLowerCase(),
+          source_lang_en: i18next.t(`language_${translateDeepLX?.source_lang.toLowerCase()}`, {
+            lng: 'en'
+          }),
+          provider: 'deepl'
+        };
+        didTranslate = true;
+      }
+    }
+    if (c.env.AI && !didTranslate) {
+      console.log('Falling back to LLM translation');
+      const translateAPI = await translateStatusAI(apiStatus, language, c);
+      if (translateAPI !== null && translateAPI?.translated_text) {
+        apiStatus.translation = {
+          text: unescapeText(
+            linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
+          ),
+          source_lang: apiStatus.lang ?? 'en',
+          target_lang: language,
+          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+          provider: 'llm'
+        };
+      }
+      didTranslate = true;
+    }
+    if (!didTranslate) {
+      console.log('No translation was successful, skipping');
     }
   }
 

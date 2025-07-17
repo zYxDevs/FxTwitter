@@ -23,6 +23,7 @@ import {
 } from '../types/types';
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
+import { normalizeLanguage } from '../helpers/language';
 
 const generatePoll = (poll: APIPoll): string => {
   let str = '<blockquote>';
@@ -57,19 +58,22 @@ const getStatusText = (status: APIStatus) => {
       })
     });
 
-    text = `${formatText}<br><br>${translation?.text}<br><br>`;
+    text = `${formatText}<br><br>${formatStatus(translation?.text ?? '', status)}<br><br>`;
     text += `<blockquote><b>${i18next.t('ivOriginalText')}</b><br>${formatStatus(convertedStatusText, status)}</blockquote>`;
   } else {
     text = formatStatus(convertedStatusText, status) + '<br><br>';
   }
   if (status.quote) {
     // console.log('quote!!', status.quote);
+    const quoteText = (status.quote.translation?.text ?? status.quote.text)
+      .trim()
+      .replace(/\n/g, '<br>︀︀');
     text += `<blockquote><b>${i18next.t('ivQuoteHeader').format({
       authorName: status.quote.author.name,
       authorURL: status.quote.author.url,
       authorHandle: status.quote.author.screen_name,
       url: status.quote.url
-    })}</b><br>︀<br>${formatStatus(status.quote.text.trim().replace(/\n/g, '<br>︀︀'), status.quote)}</blockquote>`;
+    })}</b><br>︀<br>${formatStatus(quoteText, status.quote)}</blockquote>`;
   }
   if (status.poll) {
     text += `${generatePoll(status.poll)}`;
@@ -271,7 +275,7 @@ export const handleActivity = async (
   }
 
   await i18next.use(icu).init({
-    lng: language ?? thread.status?.lang ?? 'en',
+    lng: normalizeLanguage(language ?? thread.status?.lang ?? 'en'),
     resources: translationResources,
     fallbackLng: 'en'
   });

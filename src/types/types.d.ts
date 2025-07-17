@@ -70,6 +70,7 @@ declare interface APITranslate {
   source_lang: string;
   source_lang_en: string;
   target_lang: string;
+  provider: 'deepl' | 'llm';
 }
 
 declare interface APIExternalMedia {
@@ -151,6 +152,8 @@ declare interface APIStatus {
   };
 
   lang: string | null;
+  translation?: APITranslate;
+
   possibly_sensitive: boolean;
 
   replying_to: {
@@ -181,7 +184,6 @@ declare interface APITwitterCommunityNote {
 declare interface APITwitterStatus extends APIStatus {
   views?: number | null;
   bookmarks?: number | null;
-  translation?: APITranslate;
 
   is_note_tweet: boolean;
   community_note: APITwitterCommunityNote | null;

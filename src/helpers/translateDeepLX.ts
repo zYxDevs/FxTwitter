@@ -25,25 +25,29 @@ export const translateStatusDeepLX = async (
   if (!domain) {
     return null;
   }
+  try {
+    const response = await fetch(`https://${domain}/translate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Constants.DEEPLX_TOKEN}`,
+        'User-Agent': Constants.FRIENDLY_USER_AGENT
+      },
+      body: JSON.stringify({ text: status.text, source_lang: status.lang, target_lang: language })
+    });
 
-  const response = await fetch(`https://${domain}/translate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${Constants.DEEPLX_TOKEN}`,
-      'User-Agent': Constants.FRIENDLY_USER_AGENT
-    },
-    body: JSON.stringify({ text: status.text, source_lang: status.lang, target_lang: language })
-  });
+    const data: DeepLXTranslation = await response.json();
 
-  const data: DeepLXTranslation = await response.json();
+    if (data.code !== 200) {
+      console.error('DeepLX translation failed', data);
+      return null;
+    }
 
-  if (data.code !== 200) {
-    console.error('DeepLX translation failed', data);
+    console.log('DeepLX translation successful', data.data);
+
+    return data;
+  } catch (error) {
+    console.error('DeepLX translation failed', error);
     return null;
   }
-
-  console.log('DeepLX translation successful', data.data);
-
-  return data;
 };

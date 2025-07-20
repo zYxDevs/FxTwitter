@@ -15,8 +15,8 @@ export default defineConfig({
       'd.fxtwitter.com,dl.fxtwitter.com,d.fixupx.com,dl.fixupx.com'
     ),
     MOSAIC_DOMAIN_LIST: JSON.stringify('mosaic.fxtwitter.com'),
-    DEEPLX_DOMAIN_LIST: JSON.stringify('deeplx.fxembed.com'),
-    DEEPLX_TOKEN: JSON.stringify('example-token'),
+    POLYGLOT_DOMAIN_LIST: JSON.stringify('polyglot.fxembed.com'),
+    POLYGLOT_ACCESS_TOKEN: JSON.stringify('example-token'),
     MOSAIC_BSKY_DOMAIN_LIST: JSON.stringify('mosaic.fxbsky.app'),
     API_HOST_LIST: JSON.stringify('api.fxtwitter.com'),
     GIF_TRANSCODE_DOMAIN_LIST: JSON.stringify('gif.fxtwitter.com'),

@@ -10,7 +10,7 @@ import { DataProvider } from '../../enum';
 import { APIUser, APITwitterStatus, FetchResults, APIVideo, APIPhoto } from '../../types/types';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
-import { translateStatusDeepLX } from '../../helpers/translateDeepLX';
+import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 
 export const buildAPITwitterStatus = async (
@@ -411,17 +411,19 @@ export const buildAPITwitterStatus = async (
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;
-    if (Constants.DEEPLX_DOMAIN_LIST.length > 0) {
-      const translateDeepLX = await translateStatusDeepLX(apiStatus, language, c);
-      if (translateDeepLX !== null) {
+    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0) {
+      const translatePolyglot = await translateStatus(apiStatus, language, c);
+      if (translatePolyglot !== null) {
         apiStatus.translation = {
-          text: unescapeText(linkFixer(status.legacy?.entities?.urls, translateDeepLX?.data || '')),
-          source_lang: translateDeepLX?.source_lang.toLowerCase() ?? 'en',
+          text: unescapeText(
+            linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
+          ),
+          source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
           target_lang: language.toLowerCase(),
-          source_lang_en: i18next.t(`language_${translateDeepLX?.source_lang.toLowerCase()}`, {
+          source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
             lng: 'en'
           }),
-          provider: 'deepl'
+          provider: translatePolyglot?.provider ?? 'polyglot'
         };
         didTranslate = true;
       }

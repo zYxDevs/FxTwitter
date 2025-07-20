@@ -70,7 +70,7 @@ declare interface APITranslate {
   source_lang: string;
   source_lang_en: string;
   target_lang: string;
-  provider: 'deepl' | 'llm';
+  provider: string;
 }
 
 declare interface APIExternalMedia {
@@ -326,3 +326,15 @@ export interface ActivityMediaAttachment {
     };
   };
 }
+
+type CFAITranslation = {
+  translated_text: string;
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+};
+
+type PolyglotTranslation = {
+  translated_text: string;
+  provider: string;
+  source_lang: string;
+  target_lang: string;
+};

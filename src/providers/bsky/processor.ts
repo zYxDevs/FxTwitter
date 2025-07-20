@@ -6,7 +6,7 @@ import { linkFixerBsky } from '../../helpers/linkFixer';
 import { APIStatus, APIMedia } from '../../types/types';
 import i18next from 'i18next';
 import { translateStatusAI } from '../../helpers/translateAI';
-import { translateStatusDeepLX } from '../../helpers/translateDeepLX';
+import { translateStatus } from '../../helpers/translate';
 import { unescapeText } from '../../helpers/utils';
 
 export const buildAPIBskyPost = async (
@@ -199,17 +199,19 @@ export const buildAPIBskyPost = async (
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;
-    if (Constants.DEEPLX_DOMAIN_LIST.length > 0) {
-      const translateDeepLX = await translateStatusDeepLX(apiStatus, language, c);
-      if (translateDeepLX !== null) {
+    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0) {
+      const translatePolyglot = await translateStatus(apiStatus, language, c);
+      if (translatePolyglot !== null) {
         apiStatus.translation = {
-          text: unescapeText(linkFixerBsky(status.record?.facets, translateDeepLX?.data || '')),
-          source_lang: translateDeepLX?.source_lang.toLowerCase() ?? 'en',
+          text: unescapeText(
+            linkFixerBsky(status.record?.facets, translatePolyglot?.translated_text || '')
+          ),
+          source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
           target_lang: language.toLowerCase(),
-          source_lang_en: i18next.t(`language_${translateDeepLX?.source_lang.toLowerCase()}`, {
+          source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
             lng: 'en'
           }),
-          provider: 'deepl'
+          provider: translatePolyglot?.provider ?? 'polyglot'
         };
         didTranslate = true;
       }

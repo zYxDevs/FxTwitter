@@ -1,68 +1,53 @@
 import { Context } from 'hono';
+import { APIBlueskyStatus, APITwitterStatus, PolyglotTranslation } from '../types/types';
 import { Constants } from '../constants';
-import { withTimeout } from './utils';
 import { normalizeLanguage } from './language';
 
-/* Handles translating statuses when asked! */
-export const translateStatus = async (
-  tweet: GraphQLTwitterStatus,
-  guestToken: string,
-  _language: string,
-  c: Context
-): Promise<TranslationPartial | null> => {
-  const csrfToken = crypto.randomUUID().replace(/-/g, ''); // Generate a random CSRF token, this doesn't matter, Twitter just cares that header and cookie match
-
-  const headers: { [header: string]: string } = {
-    'Authorization': Constants.GUEST_BEARER_TOKEN,
-    ...Constants.BASE_HEADERS,
-    'Cookie': [
-      `guest_id_ads=v1%3A${guestToken}`,
-      `guest_id_marketing=v1%3A${guestToken}`,
-      `guest_id=v1%3A${guestToken}`,
-      `ct0=${csrfToken};`
-    ].join('; '),
-    'x-csrf-token': csrfToken,
-    'x-twitter-active-user': 'yes',
-    'x-guest-token': guestToken,
-    'Referer': `${Constants.TWITTER_ROOT}/i/status/${tweet.rest_id}`
-  };
-
-  let translationApiResponse;
-  let translationResults: TranslationPartial;
-
-  const language = normalizeLanguage(_language);
-
-  headers['x-twitter-client-language'] = language;
-
-  /* As of August 2023, you can no longer fetch translations with guest token */
-  if (typeof c.env?.TwitterProxy === 'undefined') {
+const getDomain = (): string | null => {
+  const polyglotDomains: string[] = Constants.POLYGLOT_DOMAIN_LIST;
+  if (polyglotDomains.length === 0) {
     return null;
   }
 
+  return polyglotDomains[Math.floor(Math.random() * polyglotDomains.length)];
+};
+
+/* Handles translating statuses when asked! */
+export const translateStatus = async (
+  status: APITwitterStatus | APIBlueskyStatus,
+  _language: string,
+  c: Context
+): Promise<PolyglotTranslation | null> => {
+  const language = normalizeLanguage(_language);
+
+  console.log('Using Polyglot translation');
+  const domain = getDomain();
+  if (!domain) {
+    return null;
+  }
   try {
-    const url = `${Constants.TWITTER_ROOT}/i/api/1.1/strato/column/None/tweetId=${
-      tweet.rest_id ?? tweet.legacy?.id_str ?? tweet.legacy?.conversation_id_str
-    },destinationLanguage=None,translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet`;
-    console.log(url, headers);
-    translationApiResponse = (await withTimeout((signal: AbortSignal) =>
-      c.env?.TwitterProxy.fetch(url, {
-        method: 'GET',
-        headers: headers,
-        signal: signal
-      })
-    )) as Response;
-    translationResults = (await translationApiResponse.json()) as TranslationPartial;
+    const response = await fetch(`https://${domain}/translate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Constants.POLYGLOT_ACCESS_TOKEN}`,
+        'User-Agent': Constants.FRIENDLY_USER_AGENT
+      },
+      body: JSON.stringify({ text: status.text, source_lang: status.lang, target_lang: language })
+    });
 
-    console.log(`translationResults`, translationResults);
+    const data: PolyglotTranslation = await response.json();
 
-    if (translationResults.translationState !== 'Success') {
+    if (!response.ok) {
+      console.error('Polyglot translation failed', data);
       return null;
     }
 
-    console.log(translationResults);
-    return translationResults;
-  } catch (e: unknown) {
-    console.error('Unknown error while fetching from Translation API', e);
+    console.log('Polyglot translation successful', data.translated_text);
+
+    return data;
+  } catch (error) {
+    console.error('Polyglot translation failed', error);
     return null;
   }
 };

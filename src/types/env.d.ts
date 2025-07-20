@@ -8,8 +8,8 @@ declare const NATIVE_MULTI_IMAGE_DOMAINS: string;
 declare const OLD_EMBED_DOMAINS: string;
 declare const MOSAIC_DOMAIN_LIST: string;
 declare const MOSAIC_BSKY_DOMAIN_LIST: string;
-declare const DEEPLX_DOMAIN_LIST: string;
-declare const DEEPLX_TOKEN: string;
+declare const POLYGLOT_DOMAIN_LIST: string;
+declare const POLYGLOT_ACCESS_TOKEN: string;
 declare const API_HOST_LIST: string;
 declare const GIF_TRANSCODE_DOMAIN_LIST: string;
 

@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { APIBlueskyStatus, APITwitterStatus } from '../types/types';
+import { APIBlueskyStatus, APITwitterStatus, CFAITranslation } from '../types/types';
 import i18next from 'i18next';
 import { normalizeLanguage } from './language';
 

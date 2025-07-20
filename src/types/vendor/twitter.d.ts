@@ -195,21 +195,6 @@ type TranslationPartial = {
   entities: TweetEntities;
 };
 
-type CFAITranslation = {
-  translated_text: string;
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-};
-
-type DeepLXTranslation = {
-  alternatives: string[];
-  code: number;
-  data: string;
-  id: number;
-  method: string;
-  source_lang: string;
-  target_lang: string;
-};
-
 type GraphQLUserResponse = {
   data: {
     user: {

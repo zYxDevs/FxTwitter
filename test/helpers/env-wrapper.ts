@@ -31,6 +31,17 @@ export default {
             console.error('Error loading mock:', error);
             return new Response(JSON.stringify({ data: {} }));
           }
+        case 'UserResultByScreenName':
+          const screenNameResult = variables.screen_name;
+          // load mock based on screen name
+          try {
+            const mock = await import(`../mocks/UserResultByScreenName/${screenNameResult}.json`);
+            console.log('Mock data:', mock);
+            return new Response(JSON.stringify(mock));
+          } catch (error) {
+            console.error('Error loading mock:', error);
+            return new Response(JSON.stringify({ data: {} }));
+          }
         case 'TweetDetail':
           const focalTweetId = variables.focalTweetId;
           // load mock based on tweet id

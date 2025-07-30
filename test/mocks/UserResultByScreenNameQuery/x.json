@@ -1,0 +1,116 @@
+{
+  "data": {
+    "user_results": {
+      "rest_id": "783214",
+      "result": {
+        "__typename": "User",
+        "action_counts": {
+          "favorites_count": 5962
+        },
+        "avatar": {
+          "image_url": "https://pbs.twimg.com/profile_images/1683899100922511378/5lY42eHs_normal.jpg"
+        },
+        "banner": {
+          "image_url": "https://pbs.twimg.com/profile_banners/783214/1690175171"
+        },
+        "core": {
+          "created_at": "Tue Feb 20 14:35:54 +0000 2007",
+          "name": "X",
+          "screen_name": "X"
+        },
+        "dm_permissions": {
+          "can_dm": false
+        },
+        "exclusive_tweet_following": false,
+        "profile_description_language": "en",
+        "identity_profile_labels_highlighted_label": {},
+        "location": {
+          "location": "everywhere"
+        },
+        "media_permissions": {
+          "can_media_tag": true
+        },
+        "notifications_settings": {},
+        "pinned_items": {},
+        "privacy": {},
+        "private_super_following": false,
+        "professional": {
+          "rest_id": "1858538123375874167",
+          "category": [{
+            "id": 714,
+            "name": "Technology Company"
+          }],
+          "professional_type": "Business"
+        },
+        "profile_bio": {
+          "description": "what's happening?!",
+          "entities": {
+            "description": {},
+            "url": {
+              "urls": [{
+                "display_url": "x.com",
+                "expanded_url": "https://x.com",
+                "indices": [0, 23],
+                "url": "https://t.co/Xp0xJlcROt"
+              }]
+            }
+          },
+          "withheld_in_countries": []
+        },
+        "profile_image_shape": "Square",
+        "profile_metadata": {
+          "profile_interstitial_type": "",
+          "profile_link_color": "1B95E0"
+        },
+        "profile_translation": {
+          "translator_type_enum": "Regular"
+        },
+        "properties": {
+          "has_extended_profile": true
+        },
+        "relationship_counts": {
+          "followers": 68820421,
+          "following": 1
+        },
+        "relationship_perspectives": {
+          "following": true
+        },
+        "rest_id": "783214",
+        "reply_device_following": false,
+        "super_follow_eligible": false,
+        "super_followed_by": false,
+        "super_following": false,
+        "tweet_counts": {
+          "media_tweets": 2465,
+          "tweets": 15605
+        },
+        "website": {
+          "url": "https://t.co/Xp0xJlcROt"
+        },
+        "verification": {
+          "is_blue_verified": true,
+          "verified_type": "Business"
+        },
+        "is_profile_translatable": false,
+        "tipjar": {},
+        "has_graduated_access": true,
+        "parody_commentary_fan_label": "None",
+        "business_account": {
+          "affiliates_count": 100
+        },
+        "highlights_info": {
+          "can_highlight_tweets": true,
+          "highlighted_tweets": "7"
+        },
+        "creator_subscriptions_count": 0,
+        "has_hidden_likes_on_profile": true,
+        "verified_program_creator_features": {
+          "email_sharing_from_subscribers_enabled": false
+        },
+        "has_hidden_subscriptions_on_profile": false,
+        "user_seed_tweet_count": 62,
+        "can_receive_gift": false
+      }
+    }
+  }
+}

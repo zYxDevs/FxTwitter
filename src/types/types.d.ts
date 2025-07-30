@@ -2,7 +2,7 @@
    For Twitter API types, see twitterTypes.d.ts */
 
 import { Context } from 'hono';
-import { DataProvider } from './enum';
+import { DataProvider } from '../enum';
 
 declare type InputFlags = {
   standard?: boolean;
@@ -209,7 +209,6 @@ declare interface APIUser {
   followers: number;
   following: number;
   statuses: number;
-  listed_count: number;
   media_count: number;
   likes: number;
   joined: string;

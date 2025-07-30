@@ -7,44 +7,30 @@ import { graphqlRequest } from './graphql/request';
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
+  apiUser.screen_name = user.core?.screen_name ?? user.legacy.screen_name;
   /* Populating a lot of the basics */
-  apiUser.url = `${Constants.TWITTER_ROOT}/${user.legacy.screen_name}`;
+  apiUser.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}`;
   apiUser.id = user.rest_id;
   apiUser.followers = user.legacy.followers_count;
   apiUser.following = user.legacy.friends_count;
   apiUser.likes = user.legacy.favourites_count;
+  apiUser.listed_count = user.legacy.listed_count;
+  apiUser.media_count = user.legacy.media_count;
   if (legacyAPI) {
     // @ts-expect-error Use tweets for legacy API
     apiUser.tweets = user.legacy.statuses_count;
   } else {
     apiUser.statuses = user.legacy.statuses_count;
   }
-  apiUser.name = user.legacy.name;
-  apiUser.screen_name = user.legacy.screen_name;
+  apiUser.name = user.core?.name ?? user.legacy.name;
   apiUser.description = user.legacy.description
     ? linkFixer(user.legacy.entities?.description?.urls, user.legacy.description)
     : '';
-  apiUser.location = user.legacy.location ? user.legacy.location : '';
+  apiUser.location = user.location?.location ?? user.legacy.location ?? '';
   apiUser.banner_url = user.legacy.profile_banner_url ? user.legacy.profile_banner_url : '';
-  /*
-  if (user.is_blue_verified) {
-    apiUser.verified = 'blue';
-  } else if (user.legacy.verified) {
-    if (user.legacy.verified_type === 'Business') {
-      apiUser.verified = 'business';
-    } else if (user.legacy.verified_type === 'Government') {
-      apiUser.verified = 'government';
-    } else {
-      apiUser.verified = 'legacy';
-    }
-  }
-  
-  if (apiUser.verified === 'government') {
-    apiUser.verified_label = user.affiliates_highlighted_label?.label?.description || '';
-  }
-  */
-  apiUser.avatar_url = user.legacy.profile_image_url_https;
-  apiUser.joined = user.legacy.created_at;
+  apiUser.avatar_url = user.avatar?.image_url ?? user.legacy.profile_image_url_https ?? null;
+  apiUser.joined = user.core?.created_at ?? user.legacy.created_at ?? '';
+  apiUser.protected = user.privacy?.protected ?? user.legacy.protected ?? false;
   if (user.legacy_extended_profile?.birthdate) {
     const { birthdate } = user.legacy_extended_profile;
     apiUser.birthday = {};
@@ -61,6 +47,25 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
     };
   } else {
     apiUser.website = null;
+  }
+  /* Fun fact: verification.verified always returns false in Twitter GraphQL even if the account is verified.
+     They moved legacy.verified into verification.verified but didn't bother to reimplement it
+     with Twitter Blue / X Premium verification */
+  if (user.is_blue_verified) {
+    apiUser.verification = {
+      verified: true,
+      type: 'individual'
+    };
+    if (user.verification?.verified_type === 'Business') {
+      apiUser.verification.type = 'organization';
+    } else if (user.verification?.verified_type === 'Government') {
+      apiUser.verification.type = 'government';
+    }
+  } else {
+    apiUser.verification = {
+      verified: false,
+      type: null
+    };
   }
 
   return apiUser;

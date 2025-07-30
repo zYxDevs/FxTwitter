@@ -219,14 +219,25 @@ type GraphQLUser = {
       };
     };
   };
-  business_account: {
-    affiliates_count?: 20;
+  avatar?: {
+    image_url: string; // "https://pbs.twimg.com/profile_images/1891737564417347584/E3hSpDqx_normal.jpg"
   };
-  is_blue_verified: boolean; // false,
-  profile_image_shape: 'Circle' | 'Square' | 'Hexagon'; // "Circle",
-  has_nft_avatar: boolean; // false,
-  legacy: {
+  business_account?: {
+    affiliates_count: number; // 9
+  };
+  core?: {
     created_at: string; // "Tue Feb 20 14:35:54 +0000 2007",
+    name: string; // "Twitter",
+    screen_name: string; // "twitter"
+  };
+  creator_subscriptions_count?: number; // 0
+  dm_permissions?: {
+    can_dm: boolean; // true
+  };
+  legacy: {
+    can_dm?: boolean; // false,
+    can_media_tag?: boolean; // false,
+    created_at?: string; // "Tue Feb 20 14:35:54 +0000 2007",
     default_profile: boolean; // false,
     default_profile_image: boolean; // false,
     description: string; // "What's happening?!",
@@ -257,25 +268,16 @@ type GraphQLUser = {
     pinned_tweet_ids_str: string[]; // Array of tweet ids, usually one. Empty if no pinned tweet
     possibly_sensitive: boolean; // false,
     profile_banner_url: string; // "https://pbs.twimg.com/profile_banners/783214/1646075315",
-    profile_image_url_https: string; // "https://pbs.twimg.com/profile_images/1488548719062654976/u6qfBBkF_normal.jpg",
+    profile_image_url_https?: string; // "https://pbs.twimg.com/profile_images/1488548719062654976/u6qfBBkF_normal.jpg",
     profile_interstitial_type: string; // "",
+    protected?: boolean; // false
     screen_name: string; // "Twitter",
     statuses_count: number; // 15047
     translator_type: string; // "regular"
-    verified: boolean; // false
-    verified_type: 'Business' | 'Government';
-    withheld_in_countries: [];
-  };
-  professional: {
-    rest_id: string; // "1503055759638159366",
-    professional_type: string; // "Creator",
-    category: [
-      {
-        id: number; // 354,
-        name: string; // "Community",
-        icon_name: string; // "IconBriefcaseStroke"
-      }
-    ];
+    want_retweets: boolean; // false
+    verified?: boolean; // false
+    verified_type?: 'Business' | 'Government';
+    withheld_in_countries: string[];
   };
   legacy_extended_profile: {
     birthdate?: {
@@ -288,8 +290,43 @@ type GraphQLUser = {
     profile_image_shape: string; // "Circle",
     rest_id: string; // "783214",
   };
+  highlights_info?: {
+    can_highlight_tweets: boolean; // true
+    highlighted_tweets: string; // "0"
+  };
   is_profile_translatable: false;
+  is_blue_verified: boolean; // false,
+  location?: {
+    location: string; // "Palo Alto, CA"
+  };
+  media_permissions?: {
+    can_media_tag: boolean; // true
+  };
+  parody_commentary_fan_label?: string; // "None",
+  privacy?: {
+    protected: boolean; // false
+  };
+  professional: {
+    rest_id: string; // "1503055759638159366",
+    professional_type: string; // "Creator",
+    category: [
+      {
+        id: number; // 354,
+        name: string; // "Community",
+        icon_name: string; // "IconBriefcaseStroke"
+      }
+    ];
+  };
+  profile_image_shape: 'Circle' | 'Square' | 'Hexagon'; // "Circle",
+  relationship_perspectives?: {
+    following: boolean; // false
+  };
+  verification?: {
+    verified: boolean; // false
+    verified_type?: 'Business' | 'Government' | null;
+  };
   verification_info: {
+    is_identity_verified: boolean; // false,
     reason: {
       description: {
         entities: {
@@ -300,12 +337,12 @@ type GraphQLUser = {
           };
           to_index: number; // 108
         }[];
-        text?:
-          | 'This account is verified because it’s subscribed to Twitter Blue or is a legacy verified account. Learn more'
-          | "This account is verified because it's an official organisation on Twitter. Learn more";
+        text?: string; // "This account is verified because it's an official organization on X. Learn more"
       };
+      verified_since_msec: string; // "1744528442487"
     };
   };
+  user_seed_tweet_count: number; // 0
 };
 
 type GraphQLTwitterStatusLegacy = {

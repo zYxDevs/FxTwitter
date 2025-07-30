@@ -198,8 +198,8 @@ declare interface APIUser {
   id: string;
   name: string;
   screen_name: string;
-  avatar_url: string;
-  banner_url: string;
+  avatar_url: string | null;
+  banner_url: string | null;
   // verified: 'legacy' | 'blue'| 'business' | 'government';
   // verified_label: string;
   description: string;
@@ -209,6 +209,8 @@ declare interface APIUser {
   followers: number;
   following: number;
   statuses: number;
+  listed_count: number;
+  media_count: number;
   likes: number;
   joined: string;
   website: {
@@ -219,6 +221,10 @@ declare interface APIUser {
     day?: number;
     month?: number;
     year?: number;
+  };
+  verification?: {
+    verified: boolean;
+    type: 'organization' | 'government' | 'individual' | null;
   };
 }
 

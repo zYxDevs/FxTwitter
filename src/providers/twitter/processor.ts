@@ -97,6 +97,8 @@ export const buildAPITwitterStatus = async (
     joined: apiUser.joined,
     statuses: apiUser.statuses,
     likes: apiUser.likes,
+    listed_count: apiUser.listed_count,
+    media_count: apiUser.media_count,
     protected: apiUser.protected,
     birthday: apiUser.birthday,
     website: apiUser.website

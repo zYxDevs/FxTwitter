@@ -267,3 +267,65 @@ export const UserByScreenNameQuery: GraphQLQuery = {
     withAuxiliaryUserLabels: true
   }
 };
+
+export const UserResultByScreenNameQueryQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: '2DgQpAxdL3NfBVOokJ_XcA',
+  queryName: 'UserResultByScreenNameQuery',
+  requiresAccount: true,
+  variables: {
+    include_smart_block: true,
+    includeTweetImpression: true,
+    include_profile_info: true,
+    includeTranslatableProfile: true,
+    includeHasBirdwatchNotes: false,
+    include_tipjar: true,
+    includeEditPerspective: false,
+    // screen_name: '',
+    include_reply_device_follow: true,
+    includeEditControl: true,
+    include_verified_phone_status: false
+  },
+  features: {
+    profile_label_improvements_pcf_label_in_profile_enabled: true,
+    verified_phone_label_enabled: false,
+    super_follow_badge_privacy_enabled: true,
+    subscriptions_verification_info_enabled: true,
+    super_follow_user_api_enabled: true,
+    blue_business_profile_image_shape_enabled: true,
+    profile_label_improvements_pcf_label_in_post_enabled: true,
+    immersive_video_status_linkable_timestamps: true,
+    super_follow_exclusive_tweet_notifications_enabled: true
+  }
+};
+
+export const UserResultByScreenNameQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: '5moJkBXyS_m_WjHEEZUm9Q',
+  queryName: 'UserResultByScreenName',
+  requiresAccount: true,
+  variables: {
+    creator_subscriptions_email_share_enabled: true,
+    include_grok_translated_bio: false,
+    include_can_pay: false,
+    include_highlights_info: true,
+    include_professional: true,
+    include_is_profile_translatable: true,
+    include_business_account: true,
+    include_creator_subscriptions_count: true,
+    include_reply_device_follow: true,
+    include_tipjar: true,
+    include_dm_muting: false,
+    include_hidden_profile_likes: true,
+    // screen_name: 'x'
+  },
+  features: {
+    rito_safety_mode_features_enabled: false,
+    hidden_profile_subscriptions_enabled: true,
+    profile_foundations_has_spaces_graphql_enabled: false,
+    articles_timeline_profile_tab_enabled: true,
+    ios_notifications_replies_mentions_device_follow_enabled: true,
+    subscriptions_feature_can_gift_premium: true,
+    immersive_video_status_linkable_timestamps: true
+  }
+};

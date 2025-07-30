@@ -203,10 +203,29 @@ type GraphQLUserResponse = {
   };
 };
 
+type UserResultByScreenNameQueryResponse = {
+  data: {
+    user_result: {
+      result: GraphQLUser;
+    };
+  };
+};
+
+type UserResultByScreenNameResponse = {
+  data: {
+    user_results: {
+      result: GraphQLUser;
+    };
+  };
+};
+
 type GraphQLUser = {
   __typename: 'User';
   id: string; // "VXNlcjo3ODMyMTQ="
   rest_id: string; // "783214",
+  action_counts: {
+    favorites_count: number; // 5962
+  };
   affiliates_highlighted_label: {
     label?: {
       badge?: {
@@ -222,6 +241,9 @@ type GraphQLUser = {
   avatar?: {
     image_url: string; // "https://pbs.twimg.com/profile_images/1891737564417347584/E3hSpDqx_normal.jpg"
   };
+  banner?: {
+    image_url: string; // "https://pbs.twimg.com/profile_banners/783214/1690175171"
+  };
   business_account?: {
     affiliates_count: number; // 9
   };
@@ -234,7 +256,7 @@ type GraphQLUser = {
   dm_permissions?: {
     can_dm: boolean; // true
   };
-  legacy: {
+  legacy?: {
     can_dm?: boolean; // false,
     can_media_tag?: boolean; // false,
     created_at?: string; // "Tue Feb 20 14:35:54 +0000 2007",
@@ -317,11 +339,28 @@ type GraphQLUser = {
       }
     ];
   };
+  profile_bio: {
+    description: string; // "what's happening?!",
+    entities: {
+      url?: {
+        urls: TcoExpansion[];
+      };
+    };
+  };
   profile_image_shape: 'Circle' | 'Square' | 'Hexagon'; // "Circle",
+  relationship_counts?: {
+    following: number; // 0
+    followers: number; // 0
+  };
   relationship_perspectives?: {
     following: boolean; // false
   };
+  tweet_counts: {
+    media_tweets: number; // 2465
+    tweets: number; // 15605
+  };
   verification?: {
+    is_blue_verified?: boolean; // false,
     verified: boolean; // false
     verified_type?: 'Business' | 'Government' | null;
   };

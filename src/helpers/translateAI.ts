@@ -27,7 +27,7 @@ The target language is ${i18next.t(`language_${targetLang}`, { lng: 'en' })}.`
     }
   ];
   console.log('messages', messages);
-  const response = await c.env.AI.run('@cf/google/gemma-3-12b-it', { messages });
+  const response = await c.env.AI.run('@cf/openai/gpt-oss-120b', { messages });
   console.log(`translationResults`, response);
   return {
     translated_text: response.response,

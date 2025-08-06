@@ -88,6 +88,21 @@ const populateUserProperties = async (
   return null;
 };
 
+const endpoints = [
+  {
+    name: 'UserByScreenName',
+    weight: 150, // Lowest rate limit, available logged out
+    handler: async () => await fetchByScreenName(id, c),
+    resultCheck: (response: any) => response?.data?.tweetResult?.result?.__typename
+  },
+  {
+    name: 'UserResultByScreenName',
+    weight: 500, // Higher rate limit, requires login
+    handler: async () => await fetchByScreenName(id, c),
+    resultCheck: (response: any) => response?.data?.tweetResult?.[0]?.result?.__typename
+  }
+];
+
 /* API for Twitter profiles (Users)
    Used internally by FixTweet's embed service, or
    available for free using api.fxtwitter.com. */

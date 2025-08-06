@@ -12,6 +12,7 @@ import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
+import { translateStatusGrok } from '../../helpers/translateGrok';
 
 export const buildAPITwitterStatus = async (
   c: Context,
@@ -412,7 +413,26 @@ export const buildAPITwitterStatus = async (
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;
-    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0) {
+    try {
+      const translateGrok = await translateStatusGrok(apiStatus, language, c);
+      console.log('Grok translation response:', JSON.stringify(translateGrok));
+      if (translateGrok !== null) {
+        apiStatus.translation = {
+          text: unescapeText(
+            linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
+          ),
+          source_lang: apiStatus.lang ?? 'en',
+          target_lang: language,
+          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+          provider: 'grok'
+        };
+        didTranslate = true;
+      }
+    } catch (error) {
+      console.error('Error translating status with Grok:', error);
+    }
+
+    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
       const translatePolyglot = await translateStatus(apiStatus, language, c);
       if (translatePolyglot !== null) {
         apiStatus.translation = {

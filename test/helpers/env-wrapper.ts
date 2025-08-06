@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 /* eslint-disable no-case-declarations */
 // Wrapper for elongator TwitterProxy to handle mock requests for testing
 export default {

@@ -3,20 +3,26 @@ import { Constants } from '../../constants';
 import { Experiment, experimentCheck } from '../../experiments';
 import { generateUserAgent } from '../../helpers/useragent';
 import { generateSnowflake, withTimeout } from '../../helpers/utils';
+import { detokenize } from '../../helpers/detokenize';
 
 const API_ATTEMPTS = 3;
 let wasElongatorDisabled = false;
 
-export const twitterFetch = async (
-  c: Context,
-  url: string,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  ),
-  validateFunction: (response: unknown) => boolean,
-  elongatorRequired = false
-): Promise<unknown> => {
+interface TwitterFetchOptions {
+  url: string;
+  method?: 'GET' | 'POST';
+  headers?: Record<string, string>;
+  body?: string;
+  useElongator?: boolean;
+  validateFunction?: (response: unknown) => boolean;
+  elongatorRequired?: boolean;
+}
+
+export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Promise<unknown> => {
+  const { url, method, headers: _headers, body, validateFunction, elongatorRequired } = options;
+  let useElongator =
+    options.useElongator ??
+    experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined');
   let apiAttempts = 0;
   let newTokenGenerated = false;
 
@@ -61,6 +67,7 @@ export const twitterFetch = async (
     const csrfToken = crypto.randomUUID().replace(/-/g, '');
 
     const headers: Record<string, string> = {
+      ...(_headers ?? {}),
       Authorization: Constants.GUEST_BEARER_TOKEN,
       ...Constants.BASE_HEADERS
     };
@@ -140,9 +147,10 @@ export const twitterFetch = async (
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
         apiRequest = await withTimeout((signal: AbortSignal) =>
           c.env?.TwitterProxy.fetch(url, {
-            method: 'GET',
+            method: method,
             headers: headers2,
-            signal: signal
+            signal: signal,
+            body: body
           })
         );
         const performanceEnd = performance.now();
@@ -151,16 +159,26 @@ export const twitterFetch = async (
         const performanceStart = performance.now();
         apiRequest = await withTimeout((signal: AbortSignal) =>
           fetch(url, {
-            method: 'GET',
+            method: method,
             headers: headers,
-            signal: signal
+            signal: signal,
+            body: body
           })
         );
         const performanceEnd = performance.now();
         console.log(`Guest API request successful after ${performanceEnd - performanceStart}ms`);
       }
 
-      response = await apiRequest?.json();
+      const _response = (await apiRequest?.text()) ?? '';
+      try {
+        response = JSON.parse(_response);
+      } catch (_e) {
+        if (_response.split('\n').length > 1) {
+          response = detokenize(_response);
+        } else {
+          throw new Error('Failed to parse response as JSON');
+        }
+      }
     } catch (e: unknown) {
       /* We'll usually only hit this if we get an invalid response from Twitter.
          It's uncommon, but it happens */
@@ -220,7 +238,7 @@ export const twitterFetch = async (
       }
     }
 
-    if (!validateFunction(response)) {
+    if (validateFunction && !validateFunction(response)) {
       console.log('Failed to fetch response, got', JSON.stringify(response));
       if (elongatorRequired) {
         console.log('Elongator was required, but we failed to fetch a valid response');
@@ -249,9 +267,6 @@ export const twitterFetch = async (
     } catch (error) {
       console.error((error as Error).stack);
     }
-
-    // @ts-expect-error - We'll pin the guest token to whatever response we have
-    response.guestToken = guestToken;
     console.log('twitterFetch is all done here, see you soon!');
     return response;
   }

@@ -343,3 +343,13 @@ type PolyglotTranslation = {
   source_lang: string;
   target_lang: string;
 };
+
+type GrokTranslation = {
+  result: {
+    content_type: 'POST';
+    text: string;
+    entities: {
+      [key: string]: string;
+    };
+  };
+};

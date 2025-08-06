@@ -18,7 +18,7 @@
 
 export const detokenize = (text: string): unknown => {
   console.log('Detokenizing LLM response', text);
-  const lines = text.split('\n');
+  const lines = text.split('\n').filter(line => line.includes('{') && line.includes('}'));
   const base = JSON.parse(lines[0]);
   lines.forEach((line, index) => {
     // We already have the first token in our base object, so we can skip it

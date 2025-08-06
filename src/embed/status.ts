@@ -56,6 +56,9 @@ export const handleStatus = async (
 ): Promise<Response> => {
   console.log('Direct?', flags?.direct);
 
+  const isTelegram = (userAgent || '').indexOf('Telegram') > -1;
+  const isDiscord = (userAgent || '').indexOf('Discord') > -1;
+
   let fetchWithThreads = false;
 
   if (
@@ -67,12 +70,18 @@ export const handleStatus = async (
   }
 
   let thread: SocialThread;
+  let useLanguage = language;
+  // Only request translation for activity embed, otherwise we'll be doing it twice
+  if (!flags.noActivity && isDiscord) {
+    useLanguage = undefined;
+  }
+
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(
       statusId,
       fetchWithThreads,
       c,
-      language,
+      useLanguage,
       flags?.api ?? false
     );
   } else if (provider === DataProvider.Bsky) {
@@ -81,7 +90,7 @@ export const handleStatus = async (
       authorHandle ?? '',
       fetchWithThreads,
       c,
-      language
+      useLanguage
     );
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);
@@ -143,9 +152,6 @@ export const handleStatus = async (
       console.log(api);
       return returnError(c, Strings.ERROR_API_FAIL);
   }
-
-  const isTelegram = (userAgent || '').indexOf('Telegram') > -1;
-  const isDiscord = (userAgent || '').indexOf('Discord') > -1;
   /* Should sensitive statuses be allowed Instant View? */
   let useIV = false;
   let useActivity = false;

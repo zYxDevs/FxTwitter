@@ -16,7 +16,10 @@
       "@cloudflare/workers-types",
       "@cloudflare/vitest-pool-workers",
       "@sentry/integrations",
-      "./src/types/"
+      "./src/types/types.d.ts",
+      "./src/types/vendor/twitter.d.ts",
+      "./src/types/vendor/bsky.d.ts",
+      "./src/types/env.d.ts"
     ]
   },
   "include": ["src"],

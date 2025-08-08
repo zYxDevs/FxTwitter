@@ -2,8 +2,9 @@ import { Context } from 'hono';
 import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
 import { APIUser, UserAPIResponse } from '../../types/types';
-import { UserResultByScreenNameQuery } from './graphql/queries';
+import { UserByScreenNameQuery, UserResultByScreenNameQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
+import { tryWeightedEndpoints, WeightedEndpoint } from '../../helpers/weightedEndpoints';
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
@@ -52,7 +53,7 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
   /* Fun fact: verification.verified always returns false in Twitter GraphQL even if the account is verified.
      They moved legacy.verified into verification.verified but didn't bother to reimplement it
      with Twitter Blue / X Premium verification */
-  if (user.verification?.is_blue_verified ?? user.verification?.verified) {
+  if (user.verification?.is_blue_verified || user.is_blue_verified) {
     apiUser.verification = {
       verified: true,
       type: 'individual'
@@ -88,20 +89,60 @@ const populateUserProperties = async (
   return null;
 };
 
-const endpoints = [
-  {
-    name: 'UserByScreenName',
-    weight: 150, // Lowest rate limit, available logged out
-    handler: async () => await fetchByScreenName(id, c),
-    resultCheck: (response: any) => response?.data?.tweetResult?.result?.__typename
-  },
-  {
-    name: 'UserResultByScreenName',
-    weight: 500, // Higher rate limit, requires login
-    handler: async () => await fetchByScreenName(id, c),
-    resultCheck: (response: any) => response?.data?.tweetResult?.[0]?.result?.__typename
-  }
-];
+const fetchByScreenName = async (c: Context, screenName: string): Promise<GraphQLUserResponse> => {
+  return (await graphqlRequest(c, {
+    query: UserByScreenNameQuery,
+    variables: { screen_name: screenName },
+    validator: (response: unknown) => {
+      const userResponse = response as GraphQLUserResponse;
+      const result = userResponse?.data?.user?.result;
+      return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
+    }
+  })) as GraphQLUserResponse;
+};
+
+const fetchResultByScreenName = async (
+  c: Context,
+  screenName: string
+): Promise<UserResultByScreenNameResponse> => {
+  return (await graphqlRequest(c, {
+    query: UserResultByScreenNameQuery,
+    variables: { screen_name: screenName },
+    validator: (response: unknown) => {
+      const userResponse = response as UserResultByScreenNameResponse;
+      const result = userResponse?.data?.user_results?.result;
+      return Boolean(result && result.__typename === 'User' && (result.legacy || result.rest_id));
+    }
+  })) as UserResultByScreenNameResponse;
+};
+
+const fetchUserWeighted = async (
+  c: Context,
+  screenName: string
+): Promise<GraphQLUserResponse | UserResultByScreenNameResponse | null> => {
+  const endpoints: WeightedEndpoint<GraphQLUserResponse | UserResultByScreenNameResponse>[] = [
+    {
+      name: 'UserByScreenName',
+      weight: 150,
+      handler: () => fetchByScreenName(c, screenName),
+      resultCheck: (response: GraphQLUserResponse | UserResultByScreenNameResponse) => {
+        const result = (response as GraphQLUserResponse)?.data?.user?.result;
+        return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
+      }
+    },
+    {
+      name: 'UserResultByScreenName',
+      weight: 500,
+      handler: () => fetchResultByScreenName(c, screenName),
+      resultCheck: (response: GraphQLUserResponse | UserResultByScreenNameResponse) => {
+        const result = (response as UserResultByScreenNameResponse)?.data?.user_results?.result;
+        return Boolean(result && result.__typename === 'User' && (result.legacy || result.rest_id));
+      }
+    }
+  ];
+
+  return tryWeightedEndpoints(endpoints);
+};
 
 /* API for Twitter profiles (Users)
    Used internally by FixTweet's embed service, or
@@ -111,21 +152,7 @@ export const userAPI = async (
   c: Context
   // flags?: InputFlags
 ): Promise<UserAPIResponse> => {
-  const userResponse: UserResultByScreenNameResponse = (await graphqlRequest(c, {
-    query: UserResultByScreenNameQuery,
-    variables: {
-      screen_name: username
-    },
-    useElongator: typeof c.env?.TwitterProxy !== 'undefined',
-    validator: (response: unknown) => {
-      const userResponse = response as UserResultByScreenNameResponse;
-      return !(
-        userResponse?.data?.user_results?.result?.__typename !== 'User' ||
-        (typeof userResponse?.data?.user_results?.result?.legacy === 'undefined' &&
-          typeof userResponse?.data?.user_results?.result?.rest_id === 'undefined')
-      );
-    }
-  })) as UserResultByScreenNameResponse;
+  const userResponse = await fetchUserWeighted(c, username);
   if (!userResponse || !Object.keys(userResponse).length) {
     return {
       code: 404,

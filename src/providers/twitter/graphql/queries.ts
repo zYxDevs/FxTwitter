@@ -316,7 +316,7 @@ export const UserResultByScreenNameQuery: GraphQLQuery = {
     include_reply_device_follow: true,
     include_tipjar: true,
     include_dm_muting: false,
-    include_hidden_profile_likes: true,
+    include_hidden_profile_likes: true
     // screen_name: 'x'
   },
   features: {

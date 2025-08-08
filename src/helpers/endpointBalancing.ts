@@ -1,4 +1,4 @@
-export interface WeightedEndpoint<TResponse> {
+export interface BalancedEndpoint<TResponse> {
   name: string;
   weight: number;
   handler: () => Promise<TResponse>;
@@ -9,8 +9,8 @@ export interface WeightedEndpoint<TResponse> {
  * Try a set of endpoints in weighted-random order, falling back to the rest if the first fails.
  * Endpoints with weight <= 0 are ignored.
  */
-export const tryWeightedEndpoints = async <TResponse>(
-  endpoints: WeightedEndpoint<TResponse>[]
+export const tryBalancedEndpoints = async <TResponse>(
+  endpoints: BalancedEndpoint<TResponse>[]
 ): Promise<TResponse | null> => {
   const usableEndpoints = endpoints.filter(endpoint => endpoint.weight > 0);
   if (usableEndpoints.length === 0) {
@@ -52,4 +52,3 @@ export const tryWeightedEndpoints = async <TResponse>(
 
   return null;
 };
-

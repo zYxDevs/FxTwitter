@@ -4,7 +4,7 @@ import { linkFixer } from '../../helpers/linkFixer';
 import { APIUser, UserAPIResponse } from '../../types/types';
 import { UserByScreenNameQuery, UserResultByScreenNameQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
-import { tryWeightedEndpoints, WeightedEndpoint } from '../../helpers/weightedEndpoints';
+import { tryBalancedEndpoints, BalancedEndpoint } from '../../helpers/endpointBalancing';
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
@@ -116,11 +116,11 @@ const fetchResultByScreenName = async (
   })) as UserResultByScreenNameResponse;
 };
 
-const fetchUserWeighted = async (
+const fetchUserBalanced = async (
   c: Context,
   screenName: string
 ): Promise<GraphQLUserResponse | UserResultByScreenNameResponse | null> => {
-  const endpoints: WeightedEndpoint<GraphQLUserResponse | UserResultByScreenNameResponse>[] = [
+  const endpoints: BalancedEndpoint<GraphQLUserResponse | UserResultByScreenNameResponse>[] = [
     {
       name: 'UserByScreenName',
       weight: 150,
@@ -141,7 +141,7 @@ const fetchUserWeighted = async (
     }
   ];
 
-  return tryWeightedEndpoints(endpoints);
+  return tryBalancedEndpoints(endpoints);
 };
 
 /* API for Twitter profiles (Users)
@@ -152,7 +152,7 @@ export const userAPI = async (
   c: Context
   // flags?: InputFlags
 ): Promise<UserAPIResponse> => {
-  const userResponse = await fetchUserWeighted(c, username);
+  const userResponse = await fetchUserBalanced(c, username);
   if (!userResponse || !Object.keys(userResponse).length) {
     return {
       code: 404,

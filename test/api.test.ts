@@ -92,7 +92,7 @@ test('API fetch basic Status', async () => {
   expect(status.replying_to).toBeNull();
 });
 
-test('API fetch Status with community integration (1964084223871971826)', async () => {
+test('API fetch Status with community', async () => {
   const result = await app.request(
     new Request('https://api.fxtwitter.com/status/1964084223871971826', {
       method: 'GET',

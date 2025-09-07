@@ -169,7 +169,10 @@ export const handleStatus = async (
     useActivity = true;
   }
 
-  if ((status.media?.all?.length ?? 0) <= 0 && status.media?.external?.url) {
+  if (
+    (status.media?.all?.length ?? 0) <= 0 &&
+    (status.media?.external?.url || status.media?.broadcast?.stream?.url)
+  ) {
     useActivity = false;
   }
 

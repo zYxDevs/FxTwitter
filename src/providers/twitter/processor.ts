@@ -1,4 +1,4 @@
-import { renderCard } from '../../helpers/card';
+import { renderCard } from './card';
 import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
 import { handleMosaic } from '../../helpers/mosaic';
@@ -13,6 +13,7 @@ import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
+import { experimentCheck, Experiment } from '../../experiments';
 
 export const buildAPITwitterStatus = async (
   c: Context,
@@ -334,8 +335,11 @@ export const buildAPITwitterStatus = async (
 
   /* Populate a Twitter card */
 
-  if (status.card) {
-    const card = renderCard(status.card);
+  console.log('status.card', JSON.stringify(status.card));
+  console.log('status.tweet_card', JSON.stringify(status.tweet_card));
+
+  if (status.card ?? status.tweet_card) {
+    const card = await renderCard(c, status.card ?? status.tweet_card);
     if (card.external_media) {
       apiStatus.embed_card = 'player';
       apiStatus.media.external = card.external_media;
@@ -346,6 +350,37 @@ export const buildAPITwitterStatus = async (
           ''
         )}/maxresdefault.jpg`;
       }
+    }
+    if (card.broadcast && experimentCheck(Experiment.BROADCAST_STREAM_API)) {
+      apiStatus.media = apiStatus.media ?? { all: [] };
+      apiStatus.embed_card = 'player';
+      apiStatus.media.broadcast = card.broadcast;
+      apiStatus.media.videos = apiStatus.media?.videos ?? [];
+      console.log('card.broadcast.thumbnail', JSON.stringify(card.broadcast.thumbnail));
+      apiStatus.media.videos?.push({
+        type: 'video',
+        url: `https://stream-test.fxembed.com/download.mp4?url=${encodeURIComponent(
+          card.broadcast.stream?.url ?? ''
+        )}`,
+        thumbnail_url: card.broadcast.thumbnail.original.url,
+        format: 'video/mp4',
+        width: card.broadcast.width,
+        height: card.broadcast.height,
+        duration: 0,
+        variants: []
+      });
+      apiStatus.media.all = apiStatus.media?.all ?? [];
+      apiStatus.media.all?.push({
+        type: 'video',
+        url: `https://stream-test.fxembed.com/download.mp4?url=${encodeURIComponent(
+          card.broadcast.stream?.url ?? ''
+        )}`,
+        format: 'video/mp4',
+        width: card.broadcast.width,
+        height: card.broadcast.height,
+        duration: 0,
+        variants: []
+      });
     }
     if (card.poll) {
       apiStatus.poll = card.poll;

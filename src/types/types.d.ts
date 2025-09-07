@@ -81,6 +81,45 @@ declare interface APIExternalMedia {
   width?: number;
 }
 
+declare interface APIBroadcast {
+  url: string;
+  width: number;
+  height: number;
+  state: 'LIVE' | 'ENDED';
+  broadcaster: {
+    username: string;
+    display_name: string;
+    id: string;
+  };
+  stream?: {
+    url: string;
+  };
+  title: string;
+  source: 'Producer' | string; // are there other ones?
+  orientation: 'landscape' | 'portrait'; // in twitter api 0 = landscape, presumably 1 = portrait but i'll want to verify this
+  broadcast_id: string; // THis lets us query the actual broadcast information
+  media_id: string; // This is part of the Twitter broadcast URL
+  media_key: string; // We can query more info about a livestream with this. Not sure if we need it though
+  is_high_latency: boolean; // Whether the broadcast is high latency
+  thumbnail: {
+    original: {
+      url: string;
+    };
+    small?: {
+      url: string;
+    };
+    medium?: {
+      url: string;
+    };
+    large?: {
+      url: string;
+    };
+    x_large?: {
+      url: string;
+    };
+  };
+}
+
 declare interface APIPollChoice {
   label: string;
   count: number;
@@ -144,6 +183,7 @@ declare interface APIStatus {
     videos?: APIVideo[];
     all?: APIMedia[];
     mosaic?: APIMosaicPhoto;
+    broadcast?: APIBroadcast;
   };
 
   raw_text: {

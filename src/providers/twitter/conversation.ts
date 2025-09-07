@@ -667,7 +667,7 @@ export const constructTwitterThread = async (
   status = (await buildAPITwitterStatus(
     c,
     originalStatus,
-    undefined,
+    language,
     null,
     legacyAPI
   )) as APITwitterStatus;
@@ -836,7 +836,7 @@ export const constructTwitterThread = async (
       const builtStatus = (await buildAPITwitterStatus(
         c,
         status,
-        undefined,
+        language,
         author,
         false
       )) as APITwitterStatus;

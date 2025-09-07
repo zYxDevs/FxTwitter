@@ -545,30 +545,55 @@ type GraphQLTwitterStatus = {
       };
     };
   };
-  card: {
-    rest_id: string; // "card://1674824189176590336",
-    legacy: {
-      binding_values: {
-        key:
-          | `choice${1 | 2 | 3 | 4}_label`
-          | 'counts_are_final'
-          | `choice${1 | 2 | 3 | 4}_count`
-          | 'last_updated_datetime_utc'
-          | 'duration_minutes'
-          | 'api'
-          | 'card_url'
-          | 'unified_card';
-        value:
-          | {
-              string_value: string; // "Option text"
-              type: 'STRING';
-            }
-          | {
-              boolean_value: boolean; // true
-              type: 'BOOLEAN';
-            };
-      }[];
-    };
+  card: GraphQLTwitterCard;
+  tweet_card: {
+    legacy: GraphQLTwitterCard;
+  };
+};
+
+type GraphQLTwitterCard = {
+  rest_id: string; // "card://1674824189176590336",
+  legacy: {
+    binding_values: {
+      key:
+        | `choice${1 | 2 | 3 | 4}_label`
+        | 'counts_are_final'
+        | `choice${1 | 2 | 3 | 4}_count`
+        | 'last_updated_datetime_utc'
+        | 'duration_minutes'
+        | 'api'
+        | 'card_url'
+        | 'unified_card'
+        | 'broadcast_url'
+        | 'broadcast_width'
+        | 'broadcast_height'
+        | 'broadcast_state'
+        | 'broadcast_title'
+        | 'broadcast_source'
+        | 'broadcast_orientation'
+        | 'broadcast_id'
+        | 'broadcast_media_id'
+        | 'broadcast_media_key'
+        | 'broadcast_is_high_latency'
+        | 'broadcaster_username'
+        | 'broadcaster_display_name'
+        | 'broadcast_thumbnail'
+        | 'broadcast_thumbnail_small'
+        | 'broadcast_thumbnail_large'
+        | 'broadcast_thumbnail_x_large'
+        | 'broadcast_thumbnail_original'
+        | 'broadcast_thumbnail_color'
+        | 'broadcaster_twitter_id';
+      value:
+        | {
+            string_value: string; // "Option text"
+            type: 'STRING';
+          }
+        | {
+            boolean_value: boolean; // true
+            type: 'BOOLEAN';
+          };
+    }[];
   };
 };
 

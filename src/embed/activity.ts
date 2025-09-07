@@ -423,7 +423,7 @@ export const handleActivity = async (
             case 'video':
             case 'gif':
               const video = media as APIVideo;
-              let sizeMultiplier = 2;
+              let sizeMultiplier = 1;
 
               if (video.width > 1920 || video.height > 1920) {
                 sizeMultiplier = 0.5;

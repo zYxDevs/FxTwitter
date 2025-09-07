@@ -238,6 +238,38 @@ export const buildAPITwitterStatus = async (
     apiStatus.lang = null;
   }
 
+  if (status.author_community_relationship?.community_results?.result?.id_str) {
+    apiStatus.community = {
+      id: status.author_community_relationship.community_results.result.id_str,
+      name: status.author_community_relationship.community_results.result.name,
+      description: status.author_community_relationship.community_results.result.description,
+      created_at: new Date(
+        status.author_community_relationship.community_results.result.created_at
+      ).toISOString(),
+      search_tags: status.author_community_relationship.community_results.result.search_tags,
+      is_nsfw: status.author_community_relationship.community_results.result.is_nsfw,
+      topic:
+        status.author_community_relationship.community_results.result.primary_community_topic
+          ?.topic_name ?? null,
+      join_policy: status.author_community_relationship.community_results.result.join_policy,
+      invites_policy: status.author_community_relationship.community_results.result.invites_policy,
+      is_pinned: status.author_community_relationship.community_results.result.is_pinned,
+      admin: null,
+      creator: null
+    };
+
+    if (status.author_community_relationship.community_results.result.admin_results?.result) {
+      apiStatus.community.admin = convertToApiUser(
+        status.author_community_relationship.community_results.result.admin_results.result
+      );
+    }
+    if (status.author_community_relationship.community_results.result.creator_results?.result) {
+      apiStatus.community.creator = convertToApiUser(
+        status.author_community_relationship.community_results.result.creator_results.result
+      );
+    }
+  }
+
   if (legacyAPI) {
     // @ts-expect-error Use replying_to string for legacy API
     apiStatus.replying_to = status.legacy?.in_reply_to_screen_name || null;

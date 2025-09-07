@@ -549,6 +549,45 @@ type GraphQLTwitterStatus = {
   tweet_card: {
     legacy: GraphQLTwitterCard;
   };
+  community_results?: {
+    result?: {
+      __typename: 'Community';
+      id_str: string;
+    };
+  };
+  community_relationship?: {
+    id: string;
+    rest_id: string;
+    moderation_state: unknown;
+    actions: unknown;
+  };
+  author_community_relationship?: {
+    community_results?: {
+      result?: {
+        __typename: 'Community';
+        id_str: string;
+        name: string;
+        description: string;
+        created_at: number;
+        search_tags: string[];
+        is_nsfw: boolean;
+        primary_community_topic?: {
+          topic_id: string;
+          topic_name: string;
+        };
+        actions: unknown;
+        admin_results?: {
+          result?: GraphQLUser;
+        };
+        creator_results?: {
+          result?: GraphQLUser;
+        };
+        join_policy: 'Open'; // TODO: What other values are there?
+        invites_policy: 'MemberInvitesAllowed'; // TODO: What other values are there?
+        is_pinned: boolean;
+      };
+    };
+  };
 };
 
 type GraphQLTwitterCard = {

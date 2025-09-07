@@ -224,6 +224,7 @@ declare interface APITwitterCommunityNote {
 declare interface APITwitterStatus extends APIStatus {
   views?: number | null;
   bookmarks?: number | null;
+  community?: APITwitterCommunity;
 
   is_note_tweet: boolean;
   community_note: APITwitterCommunityNote | null;
@@ -393,3 +394,18 @@ type GrokTranslation = {
     };
   };
 };
+
+declare interface APITwitterCommunity {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  search_tags: string[];
+  is_nsfw: boolean;
+  topic: string | null;
+  admin: APIUser | null;
+  creator: APIUser | null;
+  join_policy: 'Open' | 'Closed';
+  invites_policy: 'MemberInvitesAllowed' | 'MemberInvitesDisabled';
+  is_pinned: boolean;
+}

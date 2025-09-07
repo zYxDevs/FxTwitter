@@ -93,9 +93,9 @@ test('Status activity video status', async () => {
     'https://pbs.twimg.com/ext_tw_video_thumb/1841204388993646595/pu/img/KKN8tSQm60z2FmtE.jpg'
   );
   expect(response.media_attachments[0].meta).toBeTruthy();
-  expect(response.media_attachments[0].meta?.original?.width).toEqual(3840);
-  expect(response.media_attachments[0].meta?.original?.height).toEqual(2160);
-  expect(response.media_attachments[0].meta?.original?.size).toEqual('3840x2160');
+  expect(response.media_attachments[0].meta?.original?.width).toEqual(1920);
+  expect(response.media_attachments[0].meta?.original?.height).toEqual(1080);
+  expect(response.media_attachments[0].meta?.original?.size).toEqual('1920x1080');
   expect(response.media_attachments[0].meta?.original?.aspect).toEqual(1.7777777777777777);
 
   expect(response.media_attachments[0].url).toContain('video.twimg.com');
@@ -301,9 +301,9 @@ test('Status activity quote and video', async () => {
     'https://pbs.twimg.com/ext_tw_video_thumb/1902059279190052864/pu/img/DLoQFXU9gzkHQ2fh.jpg'
   );
   expect(response.media_attachments[0].meta).toBeTruthy();
-  expect(response.media_attachments[0].meta?.original?.width).toEqual(1152);
-  expect(response.media_attachments[0].meta?.original?.height).toEqual(2560);
-  expect(response.media_attachments[0].meta?.original?.size).toEqual('1152x2560');
+  expect(response.media_attachments[0].meta?.original?.width).toEqual(576);
+  expect(response.media_attachments[0].meta?.original?.height).toEqual(1280);
+  expect(response.media_attachments[0].meta?.original?.size).toEqual('576x1280');
   expect(response.media_attachments[0].meta?.original?.aspect).toEqual(0.45);
 
   expect(response.media_attachments[0].url).toContain('video.twimg.com');

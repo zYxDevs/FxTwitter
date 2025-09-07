@@ -91,3 +91,44 @@ test('API fetch basic Status', async () => {
   expect(status.lang).toEqual('en');
   expect(status.replying_to).toBeNull();
 });
+
+test('API fetch Status with community integration (1964084223871971826)', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/status/1964084223871971826', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    envWrapper
+  );
+  expect(result.status).toEqual(200);
+  const response = (await result.json()) as TweetAPIResponse;
+  expect(response).toBeTruthy();
+  expect(response.code).toEqual(200);
+  expect(response.message).toEqual('OK');
+
+  const status = response.tweet as APITwitterStatus;
+  expect(status).toBeTruthy();
+  expect(status.id).toEqual('1964084223871971826');
+
+  expect(status.community).toBeTruthy();
+  const community = status.community!;
+  expect(community.id).toEqual('1506777270324764673');
+  expect(community.name).toEqual('Fox Twitter');
+  expect(community.description).toEqual('Fox superiority');
+  expect(community.created_at).toEqual(new Date(1648078670474).toISOString());
+  expect(community.search_tags).toEqual([]);
+  expect(community.is_nsfw).toEqual(false);
+  expect(community.topic).toEqual('Animals');
+  expect(community.join_policy).toEqual('Open');
+  expect(community.invites_policy).toEqual('MemberInvitesAllowed');
+  expect(community.is_pinned).toEqual(false);
+
+  expect(community.admin).toBeTruthy();
+  expect(community.admin?.id).toEqual('1194627934495092736');
+  expect(community.admin?.screen_name?.toLowerCase()).toEqual('shreddyfox');
+
+  expect(community.creator).toBeTruthy();
+  expect(community.creator?.id).toEqual('1194627934495092736');
+  expect(community.creator?.screen_name?.toLowerCase()).toEqual('shreddyfox');
+});

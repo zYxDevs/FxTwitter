@@ -107,7 +107,7 @@ test('Status activity video status', async () => {
 test('Status activity mosaic status', async () => {
   const result = await app.request(
     new Request(
-      'https://fxtwitter.com/api/v1/statuses/66086667665360566060555357615752535656576157535566',
+      'https://fxtwitter.com/api/v1/statuses/66086667665360566060555357615752535656576157535566686612666753',
       {
         method: 'GET',
         headers: botHeaders
@@ -129,6 +129,54 @@ test('Status activity mosaic status', async () => {
   expect(response.media_attachments[0].type).toEqual('image');
   expect(response.media_attachments[0].url).toEqual(
     'https://mosaic.fxtwitter.com/jpeg/1848831595014459513/GahebgHbEAEevTU/GahecZ5aAAEX7GX/GaheddqbsAAzGXg'
+  );
+  expect(response.account.username).toEqual('SpaceX');
+  expect(response.account.display_name).toEqual('SpaceX');
+  expect(response.account.created_at).toEqual('2009-04-23T21:53:30.000Z');
+  expect(response.account.avatar).toMatch(/https:\/\/pbs\.twimg\.com\/profile_images\/.+\.jpg/);
+  expect(response.account.avatar_static).toMatch(
+    /https:\/\/pbs\.twimg\.com\/profile_images\/.+\.jpg/
+  );
+  expect(response.account.header).toMatch(/https:\/\/pbs\.twimg\.com\/profile_banners\/.+/);
+  expect(response.account.header_static).toMatch(/https:\/\/pbs\.twimg\.com\/profile_banners\/.+/);
+  expect(response.account.followers_count).toBeGreaterThan(0);
+  expect(response.account.following_count).toBeGreaterThan(0);
+  expect(response.account.statuses_count).toBeGreaterThan(0);
+});
+
+test('Status activity native multi-image status', async () => {
+  const result = await app.request(
+    new Request(
+      'https://fxtwitter.com/api/v1/statuses/66086667665360566060555357615752535656576157535566',
+      {
+        method: 'GET',
+        headers: botHeaders
+      }
+    ),
+    undefined,
+    envWrapper
+  );
+  expect(result.status).toEqual(200);
+  const response = (await result.json()) as ActivityStatus;
+  expect(response).toBeTruthy();
+  expect(response.id).toEqual('1848831595014459513');
+  expect(response.url).toEqual(`${twitterBaseUrl}/SpaceX/status/1848831595014459513`);
+  expect(response.content).toMatch(
+    /Flight 6 Super Heavy booster moved to the Starbase pad for testing\. The move comes just one week after returning the first booster caught following launch/
+  );
+  expect(response.media_attachments).toBeTruthy();
+  expect(response.media_attachments.length).toEqual(3);
+  expect(response.media_attachments[0].type).toEqual('image');
+  expect(response.media_attachments[0].url).toEqual(
+    'https://pbs.twimg.com/media/GahebgHbEAEevTU.jpg?name=orig'
+  );
+  expect(response.media_attachments[1].type).toEqual('image');
+  expect(response.media_attachments[1].url).toEqual(
+    'https://pbs.twimg.com/media/GahecZ5aAAEX7GX.jpg?name=orig'
+  );
+  expect(response.media_attachments[2].type).toEqual('image');
+  expect(response.media_attachments[2].url).toEqual(
+    'https://pbs.twimg.com/media/GaheddqbsAAzGXg.jpg?name=orig'
   );
   expect(response.account.username).toEqual('SpaceX');
   expect(response.account.display_name).toEqual('SpaceX');
@@ -168,7 +216,7 @@ test('Status activity select image 1', async () => {
   expect(response.media_attachments.length).toEqual(1);
   expect(response.media_attachments[0].type).toEqual('image');
   expect(response.media_attachments[0].url).toEqual(
-    'https://pbs.twimg.com/media/GahebgHbEAEevTU.jpg'
+    'https://pbs.twimg.com/media/GahebgHbEAEevTU.jpg?name=orig'
   );
   expect(response.account.username).toEqual('SpaceX');
   expect(response.account.display_name).toEqual('SpaceX');
@@ -205,10 +253,18 @@ test('Status activity select non-existing image', async () => {
     /Flight 6 Super Heavy booster moved to the Starbase pad for testing\. The move comes just one week after returning the first booster caught following launch/
   );
   expect(response.media_attachments).toBeTruthy();
-  expect(response.media_attachments.length).toEqual(1);
+  expect(response.media_attachments.length).toEqual(3);
   expect(response.media_attachments[0].type).toEqual('image');
   expect(response.media_attachments[0].url).toEqual(
-    'https://mosaic.fxtwitter.com/jpeg/1848831595014459513/GahebgHbEAEevTU/GahecZ5aAAEX7GX/GaheddqbsAAzGXg'
+    'https://pbs.twimg.com/media/GahebgHbEAEevTU.jpg?name=orig'
+  );
+  expect(response.media_attachments[1].type).toEqual('image');
+  expect(response.media_attachments[1].url).toEqual(
+    'https://pbs.twimg.com/media/GahecZ5aAAEX7GX.jpg?name=orig'
+  );
+  expect(response.media_attachments[2].type).toEqual('image');
+  expect(response.media_attachments[2].url).toEqual(
+    'https://pbs.twimg.com/media/GaheddqbsAAzGXg.jpg?name=orig'
   );
   expect(response.account.username).toEqual('SpaceX');
   expect(response.account.display_name).toEqual('SpaceX');

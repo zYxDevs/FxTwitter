@@ -300,7 +300,7 @@ export const handleStatus = async (
     );
   }
 
-  /* This little thing ensures if by some miracle a FixTweet embed is loaded in a browser,
+  /* This little thing ensures if by some miracle our embed is loaded in a browser,
      it will gracefully redirect to the destination instead of just seeing a blank screen.
 
      Telegram is dumb and it just gets stuck if this is included, so we never include it for Telegram UAs. */
@@ -532,6 +532,8 @@ export const handleStatus = async (
     newText += `\n${quoteText}`;
   }
 
+  const avatar = status.author.avatar_url;
+
   /* If we have no media to display, instead we'll display the user profile picture in the embed */
   if (
     !status.media?.videos &&
@@ -541,7 +543,6 @@ export const handleStatus = async (
     !flags?.textOnly
   ) {
     /* Use a slightly higher resolution image for profile pics */
-    const avatar = status.author.avatar_url;
     if (!useIV) {
       headers.push(
         `<meta property="og:image" content="${avatar}"/>`,
@@ -551,6 +552,8 @@ export const handleStatus = async (
       headers.push(`<meta property="twitter:image" content="${avatar}"/>`);
     }
   }
+
+  headers.push(`<link rel="apple-touch-icon" href="${avatar}"/>`);
 
   /* For supporting Telegram IV, we have to replace newlines with <br> within the og:description <meta> tag because of its weird (undocumented?) behavior.
      If you don't use IV, it uses newlines just fine. Just like Discord and others. But with IV, suddenly newlines don't actually break the line anymore.

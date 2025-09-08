@@ -89,7 +89,7 @@ Otherwise, it will default to the first image.
 
 ## Combine multiple images into one
 
-By default, FxEmbed will combine multiple images into one, allowing you to see all images on all platforms. You can also opt in to have images displayed using Discord's native multi-image so you can view individual, full-quality images (but, it doesn't work on iOS :( )
+By default, FxEmbed will display images using Discord's native multi-image so you can view individual, full-quality images. You can also combine multiple images into one mosaic image, like so:
 
 - `https://m.fxtwitter.com/example/status/123456789123456789`
 - `https://m.fixupx.com/example/status/123456789123456789`

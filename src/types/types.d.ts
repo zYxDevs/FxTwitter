@@ -1,4 +1,4 @@
-/* This file contains types relevant to FixTweet and the FixTweet API
+/* This file contains types relevant to FxEmbed and the FxTwitter API
    For Twitter API types, see twitterTypes.d.ts */
 
 import { Context } from 'hono';

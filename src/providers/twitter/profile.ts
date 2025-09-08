@@ -74,7 +74,7 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
 };
 
 /* This function does the heavy lifting of processing data from Twitter API
-   and using it to create FixTweet's streamlined API responses */
+   and using it to create FxTwitter's streamlined API responses */
 const populateUserProperties = async (
   response: GraphQLUserResponse | UserResultByScreenNameResponse,
   legacyAPI = false
@@ -145,8 +145,7 @@ const fetchUserBalanced = async (
 };
 
 /* API for Twitter profiles (Users)
-   Used internally by FixTweet's embed service, or
-   available for free using api.fxtwitter.com. */
+   Available for free using api.fxtwitter.com. */
 export const userAPI = async (
   username: string,
   c: Context

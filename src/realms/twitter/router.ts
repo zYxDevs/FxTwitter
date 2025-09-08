@@ -95,11 +95,11 @@ twitter.get('/i/trending/:id', genericTwitterRedirect);
 twitter.get(
   '/i/broadcasts/:id',
   genericTwitterRedirect
-); /* https://github.com/FixTweet/FxTwitter/issues/730 */
+); /* https://github.com/FxEmbed/FxEmbed/issues/730 */
 twitter.get('/hashtag/:hashtag', genericTwitterRedirect);
 
 twitter.get('/:handle', _profileRequest);
-/* Redirect profile subpages in case someone links them for some reason (https://github.com/FixTweet/FxTwitter/issues/603) */
+/* Redirect profile subpages in case someone links them for some reason (https://github.com/FxEmbed/FxEmbed/issues/603) */
 twitter.get('/:handle/:subpage', genericTwitterRedirect);
 
 twitter.all('*', async c => c.redirect(getBranding(c).redirect, 302));

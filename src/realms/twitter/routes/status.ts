@@ -89,7 +89,6 @@ export const statusRequest = async (c: Context) => {
     }
   }
 
-  /* TODO: Figure out what we're doing with FixTweet / FixupX branding in future */
   if (/twitt/g.test(url.href)) {
     console.log(`We're using twitter domain`);
     flags.isXDomain = false;

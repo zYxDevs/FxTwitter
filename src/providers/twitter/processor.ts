@@ -71,7 +71,7 @@ export const buildAPITwitterStatus = async (
     status.core.user_result?.result) as GraphQLUser;
   const apiUser = convertToApiUser(graphQLUser);
 
-  /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FixTweet/FxTwitter/issues/416 */
+  /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FxEmbed/FxEmbed/issues/416 */
   const id = status.rest_id ?? status.legacy.id_str ?? status.legacy?.conversation_id_str;
 
   /* Populating a lot of the basics */

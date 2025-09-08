@@ -15,7 +15,7 @@ api.use('*', async (c, next) => {
     return c.json(
       {
         error:
-          "You must identify yourself with a User-Agent header in order to use the FixTweet API. We recommend using a descriptive User-Agent header to identify your app, such as 'MyAwesomeBot/1.0 (+http://example.com/myawesomebot)'. We don't track or save what kinds of data you are pulling, but you may be blocked if you send too many requests from an unidentifiable user agent."
+          "You must identify yourself with a User-Agent header in order to use the FxTwitter API. We recommend using a descriptive User-Agent header to identify your app, such as 'MyAwesomeBot/1.0 (+http://example.com/myawesomebot)'. We don't track or save what kinds of data you are pulling, but you may be blocked if you send too many requests from an unidentifiable user agent."
       },
       401
     );

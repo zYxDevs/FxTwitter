@@ -18,13 +18,14 @@ const embeddingClientRegex =
 
 /* This is the root app which contains route trees for multiple "realms".
 
-   We use the term "realms" rather than domains because of the way FixTweet is structured.
+   We use the term "realms" rather than domains because of the way FxEmbed is structured.
    fxtwitter.com and fixupx.com both contain the exact same content, but api.fxtwitter.com does not*, despite technically
    being the same domain as fxtwitter.com. Similarly, d.fxtwitter.com and other subdomain flags, etc. 
-   This allows us to connect a single FixTweet worker to tons of domains and still route them to the correct content.
-   This will prove useful if/when we add other data providers to FixTweet.
+   And of course, fxbsky.app runs on the separate FxBluesky realm.
+   This allows us to connect a single FxEmbed worker to tons of domains and still route them to the correct content.
+   
 
-   * Under the old system with itty-router, this was not the case, but it is since adopting Hono. This will be necessary for FixTweet API v2. */
+   * Under the old system with itty-router, this was not the case, but it is since adopting Hono. This will be necessary for FxTwitter API v2. */
 export const app = new Hono<{
   Bindings: { TwitterProxy: Fetcher; AnalyticsEngine: AnalyticsEngineDataset };
 }>({

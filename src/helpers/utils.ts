@@ -76,3 +76,14 @@ export const generateSnowflake = () => {
 export const escapeRegex = (text: string) => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
+
+export const formatImageUrl = (url: string) => {
+  try {
+    const urlObj = new URL(url);
+    // add name=orig parameter to url
+    urlObj.searchParams.set('name', 'orig');
+    return urlObj.toString();
+  } catch (_e) {
+    return url;
+  }
+};

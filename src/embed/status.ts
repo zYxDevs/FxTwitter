@@ -411,7 +411,7 @@ export const handleStatus = async (
           /* This status has a video to render. */
           break;
       }
-    } else if (media?.videos && !flags.nativeMultiImage) {
+    } else if (media?.videos) {
       const instructions = renderVideo(
         { context: c, status: status, userAgent: userAgent, text: newText },
         media.videos[0]
@@ -424,7 +424,7 @@ export const handleStatus = async (
         siteName = instructions.siteName;
       }
     } else if (media?.mosaic) {
-      if (isDiscord && flags.nativeMultiImage) {
+      if (isDiscord && !flags.forceMosaic) {
         const photos = status.media?.photos || [];
 
         photos.forEach(photo => {
@@ -471,7 +471,7 @@ export const handleStatus = async (
       );
       headers.push(...instructions.addHeaders);
     }
-    if (status.media?.external && !status.media.videos?.length && !flags.nativeMultiImage) {
+    if (status.media?.external && !status.media.videos?.length) {
       const { external } = status.media;
       authorText = newText || '';
       headers.push(
@@ -673,7 +673,7 @@ export const handleStatus = async (
     if (flags.textOnly) {
       data.t = 1;
     }
-    if (flags.nativeMultiImage) {
+    if (flags.forceMosaic) {
       data.m = 1;
     }
     if (mediaNumber) {

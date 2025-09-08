@@ -61,9 +61,9 @@ export const statusRequest = async (c: Context) => {
   } else if (Constants.GALLERY_DOMAINS.includes(url.hostname)) {
     console.log('Gallery embed request');
     flags.gallery = true;
-  } else if (Constants.NATIVE_MULTI_IMAGE_DOMAINS.includes(url.hostname)) {
-    console.log('Force native multi image');
-    flags.nativeMultiImage = true;
+  } else if (Constants.FORCE_MOSAIC_DOMAINS.includes(url.hostname)) {
+    console.log('Force mosaic');
+    flags.forceMosaic = true;
   } else if (Constants.OLD_EMBED_DOMAINS.includes(url.hostname)) {
     console.log('Disable activity embed');
     flags.noActivity = true;

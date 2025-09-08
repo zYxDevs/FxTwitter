@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { APIPhoto, APIVideo } from '../types/types';
 import { Constants } from '../constants';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
+import { formatImageUrl } from './utils';
 
 /* Help populate API response for media */
 export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo | null => {
@@ -9,7 +10,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
   if (media.type === 'photo') {
     return {
       type: 'photo',
-      url: media.media_url_https,
+      url: formatImageUrl(media.media_url_https),
       width: media.original_info?.width,
       height: media.original_info?.height,
       altText: media.ext_alt_text

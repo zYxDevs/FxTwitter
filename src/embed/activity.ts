@@ -240,7 +240,7 @@ export const handleActivity = async (
   let authorHandle: string | null = null;
   let mediaNumber: number | null = null;
   let textOnly = false;
-  let nativeMultiImage = false;
+  let forceMosaic = false;
   const decoded = decodeSnowcode(snowcode);
   const statusId = decoded.i;
   if (decoded.l) {
@@ -253,7 +253,7 @@ export const handleActivity = async (
     textOnly = true;
   }
   if (decoded.m) {
-    nativeMultiImage = true;
+    forceMosaic = true;
   }
   if (decoded.n) {
     mediaNumber = decoded.n;
@@ -360,7 +360,7 @@ export const handleActivity = async (
       console.log('updated mediaList', mediaList);
     }
     if (
-      !nativeMultiImage &&
+      forceMosaic &&
       mediaList?.length !== 1 &&
       (thread.status.media?.mosaic || thread.status.quote?.media?.mosaic)
     ) {

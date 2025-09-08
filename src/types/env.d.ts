@@ -4,7 +4,7 @@ declare const DIRECT_MEDIA_DOMAINS: string;
 declare const TEXT_ONLY_DOMAINS: string;
 declare const INSTANT_VIEW_DOMAINS: string;
 declare const GALLERY_DOMAINS: string;
-declare const NATIVE_MULTI_IMAGE_DOMAINS: string;
+declare const FORCE_MOSAIC_DOMAINS: string;
 declare const OLD_EMBED_DOMAINS: string;
 declare const MOSAIC_DOMAIN_LIST: string;
 declare const MOSAIC_BSKY_DOMAIN_LIST: string;

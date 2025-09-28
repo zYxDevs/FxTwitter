@@ -232,7 +232,7 @@ export const buildAPITwitterStatus = async (
     apiStatus.community_note = null;
   }
 
-  if (status.legacy.lang !== 'unk') {
+  if (status.legacy.lang !== 'unk' && status.legacy.lang !== 'zxx') {
     apiStatus.lang = status.legacy.lang;
   } else {
     apiStatus.lang = null;

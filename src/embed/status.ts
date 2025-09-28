@@ -76,12 +76,27 @@ export const handleStatus = async (
     useLanguage = undefined;
   }
 
+  let useActivity = false;
+
+  if (
+    experimentCheck(
+      Experiment.ACTIVITY_EMBED,
+      c.req.header('user-agent')?.includes('Discordbot')
+    ) &&
+    !flags.direct &&
+    !flags.gallery &&
+    !flags.api &&
+    !flags.noActivity
+  ) {
+    useActivity = true;
+  }
+
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(
       statusId,
       fetchWithThreads,
       c,
-      useLanguage,
+      useActivity ? undefined : useLanguage,
       flags?.api ?? false
     );
   } else if (provider === DataProvider.Bsky) {
@@ -90,7 +105,7 @@ export const handleStatus = async (
       authorHandle ?? '',
       fetchWithThreads,
       c,
-      useLanguage
+      useActivity ? undefined : useLanguage
     );
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);
@@ -154,20 +169,6 @@ export const handleStatus = async (
   }
   /* Should sensitive statuses be allowed Instant View? */
   let useIV = false;
-  let useActivity = false;
-
-  if (
-    experimentCheck(
-      Experiment.ACTIVITY_EMBED,
-      c.req.header('user-agent')?.includes('Discordbot')
-    ) &&
-    !flags.direct &&
-    !flags.gallery &&
-    !flags.api &&
-    !flags.noActivity
-  ) {
-    useActivity = true;
-  }
 
   if (
     (status.media?.all?.length ?? 0) <= 0 &&

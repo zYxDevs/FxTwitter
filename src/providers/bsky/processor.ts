@@ -20,31 +20,34 @@ export const buildAPIBskyPost = async (
     status.record?.facets ?? [],
     status.record?.text ?? status.value?.text
   );
-  apiStatus.author = {
-    id: status.author.handle,
-    name: status.author.displayName,
-    screen_name: status.author.handle,
-    avatar_url: status.author.avatar,
-    banner_url: '', // TODO: Pull this from the actual author endpoint
-    description: '',
-    location: '',
-    followers: 0,
-    following: 0,
-    likes: 0,
-    url: `${Constants.BSKY_ROOT}/profile/${status.author.handle}`,
-    protected: false,
-    statuses: 0,
-    joined: status.author.createdAt,
-    birthday: {
-      day: 0,
-      month: 0,
-      year: 0
-    },
-    website: {
-      url: '',
-      display_url: ''
-    }
-  };
+  if (status.author) {
+    apiStatus.author = {
+      id: status.author.handle,
+      name: status.author.displayName,
+      screen_name: status.author.handle,
+      avatar_url: status.author.avatar,
+      banner_url: '', // TODO: Pull this from the actual author endpoint
+      description: '',
+      location: '',
+      followers: 0,
+      following: 0,
+      media_count: 0,
+      likes: 0,
+      url: `${Constants.BSKY_ROOT}/profile/${status.author.handle}`,
+      protected: false,
+      statuses: 0,
+      joined: status.author.createdAt,
+      birthday: {
+        day: 0,
+        month: 0,
+        year: 0
+      },
+      website: {
+        url: '',
+        display_url: ''
+      }
+    };
+  }
   apiStatus.created_at = status.record?.createdAt ?? status.value?.createdAt;
   apiStatus.media = {};
 
@@ -166,9 +169,11 @@ export const buildAPIBskyPost = async (
   }
   if (status.embed?.record) {
     const record = status.embed?.record?.record ?? status.embed?.record;
-    apiStatus.quote = await buildAPIBskyPost(c, record, language);
-    if (apiStatus.quote.embed_card) {
-      apiStatus.embed_card = apiStatus.quote.embed_card;
+    if (record.author) {
+      apiStatus.quote = await buildAPIBskyPost(c, record, language);
+      if (apiStatus.quote.embed_card) {
+        apiStatus.embed_card = apiStatus.quote.embed_card;
+      }
     }
   }
   apiStatus.media.all = ((apiStatus.media.photos as APIMedia[]) || []).concat(

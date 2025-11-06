@@ -479,8 +479,9 @@ export const buildAPITwitterStatus = async (
   /* If a language is specified in API or by user, let's try translating it! */
   if (
     typeof language === 'string' &&
-    (language.length === 2 || language.length === 5) &&
-    language !== status.legacy.lang
+    (language.length === 2 || language.length === 5) && // Only translate if the language is a valid ISO 639-1 or ISO 639-5 code
+    language !== status.legacy.lang &&                  // Don't translate if the status language is the same as the target language
+    apiStatus.text.length > 1                           // Don't translate if the status text is too short
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;

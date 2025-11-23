@@ -265,6 +265,7 @@ declare interface APIUser {
   verification?: {
     verified: boolean;
     type: 'organization' | 'government' | 'individual' | null;
+    verified_at?: string | null;
   };
 }
 

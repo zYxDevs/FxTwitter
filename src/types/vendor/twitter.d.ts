@@ -378,8 +378,8 @@ type GraphQLUser = {
         }[];
         text?: string; // "This account is verified because it's an official organization on X. Learn more"
       };
-      verified_since_msec: string; // "1744528442487"
     };
+    verified_since_msec: string; // "1744528442487"
   };
   user_seed_tweet_count: number; // 0
 };

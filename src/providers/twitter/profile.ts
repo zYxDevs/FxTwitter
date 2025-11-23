@@ -56,6 +56,7 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
   if (user.verification?.is_blue_verified || user.is_blue_verified) {
     apiUser.verification = {
       verified: true,
+      verified_at: null,
       type: 'individual'
     };
     if (user.verification?.verified_type === 'Business') {
@@ -63,9 +64,15 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
     } else if (user.verification?.verified_type === 'Government') {
       apiUser.verification.type = 'government';
     }
+    if (user.verification_info?.verified_since_msec) {
+      apiUser.verification.verified_at = new Date(
+        Number(user.verification_info.verified_since_msec)
+      ).toISOString();
+    }
   } else {
     apiUser.verification = {
       verified: false,
+      verified_at: null,
       type: null
     };
   }

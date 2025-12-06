@@ -21,7 +21,7 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
 
   // Ignore caching on workers.dev
   if (cacheUrl.hostname.includes('workers.dev')) {
-    await next();
+    return await next();
   }
 
   let cacheKey: Request;

@@ -2,14 +2,19 @@ import { MiddlewareHandler } from 'hono';
 import { Constants } from './constants';
 import {} from 'hono';
 
-/* Wrapper to handle caching, and misc things like catching robots.txt */
+/* Wrapper to handle caching */
 export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
   const request = c.req;
   const userAgent = request.header('User-Agent') ?? '';
   // https://developers.cloudflare.com/workers/examples/cache-api/
   let cacheUrl = new URL(request.url);
 
-  if (userAgent.includes('Telegram')) {
+  /* User agents that include both Telegram and Discord should not be cached
+     since our response would contain quirks of both platforms. */
+  if (userAgent.includes('Telegram') && userAgent.includes('Discord')) {
+    console.log('User agent includes both Telegram and Discord, skipping cache');
+    return await next();
+  } else if (userAgent.includes('Telegram')) {
     cacheUrl = new URL(`${request.url}&telegram`);
   } else if (userAgent.includes('Discord')) {
     cacheUrl = new URL(`${request.url}&discord`);
@@ -19,8 +24,12 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
 
   console.log('cacheUrl', cacheUrl);
 
-  // Ignore caching on workers.dev
-  if (cacheUrl.hostname.includes('workers.dev')) {
+  // Ignore caching on workers.dev, localhost, and 127.0.0.1
+  if (
+    cacheUrl.hostname.includes('workers.dev') ||
+    cacheUrl.hostname.includes('localhost') ||
+    cacheUrl.hostname.includes('127.0.0.1')
+  ) {
     return await next();
   }
 
@@ -29,16 +38,14 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
 
   /* If caching unavailable, ignore the rest of the cache middleware */
   if (typeof caches === 'undefined') {
-    await next();
-    return c.res.clone();
+    return await next();
   }
 
   try {
     cacheKey = new Request(cacheUrl.toString(), request);
   } catch (_e) {
     /* In Miniflare, you can't really create requests like this, so we ignore caching in the test environment */
-    await next();
-    return c.res.clone();
+    return await next();
   }
 
   const cache = caches.default;

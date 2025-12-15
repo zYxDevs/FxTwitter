@@ -11,13 +11,15 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
 
   /* User agents that include both Telegram and Discord should not be cached
      since our response would contain quirks of both platforms. */
-  if (userAgent.includes('Telegram') && userAgent.includes('Discord')) {
+  if (userAgent.includes('Telegrambot') && userAgent.includes('Discordbot')) {
     console.log('User agent includes both Telegram and Discord, skipping cache');
     return await next();
-  } else if (userAgent.includes('Telegram')) {
+  } else if (userAgent.includes('Telegrambot')) {
     cacheUrl = new URL(`${request.url}&telegram`);
-  } else if (userAgent.includes('Discord')) {
+  } else if (userAgent.includes('Discordbot')) {
     cacheUrl = new URL(`${request.url}&discord`);
+  } else if (userAgent.match(Constants.NATIVE_MULTI_IMAGE_UA_REGEX)) {
+    cacheUrl = new URL(`${request.url}&multibot`);
   } else if (userAgent.match(Constants.BOT_UA_REGEX)) {
     cacheUrl = new URL(`${request.url}&bot`);
   }

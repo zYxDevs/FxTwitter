@@ -425,7 +425,7 @@ export const handleStatus = async (
         siteName = instructions.siteName;
       }
     } else if (media?.mosaic) {
-      if (isDiscord && !flags.forceMosaic) {
+      if (userAgent.match(Constants.NATIVE_MULTI_IMAGE_UA_REGEX) && !flags.forceMosaic) {
         const photos = status.media?.photos || [];
 
         photos.forEach(photo => {

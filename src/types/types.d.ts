@@ -235,6 +235,11 @@ declare interface APIBlueskyStatus extends APIStatus {
   provider: DataProvider.Bsky;
 }
 
+declare interface APITikTokStatus extends APIStatus {
+  provider: DataProvider.TikTok;
+  views?: number | null;
+}
+
 declare interface APIUser {
   id: string;
   name: string;

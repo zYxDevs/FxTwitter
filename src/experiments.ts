@@ -45,7 +45,7 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
   [Experiment.VIDEO_REDIRECT_WORKAROUND]: {
     name: 'Video redirect workaround',
     description: 'Workaround for video playback issues on Telegram/Discord',
-    percentage: 1
+    percentage: 0
   },
   [Experiment.ACTIVITY_EMBED]: {
     name: 'Discord activity embed',

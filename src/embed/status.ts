@@ -29,6 +29,7 @@ import {
 } from '../types/types';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
+import { constructTikTokVideo } from '../providers/tiktok/conversation';
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
@@ -107,6 +108,12 @@ export const handleStatus = async (
       c,
       useActivity ? undefined : useLanguage
     );
+  } else if (provider === DataProvider.TikTok) {
+    // Get proxy base URL from the current request for TikTok video proxy
+    const requestUrl = new URL(c.req.url);
+    const proxyBase = `${requestUrl.protocol}//${requestUrl.host}`;
+    thread = await constructTikTokVideo(statusId, proxyBase);
+    console.log('tiktok video', JSON.stringify(thread));
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);
   }
@@ -243,9 +250,11 @@ export const handleStatus = async (
         redirectUrl = (selectedMedia as APIPhoto).transcode_url ?? redirectUrl;
       }
 
+      // Apply video redirect workaround, but NOT for TikTok (needs its own proxy)
       if (
         selectedMedia?.type === 'video' &&
-        experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST)
+        experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
+        status.provider !== DataProvider.TikTok
       ) {
         redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
       }
@@ -686,10 +695,18 @@ export const handleStatus = async (
     const snowflake = encodeSnowcode(data);
     console.log('snowflake', snowflake);
     /* Convince Discord that you are actually a Mastodon link lol */
-    let base =
-      status.provider === DataProvider.Bsky
-        ? Constants.STANDARD_BSKY_DOMAIN_LIST[0]
-        : Constants.STANDARD_DOMAIN_LIST[0];
+    let base: string;
+    switch (status.provider) {
+      case DataProvider.Bsky:
+        base = Constants.STANDARD_BSKY_DOMAIN_LIST[0];
+        break;
+      case DataProvider.TikTok:
+        base = Constants.STANDARD_TIKTOK_DOMAIN_LIST[0];
+        break;
+      default:
+        base = Constants.STANDARD_DOMAIN_LIST[0];
+        break;
+    }
 
     try {
       base = new URL(c.req.url).hostname;

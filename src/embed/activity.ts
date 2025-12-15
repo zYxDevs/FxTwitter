@@ -24,6 +24,7 @@ import {
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
+import { constructTikTokVideo } from '../providers/tiktok/conversation';
 
 const generatePoll = (poll: APIPoll): string => {
   let str = '<blockquote>';
@@ -270,6 +271,11 @@ export const handleActivity = async (
       c,
       language ?? undefined
     );
+  } else if (provider === DataProvider.TikTok) {
+    // Get proxy base URL from the current request for TikTok video proxy
+    const requestUrl = new URL(c.req.url);
+    const proxyBase = `${requestUrl.protocol}//${requestUrl.host}`;
+    thread = await constructTikTokVideo(statusId, proxyBase);
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);
   }
@@ -311,7 +317,9 @@ export const handleActivity = async (
       acct: thread.status.author.screen_name,
       url: thread.status.url,
       uri: thread.status.url,
-      created_at: new Date(thread.status.author.joined).toISOString(),
+      created_at: thread.status.author.joined
+        ? new Date(thread.status.author.joined).toISOString()
+        : null,
       locked: false,
       bot: false,
       discoverable: true,
@@ -431,8 +439,10 @@ export const handleActivity = async (
               if (video.width < 400 || video.height < 400) {
                 sizeMultiplier = 2;
               }
+              // Apply video redirect workaround, but NOT for TikTok (needs its own proxy)
               if (
-                experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST)
+                experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
+                thread.status?.provider !== DataProvider.TikTok
               ) {
                 video.url = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(video.url)}`;
               }

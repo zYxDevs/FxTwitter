@@ -56,13 +56,13 @@ export const handleStatus = async (
 ): Promise<Response> => {
   console.log('Direct?', flags?.direct);
 
-  const isTelegram = (userAgent || '').indexOf('Telegram') > -1;
-  const isDiscord = (userAgent || '').indexOf('Discord') > -1;
+  const isTelegram = (userAgent || '').indexOf('TelegramBot') > -1;
+  const isDiscord = (userAgent || '').indexOf('Discordbot') > -1;
 
   let fetchWithThreads = false;
 
   if (
-    c.req.header('user-agent')?.includes('Telegram') &&
+    c.req.header('user-agent')?.includes('TelegramBot') &&
     !flags?.direct &&
     flags.instantViewUnrollThreads
   ) {

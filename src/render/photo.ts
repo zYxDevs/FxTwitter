@@ -28,7 +28,7 @@ export const renderPhoto = (
       total: String(all.length)
     });
 
-    const isTelegram = (userAgent?.indexOf('Telegram') ?? 0) > -1;
+    const isTelegram = (userAgent?.indexOf('TelegramBot') ?? 0) > -1;
 
     if (authorText === Strings.DEFAULT_AUTHOR_TEXT || isTelegram) {
       instructions.authorText = photoCounter;

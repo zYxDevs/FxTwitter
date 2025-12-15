@@ -3,7 +3,7 @@ import { Context } from 'hono';
 export const linkHitRequest = async (c: Context) => {
   const userAgent = c.req.header('User-Agent') || '';
 
-  if (userAgent.includes('Telegram')) {
+  if (userAgent.includes('TelegramBot')) {
     return c.text('', 403);
   }
   // If param `url` exists, 302 redirect to it

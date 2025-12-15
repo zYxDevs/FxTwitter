@@ -628,22 +628,18 @@ export const handleStatus = async (
       provider = providerEngagementText;
     }
 
-    if (useActivity) {
-      const icons = getBranding(c).activityIcons;
-      const iconSizes = ['svg', '64', '48', '32', '24', '16'];
+    const icons = getBranding(c).activityIcons;
+    const iconSizes = ['svg', '64', '48', '32', '24', '16'];
 
-      for (const size of iconSizes) {
-        let icon = icons?.[size];
-        // Use default icon if size 32 is not available
-        if (size === '32' && !icon) {
-          icon = icons?.['default'];
-        }
-        const iconType = size === 'svg' ? 'image/svg+xml' : 'image/png';
-        if (icon) {
-          headers.push(
-            `<link href='${icon}' rel='icon' sizes='${size}x${size}' type='${iconType}'>`
-          );
-        }
+    for (const size of iconSizes) {
+      let icon = icons?.[size];
+      // Use default icon if size 32 is not available
+      if (size === '32' && !icon) {
+        icon = icons?.['default'];
+      }
+      const iconType = size === 'svg' ? 'image/svg+xml' : 'image/png';
+      if (icon) {
+        headers.push(`<link href='${icon}' rel='icon' sizes='${size}x${size}' type='${iconType}'>`);
       }
     }
 

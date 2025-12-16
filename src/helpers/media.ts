@@ -10,7 +10,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
   if (media.type === 'photo') {
     return {
       type: 'photo',
-      id_str: media.id_str,
+      id: media.id_str,
       url: formatImageUrl(media.media_url_https),
       width: media.original_info?.width,
       height: media.original_info?.height,
@@ -42,7 +42,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
       return {
         type: 'gif',
-        id_str: media.id_str,
+        id: media.id_str,
         url: media.media_url_https,
         width: media.original_info?.width,
         height: media.original_info?.height,
@@ -53,7 +53,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       };
     }
     return {
-      id_str: media.id_str,
+      id: media.id_str,
       url: bestVariant?.url || '',
       thumbnail_url: media.media_url_https,
       duration: (media.video_info?.duration_millis || 0) / 1000,

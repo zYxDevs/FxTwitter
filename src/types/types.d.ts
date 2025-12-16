@@ -134,6 +134,7 @@ declare interface APIPoll {
 }
 
 declare interface APIMedia {
+  id?: string;
   type: string;
   url: string;
   width: number;
@@ -142,14 +143,12 @@ declare interface APIMedia {
 
 declare interface APIPhoto extends APIMedia {
   type: 'photo' | 'gif';
-  id_str?: string;
   transcode_url?: string;
   altText?: string;
 }
 
 declare interface APIVideo extends APIMedia {
   type: 'video' | 'gif';
-  id_str?: string;
   thumbnail_url: string;
   format: string;
   duration: number;

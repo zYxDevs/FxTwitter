@@ -134,6 +134,7 @@ declare interface APIPoll {
 }
 
 declare interface APIMedia {
+  id?: string;
   type: string;
   url: string;
   width: number;

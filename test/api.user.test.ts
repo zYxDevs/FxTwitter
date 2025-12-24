@@ -79,6 +79,5 @@ test('API fetch user about_account info', async () => {
   expect(user.about_account?.source).toEqual('United States App Store');
   expect(user.about_account?.username_changes).toBeTruthy();
   expect(user.about_account?.username_changes?.count).toEqual(3);
-  expect(user.about_account?.username_changes?.count).toBeGreaterThanOrEqual(0);
   expect(typeof user.about_account?.username_changes?.last_changed_at).toBe('string');
 });

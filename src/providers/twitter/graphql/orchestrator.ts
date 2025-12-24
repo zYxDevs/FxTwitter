@@ -56,7 +56,7 @@ const executeWithMethods = async (
 
   if (selectableMethods.length === 0) {
     // All methods are fallbackOnly, just try them in weight order
-    console.log('All methods are fallbackOnly, trying in weight order');
+    console.log(`All methods are fallbackOnly, let's try them in weight order`);
   }
 
   // Weighted random selection from selectable methods

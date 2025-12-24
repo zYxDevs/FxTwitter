@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { TweetAPIResponse, APITwitterStatus } from '../src/types/types';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
-import envWrapper from './helpers/env-wrapper';
+import harness from './helpers/harness';
 
 test('API fetch basic Status', async () => {
   const result = await app.request(
@@ -11,7 +11,7 @@ test('API fetch basic Status', async () => {
       headers: botHeaders
     }),
     undefined,
-    envWrapper
+    harness
   );
   expect(result.status).toEqual(200);
   const response = (await result.json()) as TweetAPIResponse;
@@ -50,7 +50,7 @@ test('API fetch Status with community', async () => {
       headers: botHeaders
     }),
     undefined,
-    envWrapper
+    harness
   );
   expect(result.status).toEqual(200);
   const response = (await result.json()) as TweetAPIResponse;

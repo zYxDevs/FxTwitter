@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { UserAPIResponse, APIUser } from '../src/types/types';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
-import envWrapper from './helpers/env-wrapper';
+import harness from './helpers/harness';
 
 test('API fetch user', async () => {
   const result = await app.request(
@@ -11,7 +11,7 @@ test('API fetch user', async () => {
       headers: botHeaders
     }),
     undefined,
-    envWrapper
+    harness
   );
   expect(result.status).toEqual(200);
   const response = (await result.json()) as UserAPIResponse;
@@ -43,7 +43,7 @@ test('API fetch user that does not exist', async () => {
       headers: botHeaders
     }),
     undefined,
-    envWrapper
+    harness
   );
   expect(result.status).toEqual(404);
   const response = (await result.json()) as UserAPIResponse;
@@ -60,7 +60,7 @@ test('API fetch user about_account info', async () => {
       headers: botHeaders
     }),
     undefined,
-    envWrapper
+    harness
   );
 
   expect(result.status).toEqual(200);

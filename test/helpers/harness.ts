@@ -1,5 +1,5 @@
 /* eslint-disable no-case-declarations */
-// Wrapper for elongator TwitterProxy to handle mock requests for testing
+// Test harness for elongator TwitterProxy to handle mock requests for testing
 export default {
   TwitterProxy: {
     fetch: async (request: string) => {

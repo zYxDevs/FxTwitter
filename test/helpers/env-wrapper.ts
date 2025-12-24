@@ -91,6 +91,17 @@ export default {
             console.error('Error loading mock:', error);
           }
           return new Response(JSON.stringify({ data: {} }));
+        case 'AboutAccountQuery':
+          const screenNameAbout = variables.screenName;
+          // load mock based on screen name
+          try {
+            const mock = await import(`../mocks/AboutAccountQuery/${screenNameAbout}.json`);
+            console.log('Mock data:', mock);
+            return new Response(JSON.stringify(mock));
+          } catch (error) {
+            console.error('Error loading mock:', error);
+            return new Response(JSON.stringify({ data: {} }));
+          }
         default:
           throw new Error('Invalid request');
       }

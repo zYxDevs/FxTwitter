@@ -815,12 +815,9 @@ interface AboutAccountQueryResponse {
           location_accurate?: boolean;
           source?: string;
           username_changes?: {
-            count?: string;
+            count?: string; // returned as string for some reason
             last_changed_at_msec?: string;
           };
-        };
-        verification_info?: {
-          is_identity_verified?: boolean;
         };
       };
     };

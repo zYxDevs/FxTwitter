@@ -267,6 +267,17 @@ declare interface APIUser {
     verified: boolean;
     type: 'organization' | 'government' | 'individual' | null;
     verified_at?: string | null;
+    identity_verified?: boolean;
+  };
+  about_account?: {
+    based_in?: string | null;
+    location_accurate?: boolean;
+    created_country_accurate?: boolean | null;
+    source?: string | null;
+    username_changes?: {
+      count: number;
+      last_changed_at: string | null;
+    };
   };
 }
 

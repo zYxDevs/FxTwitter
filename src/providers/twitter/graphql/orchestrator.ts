@@ -6,6 +6,7 @@ export interface GraphQLEndpointMethod {
   name: string;
   query: GraphQLQuery;
   weight: number;
+  fallbackOnly?: boolean; // If true, never selected randomly, only tried as fallback after others fail
   validator: (response: unknown) => boolean;
   variables?: Record<string, unknown>; // Optional per-method variables (merged with request variables)
   useElongator?: boolean;
@@ -50,42 +51,58 @@ const executeWithMethods = async (
     };
   }
 
-  // Weighted random selection
-  const totalWeight = usableMethods.reduce((sum, method) => sum + method.weight, 0);
-  const random = Math.random() * totalWeight;
-  let cumulativeWeight = 0;
-  let selectedMethod = usableMethods[0];
+  // Filter out fallbackOnly methods for initial selection
+  const selectableMethods = usableMethods.filter(method => !method.fallbackOnly);
 
-  for (const method of usableMethods) {
-    cumulativeWeight += method.weight;
-    if (random <= cumulativeWeight) {
-      selectedMethod = method;
-      break;
+  if (selectableMethods.length === 0) {
+    // All methods are fallbackOnly, just try them in weight order
+    console.log('All methods are fallbackOnly, trying in weight order');
+  }
+
+  // Weighted random selection from selectable methods
+  let selectedMethod: GraphQLEndpointMethod | null = null;
+
+  if (selectableMethods.length > 0) {
+    const totalWeight = selectableMethods.reduce((sum, method) => sum + method.weight, 0);
+    const random = Math.random() * totalWeight;
+    let cumulativeWeight = 0;
+    selectedMethod = selectableMethods[0];
+
+    for (const method of selectableMethods) {
+      cumulativeWeight += method.weight;
+      if (random <= cumulativeWeight) {
+        selectedMethod = method;
+        break;
+      }
     }
   }
 
-  // Try selected method
-  try {
-    // Merge method-specific variables with request variables (method variables take precedence)
-    const mergedVariables = { ...variables, ...selectedMethod.variables };
-    const data = await graphqlRequest(c, {
-      query: selectedMethod.query,
-      variables: mergedVariables,
-      validator: selectedMethod.validator,
-      useElongator: selectedMethod.useElongator
-    });
+  // Try selected method (if one was selected)
+  if (selectedMethod) {
+    try {
+      // Merge method-specific variables with request variables (method variables take precedence)
+      const mergedVariables = { ...variables, ...selectedMethod.variables };
+      const data = await graphqlRequest(c, {
+        query: selectedMethod.query,
+        variables: mergedVariables,
+        validator: selectedMethod.validator,
+        useElongator: selectedMethod.useElongator
+      });
 
-    if (selectedMethod.validator(data)) {
-      return { success: true, data, error: undefined };
+      if (selectedMethod.validator(data)) {
+        return { success: true, data, error: undefined };
+      }
+    } catch (_error) {
+      console.log(`Method ${selectedMethod.name} failed, trying fallbacks...`);
     }
-  } catch (_error) {
-    console.log(`Method ${selectedMethod.name} failed, trying fallbacks...`);
   }
 
-  // Try remaining methods as fallback
-  for (const method of usableMethods) {
-    if (method.name === selectedMethod.name) continue;
+  // Try remaining methods as fallback, sorted by weight (highest first)
+  const fallbackMethods = usableMethods
+    .filter(method => method.name !== selectedMethod?.name)
+    .sort((a, b) => b.weight - a.weight); // Sort descending by weight
 
+  for (const method of fallbackMethods) {
     try {
       // Merge method-specific variables with request variables (method variables take precedence)
       const mergedVariables = { ...variables, ...method.variables };

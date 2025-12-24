@@ -472,7 +472,8 @@ const fetchSingleStatus = async (
         {
           name: 'TweetResultByRestId',
           query: TweetResultByRestIdQuery,
-          weight: processThread ? 0 : 50,
+          weight: 50,
+          fallbackOnly: processThread,
           variables: { tweetId: id },
           validator: (response: unknown) => {
             const r = response as TweetResultByRestIdResponse;
@@ -482,7 +483,8 @@ const fetchSingleStatus = async (
         {
           name: 'TweetResultsByIds',
           query: TweetResultsByIdsQuery,
-          weight: processThread || isApiHost ? 0 : 500,
+          weight: 500,
+          fallbackOnly: processThread || isApiHost,
           variables: { rest_ids: [id] },
           validator: (response: unknown) => {
             const r = (response as TweetResultsByIdsResponse)?.data?.tweet_results?.[0]?.result as
@@ -495,7 +497,8 @@ const fetchSingleStatus = async (
         {
           name: 'TweetResultsByRestIds',
           query: TweetResultsByRestIdsQuery,
-          weight: processThread ? 0 : 500,
+          weight: 500,
+          fallbackOnly: processThread,
           variables: { tweetIds: [id] },
           validator: (response: unknown) => {
             const r = (response as TweetResultsByRestIdsResponse)?.data?.tweetResult?.[0]

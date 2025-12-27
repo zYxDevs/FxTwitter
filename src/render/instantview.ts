@@ -5,6 +5,7 @@ import { getSocialTextIV } from '../helpers/socialproof';
 import { sanitizeText } from '../helpers/utils';
 import { DataProvider } from '../enum';
 import { getBranding } from '../helpers/branding';
+import { renderArticleToHtml } from '../helpers/article';
 import {
   APIPhoto,
   APIPoll,
@@ -312,15 +313,46 @@ const generateStatus = (
   isQuote = false,
   authorActionType: AuthorActionType | null
 ): string => {
+  const twitterStatus = status as APITwitterStatus;
+  
+  // Check if this is a Twitter article
+  let articleHtml = '';
+  let articleCoverMedia = '';
+  if (twitterStatus.article) {
+    const articleResult = renderArticleToHtml(twitterStatus.article.content, {
+      maxLength: undefined, // No limit for Telegram
+      renderInlineMedia: true, // Render inline media for Telegram
+      mediaEntities: twitterStatus.article.media_entities
+    });
+    
+    // Render cover media if available
+    if (twitterStatus.article.cover_media) {
+      const coverMedia = twitterStatus.article.cover_media;
+      if (coverMedia.media_info.__typename === 'ApiImage') {
+        const image = coverMedia.media_info;
+        articleCoverMedia = `<img src="${image.original_img_url}" alt="${twitterStatus.article.title}" />`;
+      }
+    }
+    
+    // Build article HTML with title
+    articleHtml = `
+    <h1>${twitterStatus.article.title}</h1>
+    ${articleCoverMedia}
+    ${articleResult.html}
+    `;
+  }
+  
   let text = paragraphify(sanitizeText(status.text), isQuote);
   text = htmlifyLinks(text);
   text = htmlifyHashtags(text, status);
   text = populateUserLinks(text, status);
 
-  const translatedText = getTranslatedText(status as APITwitterStatus, isQuote);
+  const translatedText = getTranslatedText(twitterStatus, isQuote);
 
   return `<!-- Telegram Instant View -->
   {quoteHeader}
+  <!-- Embed article (if applicable) -->
+  ${articleHtml || notApplicableComment}
   <!-- Embed media -->
   ${generateStatusMedia(status)} 
   <!-- Translated text (if applicable) -->
@@ -330,7 +362,7 @@ const generateStatus = (
   <!-- Embed Status text -->
   ${text}
   <!-- Embed Community Note -->
-  ${generateCommunityNote(status as APITwitterStatus)}
+  ${generateCommunityNote(twitterStatus)}
   <!-- Embed poll -->
   ${status.poll ? generatePoll(status.poll, status.lang ?? 'en') : notApplicableComment}
   <!-- Embedded quote status -->

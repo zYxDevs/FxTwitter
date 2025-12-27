@@ -195,6 +195,7 @@ export const handleStatus = async (
         status.media?.mosaic ||
         status.quote ||
         flags?.forceInstantView ||
+        (status as APITwitterStatus)?.article ||
         (thread?.thread?.length ?? 0) > 1
       );
   }

@@ -2,7 +2,7 @@
 import i18next from 'i18next';
 import { Constants } from '../constants';
 import { getSocialTextIV } from '../helpers/socialproof';
-import { sanitizeText } from '../helpers/utils';
+import { sanitizeText, wrapForeignLinks as wrapForeignLinksUtil } from '../helpers/utils';
 import { DataProvider } from '../enum';
 import { getBranding } from '../helpers/branding';
 import { renderArticleToHtml } from '../helpers/article';
@@ -209,21 +209,7 @@ const generateInlineAuthorHeader = (
 };
 
 const wrapForeignLinks = (url: string) => {
-  let unwrap = false;
-  const whitelistedDomains = ['twitter.com', 'x.com', 't.me', 'telegram.me', 'bsky.app'];
-  try {
-    const urlObj = new URL(url);
-
-    if (!whitelistedDomains.includes(urlObj.hostname)) {
-      unwrap = true;
-    }
-  } catch (_e) {
-    unwrap = true;
-  }
-
-  return unwrap
-    ? `https://${Constants.API_HOST_LIST[0]}/2/hit?url=${encodeURIComponent(url)}`
-    : url;
+  return wrapForeignLinksUtil(url, Constants.API_HOST_LIST[0]);
 };
 
 const generateStatusFooter = (
@@ -344,7 +330,7 @@ const generateStatus = (
   authorActionType: AuthorActionType | null
 ): string => {
   const twitterStatus = status as APITwitterStatus;
-  
+
   // Check if this is a Twitter article
   let articleHtml = '';
   let articleCoverMedia = '';
@@ -352,9 +338,10 @@ const generateStatus = (
     const articleResult = renderArticleToHtml(twitterStatus.article.content, {
       maxLength: undefined, // No limit for Telegram
       renderInlineMedia: true, // Render inline media for Telegram
-      mediaEntities: twitterStatus.article.media_entities
+      mediaEntities: twitterStatus.article.media_entities,
+      apiHost: Constants.API_HOST_LIST[0] // For wrapping foreign links
     });
-    
+
     // Render cover media if available
     if (twitterStatus.article.cover_media) {
       const coverMedia = twitterStatus.article.cover_media;
@@ -363,7 +350,7 @@ const generateStatus = (
         articleCoverMedia = `<img src="${image.original_img_url}" alt="${twitterStatus.article.title}" />`;
       }
     }
-    
+
     // Build article HTML (title is already in the main h1 header for Telegram)
     articleHtml = `
     ${articleCoverMedia}

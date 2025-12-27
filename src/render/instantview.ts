@@ -16,6 +16,35 @@ import {
   ResponseInstructions
 } from '../types/types';
 
+/**
+ * Check if the tweet text is essentially just an article URL with no meaningful additional content.
+ */
+const isArticleOnlyTweet = (status: APITwitterStatus): boolean => {
+  if (!status.article) {
+    return false;
+  }
+
+  const text = status.text.trim();
+
+  if (!text) {
+    return true;
+  }
+
+  // Article URLs look like: https://x.com/i/article/<id>
+  const articleUrlPattern = /^https?:\/\/(x\.com|twitter\.com)\/i\/article\/\d+\/?$/;
+  const tcoPattern = /^https?:\/\/t\.co\/\w+$/;
+
+  if (articleUrlPattern.test(text) || tcoPattern.test(text)) {
+    return true;
+  }
+
+  if (text === status.article.title) {
+    return true;
+  }
+
+  return false;
+};
+
 enum AuthorActionType {
   Reply = 'Reply',
   Original = 'Original',
@@ -214,6 +243,7 @@ const generateStatusFooter = (
     <p>{socialText}</p>
     <br>{viewOriginal}
     <!-- Embed profile picture, display name, and screen name in table -->
+    <hr/>
     {aboutSection}
     `.format({
     socialText: getSocialTextIV(status as APITwitterStatus) || '',
@@ -334,11 +364,11 @@ const generateStatus = (
       }
     }
     
-    // Build article HTML with title
+    // Build article HTML (title is already in the main h1 header for Telegram)
     articleHtml = `
-    <h1>${twitterStatus.article.title}</h1>
     ${articleCoverMedia}
     ${articleResult.html}
+    <hr/>
     `;
   }
   
@@ -396,6 +426,9 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
     throw new Error('Status is undefined');
   }
 
+  const twitterStatus = status as APITwitterStatus;
+  const articleOnly = twitterStatus.article && isArticleOnlyTweet(twitterStatus);
+
   /* Use ISO date for Medium template */
   const statusDate = new Date(status.created_at).toISOString();
 
@@ -412,6 +445,15 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
       : ``
   ];
 
+  // For article-only tweets, use article title as main heading and skip "View full thread" at top
+  const mainHeading = articleOnly && twitterStatus.article
+    ? twitterStatus.article.title
+    : `${status.author.name} (@${status.author.screen_name})`;
+
+  const topSection = articleOnly
+    ? '' // No top "View full thread" for article-only tweets
+    : `<sub><a href="${status.url}">${i18next.t('ivViewOriginal')}</a></sub>`;
+
   instructions.text = `
     <section class="section-backgroundImage">
       <figure class="graf--layoutFillWidth"></figure>
@@ -425,8 +467,9 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
     } <a href="${status.url}">${i18next.t('ivViewOriginal')}</a>
     </section>
     <article>
-    <sub><a href="${status.url}">${i18next.t('ivViewOriginal')}</a></sub>
-    <h1>${status.author.name} (@${status.author.screen_name})</h1>
+    ${topSection}
+    <h1>${mainHeading}</h1>
+        ${articleOnly ? `<h2>${status.author.name} (@${status.author.screen_name})</h2>` : ''}
 
     ${useThread
       .map(status => {

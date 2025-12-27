@@ -47,10 +47,7 @@ interface InlineLink {
  * @param block The content block
  * @param apiHost Optional API host for wrapping foreign links (for Telegram)
  */
-const collectInlineLinks = (
-  block: TwitterArticleContentBlock,
-  apiHost?: string
-): InlineLink[] => {
+const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string): InlineLink[] => {
   const links: InlineLink[] = [];
   const data = block.data;
 
@@ -264,7 +261,6 @@ const applyInlineStylesAndLinks = (
 
   return result;
 };
-
 
 /**
  * Renders a single block to HTML

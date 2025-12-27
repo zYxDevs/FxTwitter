@@ -358,7 +358,7 @@ const generateStatus = (
     <hr/>
     `;
   }
-  
+
   let text = paragraphify(sanitizeText(status.text), isQuote);
   text = htmlifyLinks(text);
   text = htmlifyHashtags(text, status);
@@ -433,9 +433,10 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
   ];
 
   // For article-only tweets, use article title as main heading and skip "View full thread" at top
-  const mainHeading = articleOnly && twitterStatus.article
-    ? twitterStatus.article.title
-    : `${status.author.name} (@${status.author.screen_name})`;
+  const mainHeading =
+    articleOnly && twitterStatus.article
+      ? twitterStatus.article.title
+      : `${status.author.name} (@${status.author.screen_name})`;
 
   const topSection = articleOnly
     ? '' // No top "View full thread" for article-only tweets

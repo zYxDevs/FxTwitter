@@ -3,6 +3,7 @@
 
 import { Context } from 'hono';
 import { DataProvider } from '../enum';
+import { BirdwatchEntity, TweetMediaFormat, TwitterApiMedia, TwitterArticleContentState } from './vendor/twitter';
 
 declare type InputFlags = {
   standard?: boolean;
@@ -226,7 +227,16 @@ declare interface APITwitterStatus extends APIStatus {
   views?: number | null;
   bookmarks?: number | null;
   community?: APITwitterCommunity;
-
+  article?: {
+    created_at: string;
+    modified_at?: string;
+    id: string;
+    title: string;
+    preview_text: string;
+    cover_media: TwitterApiMedia;
+    content: TwitterArticleContentState;
+    media_entities: TwitterApiMedia[];
+  };
   is_note_tweet: boolean;
   community_note: APITwitterCommunityNote | null;
   provider: DataProvider.Twitter;

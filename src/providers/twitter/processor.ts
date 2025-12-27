@@ -14,6 +14,12 @@ import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
+import {
+  GraphQLTwitterStatus,
+  GraphQLUser,
+  TwitterApiMedia,
+  TwitterArticleContentState
+} from '../../types/vendor/twitter';
 
 export const buildAPITwitterStatus = async (
   c: Context,
@@ -80,6 +86,10 @@ export const buildAPITwitterStatus = async (
   apiStatus.text = unescapeText(
     linkFixer(status.legacy.entities?.urls, status.legacy.full_text || '')
   );
+  // If article linked and that's the only thing in the status, use the article preview instead
+  if (status.article && status.legacy.full_text.length < 25) {
+    apiStatus.text = status.article.article_results?.result?.preview_text ?? '';
+  }
   apiStatus.raw_text = {
     text: status.legacy.full_text,
     facets: []
@@ -411,12 +421,13 @@ export const buildAPITwitterStatus = async (
         url: `https://stream-test.fxembed.com/download.mp4?url=${encodeURIComponent(
           card.broadcast.stream?.url ?? ''
         )}`,
+        thumbnail_url: card.broadcast.thumbnail.original.url,
         format: 'video/mp4',
         width: card.broadcast.width,
         height: card.broadcast.height,
         duration: 0,
         variants: []
-      });
+      } as APIVideo);
     }
     if (card.poll) {
       apiStatus.poll = card.poll;
@@ -476,12 +487,32 @@ export const buildAPITwitterStatus = async (
 
   console.log('language?', language);
 
+  if (status.article) {
+    console.log('article', JSON.stringify(status.article.article_results?.result));
+    apiStatus.article = {
+      created_at: new Date(
+        (status.article.article_results?.result?.metadata?.first_published_at_secs ?? 0) * 1000
+      ).toISOString(),
+      modified_at: new Date(
+        (status.article.article_results?.result?.lifecycle_state?.modified_at_secs ?? 0) * 1000
+      ).toISOString(),
+      id: status.article.article_results?.result?.rest_id ?? '',
+      title: status.article.article_results?.result?.title ?? '',
+      preview_text: status.article.article_results?.result?.preview_text ?? '',
+      cover_media: status.article.article_results?.result?.cover_media ?? ({} as TwitterApiMedia),
+      content:
+        status.article.article_results?.result?.content_state ?? ({} as TwitterArticleContentState),
+      media_entities:
+        status.article.article_results?.result?.media_entities ?? ([] as TwitterApiMedia[])
+    };
+  }
+
   /* If a language is specified in API or by user, let's try translating it! */
   if (
     typeof language === 'string' &&
     (language.length === 2 || language.length === 5) && // Only translate if the language is a valid ISO 639-1 or ISO 639-5 code
-    language !== status.legacy.lang &&                  // Don't translate if the status language is the same as the target language
-    apiStatus.text.length > 1                           // Don't translate if the status text is too short
+    language !== status.legacy.lang && // Don't translate if the status language is the same as the target language
+    apiStatus.text.length > 1 // Don't translate if the status text is too short
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;

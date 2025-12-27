@@ -588,6 +588,11 @@ type GraphQLTwitterStatus = {
       };
     };
   };
+  article?: {
+    article_results?: {
+      result?: TwitterArticleEntity;
+    };
+  };
 };
 
 type GraphQLTwitterCard = {
@@ -823,3 +828,90 @@ interface AboutAccountQueryResponse {
     };
   };
 }
+
+export type TwitterArticleEntity = {
+  rest_id: string;
+  id: string;
+  title: string;
+  preview_text: string;
+  cover_media?: TwitterApiMedia; // Twitter API be consistent challenge (impossible)
+  cover_media_results?: TwitterApiMedia;
+  content_state?: TwitterArticleContentState;
+  media_entities: TwitterApiMedia[];
+  lifecycle_state?: {
+    modified_at_secs: number;
+  };
+  metadata?: {
+    first_published_at_secs: number;
+  };
+};
+
+export type TwitterApiMedia = {
+  id: string;
+  media_key: string;
+  media_id: string;
+  media_info: TwitterApiImage;
+};
+
+export type TwitterApiImage = {
+  __typename: 'ApiImage';
+  original_img_height: number;
+  original_img_width: number;
+  original_img_url: string;
+  color_info: {
+    palette: Array<{
+      percentage: number;
+      rgb: { red: number; green: number; blue: number };
+    }>;
+  };
+};
+
+export type TwitterArticleContentState = {
+  blocks: TwitterArticleContentBlock[];
+  entityMap: TwitterArticleEntityMapEntry[];
+};
+
+export type TwitterArticleContentBlock = {
+  key: string;
+  data: Record<string, unknown>;
+  entityRanges: Array<{
+    key: number;
+    length: number;
+    offset: number;
+  }>;
+  inlineStyleRanges: Array<{
+    length: number;
+    offset: number;
+    style: string; // e.g. "Bold", "Italic"
+  }>;
+  text: string;
+  type: string; // e.g. "header-one", "unstyled", "ordered-list-item", "atomic"
+};
+
+type TwitterArticleEntityMapEntry =
+  | {
+      key: string;
+      value: {
+        type: 'MARKDOWN';
+        mutability: 'Mutable';
+        data: {
+          entityKey: string;
+          markdown: string;
+        };
+      };
+    }
+  | {
+      key: string;
+      value: {
+        type: 'MEDIA';
+        mutability: 'Immutable';
+        data: {
+          entityKey: string;
+          mediaItems: Array<{
+            localMediaId: string;
+            mediaCategory: string;
+            mediaId: string;
+          }>;
+        };
+      };
+    };

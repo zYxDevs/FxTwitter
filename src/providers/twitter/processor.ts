@@ -82,6 +82,8 @@ export const buildAPITwitterStatus = async (
 
   if (status.legacy.entities?.urls) {
     status.legacy.entities.urls = status.legacy.entities.urls.filter(
+      /* Yes this uses http:// not https://. Don't know why. Hesitant to also include https
+         because we just want to get rid of the extraneous article url at the end, not eliminate all article urls */
       url => url.expanded_url.match(/^http:\/\/x\.com\/i\/article\/\w+/g) === null
     );
   }

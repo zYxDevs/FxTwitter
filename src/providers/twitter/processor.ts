@@ -87,9 +87,9 @@ export const buildAPITwitterStatus = async (
     linkFixer(status.legacy.entities?.urls, status.legacy.full_text || '')
   );
   // If article linked and that's the only thing in the status, use the article preview instead
-  if (status.article && status.legacy.full_text.length < 25) {
-    apiStatus.text = status.article.article_results?.result?.preview_text ?? '';
-  }
+  // if (status.article && status.legacy.full_text.length < 25) {
+  //   apiStatus.text = status.article.article_results?.result?.preview_text ?? '';
+  // }
   apiStatus.raw_text = {
     text: status.legacy.full_text,
     facets: []

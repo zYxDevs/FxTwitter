@@ -850,7 +850,7 @@ export type TwitterApiMedia = {
   id: string;
   media_key: string;
   media_id: string;
-  media_info: TwitterApiImage;
+  media_info: TwitterApiImage | TwitterApiVideo;
 };
 
 export type TwitterApiImage = {
@@ -863,6 +863,45 @@ export type TwitterApiImage = {
       percentage: number;
       rgb: { red: number; green: number; blue: number };
     }>;
+  };
+};
+
+export type TwitterApiVideo = {
+  __typename: 'ApiVideo' | 'ApiGif';
+  type: 'video' | 'animated_gif';
+  id: string;
+  id_str: string;
+  ext_alt_text: string | null;
+  ext_media_color: {
+    palette: Array<{
+      percentage: number;
+      rgb: { red: number; green: number; blue: number };
+    }>;
+  };
+  media_url: string;
+  media_url_https: string;
+  url: string;
+  display_url: string;
+  expanded_url: string;
+  original_info: {
+    height: number;
+    width: number;
+  };
+  sizes: {
+    original: {
+      h: number;
+      resize: 'fit';
+      w: number;
+    };
+  };
+  video_info: {
+    aspect_ratio: [number, number];
+    duration_millis: number;
+    variants: {
+      bitrate: number;
+      content_type: string;
+      url: string;
+    }[];
   };
 };
 

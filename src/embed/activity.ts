@@ -578,8 +578,10 @@ export const handleActivity = async (
         })
         .filter(Boolean) as ActivityMediaAttachment[];
 
-      // Merge article media attachments
-      response.media_attachments.push(...articleAttachments);
+      // Merge article media attachments, excluding duplicates by id
+      const existingIds = new Set(response.media_attachments.map(a => a.id));
+      const uniqueArticleAttachments = articleAttachments.filter(a => !existingIds.has(a.id));
+      response.media_attachments.push(...uniqueArticleAttachments);
     } else if (thread.status.media?.external) {
       const external = thread.status.media.external;
       // Cast the response media attachments to correct type

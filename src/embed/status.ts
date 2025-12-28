@@ -628,7 +628,7 @@ export const handleStatus = async (
 
   // For article-only tweets, use article title and preview text
   let ogTitle = `${status.author.name} (@${status.author.screen_name})`;
-  if (articleOnly && twitterStatus.article) {
+  if (articleOnly && twitterStatus.article && isTelegram) {
     ogTitle = sanitizeText(twitterStatus.article.title);
     text = sanitizeText(twitterStatus.article.preview_text);
   }

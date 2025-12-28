@@ -337,7 +337,7 @@ const generateStatus = (
   if (twitterStatus.article) {
     const articleResult = renderArticleToHtml(twitterStatus.article.content, {
       maxLength: undefined, // No limit for Telegram
-      renderInlineMedia: true, // Render inline media for Telegram
+      fullRenderer: true, // Render inline media for Telegram
       mediaEntities: twitterStatus.article.media_entities,
       apiHost: Constants.API_HOST_LIST[0] // For wrapping foreign links
     });

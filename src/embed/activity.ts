@@ -146,7 +146,7 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
     if (twitterStatus.article) {
       const articleResult = renderArticleToHtml(twitterStatus.article.content, {
         maxLength: DISCORD_ARTICLE_MAX_LENGTH,
-        renderInlineMedia: false,
+        fullRenderer: false,
         mediaEntities: twitterStatus.article.media_entities
       });
 

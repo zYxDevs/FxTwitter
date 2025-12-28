@@ -12,7 +12,7 @@ const DISCORD_ARTICLE_MAX_LENGTH = 10000;
 
 interface ArticleRenderOptions {
   maxLength?: number; // undefined = no limit (Telegram)
-  renderInlineMedia?: boolean; // true for Telegram, false for Discord
+  fullRenderer?: boolean; // true for Telegram, false for Discord
   mediaEntities: TwitterApiMedia[];
   apiHost?: string; // Required for Telegram to wrap foreign links
 }
@@ -296,7 +296,7 @@ const renderBlock = (
       if (mediaItem) {
         const media = mediaEntities.find(m => m.media_id === mediaItem.mediaId);
         if (media) {
-          if (options.renderInlineMedia) {
+          if (options.fullRenderer) {
             // Render inline media for Telegram
             let mediaHtml = '';
             if (media.media_info.__typename === 'ApiImage') {
@@ -357,7 +357,7 @@ const renderBlock = (
         const codeContent = lines.slice(1, -1).join('\n');
         // Sanitize and wrap in code tag with optional data-language for syntax highlighting
         const langAttr = language ? ` data-language="${sanitizeText(language)}"` : '';
-        if (options.renderInlineMedia) {
+        if (options.fullRenderer) {
           markdownHtml = `<pre${langAttr}>${sanitizeText(codeContent)}</pre>`;
         } else {
           markdownHtml = `<code${langAttr}>${sanitizeText(codeContent)}</code>`;
@@ -377,7 +377,7 @@ const renderBlock = (
       // Handle embedded tweets
       const tweetId = (entityEntry.value.data as { tweetId?: string }).tweetId;
       if (tweetId) {
-        if (options.renderInlineMedia) {
+        if (options.fullRenderer) {
           // For Telegram: use Twitter's embed format which Instant View will process
           const tweetEmbed = `<blockquote class="twitter-tweet"><a href="https://twitter.com/i/status/${tweetId}">Tweet</a></blockquote>`;
           hasMediaHtml = true;
@@ -408,12 +408,12 @@ const renderBlock = (
   const styledText = applyInlineStylesAndLinks(blockText, block.inlineStyleRanges, inlineLinks);
 
   // Determine block tag based on type
-  // For Discord (renderInlineMedia = false), render headers as bold text instead of header tags
+  // For Discord (fullRenderer = false), render headers as bold text instead of header tags
   let blockTag = 'p';
   let isHeader = false;
   switch (block.type) {
     case 'header-one':
-      if (options.renderInlineMedia) {
+      if (options.fullRenderer) {
         // Telegram: use actual header tags
         blockTag = 'h1';
       } else {
@@ -423,7 +423,7 @@ const renderBlock = (
       }
       break;
     case 'header-two':
-      if (options.renderInlineMedia) {
+      if (options.fullRenderer) {
         // Telegram: use actual header tags
         blockTag = 'h2';
       } else {
@@ -442,7 +442,7 @@ const renderBlock = (
     case 'atomic':
       // Atomic blocks are typically media placeholders
       // If we're not rendering inline media, skip it
-      if (!options.renderInlineMedia && blockText.trim() === '') {
+      if (!options.fullRenderer && blockText.trim() === '') {
         return { html: '', collectedMedia };
       }
       // This case should have been handled earlier, but just in case

@@ -408,7 +408,6 @@ export const handleActivity = async (
     in_reply_to_id: thread.status.replying_to?.post,
     in_reply_to_account_id: null,
     language: thread.status.lang,
-    // TODO: Do formatting
     content: statusText,
     spoiler_text: '',
     visibility: 'public',

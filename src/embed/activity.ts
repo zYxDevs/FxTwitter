@@ -139,26 +139,28 @@ interface StatusTextResult {
 
 const getStatusText = (status: APIStatus): StatusTextResult => {
   let text = '';
-  const twitterStatus = status as APITwitterStatus;
 
-  // Check if this is a Twitter article
-  if (twitterStatus.article) {
-    const articleResult = renderArticleToHtml(twitterStatus.article.content, {
-      maxLength: DISCORD_ARTICLE_MAX_LENGTH,
-      renderInlineMedia: false,
-      mediaEntities: twitterStatus.article.media_entities
-    });
+  // Check if is Twitter so we can detect article
+  if (status.provider === DataProvider.Twitter) {
+    const twitterStatus = status as APITwitterStatus;
+    if (twitterStatus.article) {
+      const articleResult = renderArticleToHtml(twitterStatus.article.content, {
+        maxLength: DISCORD_ARTICLE_MAX_LENGTH,
+        renderInlineMedia: false,
+        mediaEntities: twitterStatus.article.media_entities
+      });
 
-    // Prepend article title
-    text = `<b>📰 ${twitterStatus.article.title}</b>${articleResult.html}`;
+      // Prepend article title
+      text = `<b>📰 ${twitterStatus.article.title}</b>${articleResult.html}`;
 
-    return { text, articleMedia: articleResult.collectedMedia };
+      return { text, articleMedia: articleResult.collectedMedia };
+    }
   }
 
   const convertedStatusText = status.text.trim().replace(/\n/g, '<br>︀︀');
-  if (twitterStatus.translation) {
-    console.log('translation', JSON.stringify(twitterStatus.translation));
-    const { translation } = twitterStatus;
+  if (status.translation) {
+    console.log('translation', JSON.stringify(status.translation));
+    const { translation } = status;
 
     const formatText = `<b>📑 {translation}</b>`.format({
       translation: i18next.t('translatedFrom').format({

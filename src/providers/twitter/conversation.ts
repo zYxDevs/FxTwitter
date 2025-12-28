@@ -578,11 +578,11 @@ export const constructTwitterThread = async (
       (!status.article.content?.blocks || status.article.content.blocks.length === 0)
     ) {
       console.log('Article lacks content blocks, re-fetching with TweetResultByRestId...');
-      const articleResponse = await fetchByRestId(id, c);
-      if (articleResponse?.data?.tweetResult?.result) {
+      const articleResponse = await fetchByRestIds([id], c);
+      if (articleResponse?.data?.tweetResult?.[0]?.result) {
         const rebuiltStatus = await buildAPITwitterStatus(
           c,
-          articleResponse.data.tweetResult.result as GraphQLTwitterStatus,
+          articleResponse.data.tweetResult[0].result as GraphQLTwitterStatus,
           language,
           null,
           legacyAPI

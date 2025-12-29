@@ -41,7 +41,7 @@ export const renderVideo = (
 
   /* Like photos when picking a specific one (not using mosaic),
       we'll put an indicator if there are more than one video */
-  if (all && all.length > 1 && (userAgent?.indexOf('Telegram') ?? 0) > -1) {
+  if (all && all.length > 1 && (userAgent?.indexOf('TelegramBot') ?? 0) > -1) {
     const baseString =
       all.length === status.media?.videos?.length
         ? i18next.t('videoCount')
@@ -89,7 +89,7 @@ export const renderVideo = (
   // TikTok videos need their own proxy with specific cookies/headers
   if (
     experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
-    (userAgent?.includes('Discord') || userAgent?.includes('Telegram')) &&
+    (userAgent?.includes('Discordbot') || userAgent?.includes('TelegramBot')) &&
     status.provider !== DataProvider.TikTok
   ) {
     url = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(url)}`;

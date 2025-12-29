@@ -10,6 +10,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
   if (media.type === 'photo') {
     return {
       type: 'photo',
+      id: media.id_str,
       url: formatImageUrl(media.media_url_https),
       width: media.original_info?.width,
       height: media.original_info?.height,
@@ -19,7 +20,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
     /* Find the variant with the highest bitrate */
     const bestVariant = media.video_info?.variants
       ?.filter?.(format => {
-        if (c.req.header('user-agent')?.includes('Telegram') && format.bitrate) {
+        if (c.req.header('user-agent')?.includes('TelegramBot') && format.bitrate) {
           /* Telegram doesn't support videos over 20 MB, so we need to filter them out */
           const bitrate = format.bitrate || 0;
           const length = (media.video_info?.duration_millis || 0) / 1000;
@@ -41,6 +42,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
       return {
         type: 'gif',
+        id: media.id_str,
         url: media.media_url_https,
         width: media.original_info?.width,
         height: media.original_info?.height,
@@ -51,6 +53,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       };
     }
     return {
+      id: media.id_str,
       url: bestVariant?.url || '',
       thumbnail_url: media.media_url_https,
       duration: (media.video_info?.duration_millis || 0) / 1000,

@@ -3,6 +3,12 @@
 
 import { Context } from 'hono';
 import { DataProvider } from '../enum';
+import {
+  BirdwatchEntity,
+  TweetMediaFormat,
+  TwitterApiMedia,
+  TwitterArticleContentState
+} from './vendor/twitter';
 
 declare type InputFlags = {
   standard?: boolean;
@@ -134,6 +140,7 @@ declare interface APIPoll {
 }
 
 declare interface APIMedia {
+  id?: string;
   type: string;
   url: string;
   width: number;
@@ -225,7 +232,16 @@ declare interface APITwitterStatus extends APIStatus {
   views?: number | null;
   bookmarks?: number | null;
   community?: APITwitterCommunity;
-
+  article?: {
+    created_at: string;
+    modified_at?: string;
+    id: string;
+    title: string;
+    preview_text: string;
+    cover_media: TwitterApiMedia;
+    content: TwitterArticleContentState;
+    media_entities: TwitterApiMedia[];
+  };
   is_note_tweet: boolean;
   community_note: APITwitterCommunityNote | null;
   provider: DataProvider.Twitter;
@@ -271,6 +287,17 @@ declare interface APIUser {
     verified: boolean;
     type: 'organization' | 'government' | 'individual' | null;
     verified_at?: string | null;
+    identity_verified?: boolean;
+  };
+  about_account?: {
+    based_in?: string | null;
+    location_accurate?: boolean;
+    created_country_accurate?: boolean | null;
+    source?: string | null;
+    username_changes?: {
+      count: number;
+      last_changed_at: string | null;
+    };
   };
 }
 

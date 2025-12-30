@@ -33,12 +33,22 @@ declare interface TikTokMusic {
 }
 
 declare interface TikTokVideoFormat {
-  url: string;
-  width: number;
-  height: number;
-  dataSize: number;
-  format: string;
-  codecType: string;
+  Bitrate: number;
+  QualityType: number;
+  BitrateFPS: number;
+  GearName: string;
+  Format: 'mp4';
+  CodecType: 'h264' | 'h265_hvc1';
+  PlayAddr: {
+    DataSize: string;
+    Width: number;
+    Height: number;
+    Uri: string;
+    UrlList: string[];
+    UrlKey: string;
+    FileHash: string;
+    FileCs: string;
+  };
 }
 
 declare interface TikTokVideo {
@@ -61,6 +71,7 @@ declare interface TikTokVideo {
   encodeUserTag: string;
   codecType: string;
   definition: string;
+  size?: string;
   bitrateInfo?: TikTokVideoFormat[];
 }
 

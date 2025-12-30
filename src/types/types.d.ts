@@ -5,7 +5,7 @@ import { Context } from 'hono';
 import { DataProvider } from '../enum';
 import {
   BirdwatchEntity,
-  TweetMediaFormat,
+  TweetMediaVariant,
   TwitterApiMedia,
   TwitterArticleContentState
 } from './vendor/twitter';
@@ -158,8 +158,20 @@ declare interface APIVideo extends APIMedia {
   thumbnail_url: string;
   format: string;
   duration: number;
-  variants: TweetMediaFormat[];
+  filesize?: number; // File size in bytes (when available, e.g., from TikTok)
+  variants?: TweetMediaVariant[]; // Legacy API only - use formats internally
+  formats: APIVideoFormat[];
 }
+
+type APIVideoFormat = {
+  container?: 'mp4' | 'webm' | 'm3u8';
+  codec?: 'h264' | 'hevc' | 'vp9' | 'av1';
+  bitrate?: number;
+  url: string;
+  size?: number; // File size in bytes (when available, e.g., from TikTok)
+  height?: number;
+  width?: number;
+};
 
 declare interface APIMosaicPhoto extends APIMedia {
   type: 'mosaic_photo';

@@ -197,10 +197,18 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
 };
 
 const linkifyMentions = (text: string, status: APIStatus) => {
-  const baseUrl =
-    status.provider === DataProvider.Bsky
-      ? `${Constants.BSKY_ROOT}/profile`
-      : `${Constants.TWITTER_ROOT}`;
+  let baseUrl = '';
+  switch (status.provider) {
+    case DataProvider.Bsky:
+      baseUrl = `${Constants.BSKY_ROOT}/profile/`;
+      break;
+    case DataProvider.Twitter:
+      baseUrl = `${Constants.TWITTER_ROOT}/`;
+      break;
+    case DataProvider.TikTok:
+      baseUrl = `${Constants.TIKTOK_ROOT}/@`;
+      break;
+  }
   const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)/g);
 
   console.log('matches', matches);
@@ -208,7 +216,7 @@ const linkifyMentions = (text: string, status: APIStatus) => {
   [...new Set(matches ?? [])]?.forEach(mention => {
     text = text.replace(
       new RegExp(`(?<!https?:\\/\\/[\\w.:/]+)${mention}(?=\\W|$)`, 'g'),
-      `<a href="${baseUrl}/${mention.slice(1)}">${mention}</a>`
+      `<a href="${baseUrl}${mention.slice(1)}">${mention}</a>`
     );
   });
   console.log('text', text);
@@ -216,10 +224,18 @@ const linkifyMentions = (text: string, status: APIStatus) => {
 };
 
 const linkifyHashtags = (text: string, status: APIStatus) => {
-  const baseUrl =
-    status.provider === DataProvider.Bsky
-      ? `${Constants.BSKY_ROOT}/hashtag`
-      : `${Constants.TWITTER_ROOT}/hashtag`;
+  let baseUrl = '';
+  switch (status.provider) {
+    case DataProvider.Bsky:
+      baseUrl = `${Constants.BSKY_ROOT}/hashtag`;
+      break;
+    case DataProvider.Twitter:
+      baseUrl = `${Constants.TWITTER_ROOT}/hashtag`;
+      break;
+    case DataProvider.TikTok:
+      baseUrl = `${Constants.TIKTOK_ROOT}/tag`;
+      break;
+  }
   const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)/g);
   console.log('matches', matches);
   // deduplicate hashtags
@@ -252,15 +268,27 @@ const formatStatus = (text: string, status: APIStatus) => {
   if (status.raw_text && enableFacets) {
     text = status.raw_text.text;
 
-    const baseHashtagUrl =
-      status.provider === DataProvider.Bsky
-        ? `${Constants.BSKY_ROOT}/hashtag`
-        : `${Constants.TWITTER_ROOT}/hashtag`;
-    const baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
-    const baseMentionUrl =
-      status.provider === DataProvider.Bsky
-        ? `${Constants.BSKY_ROOT}/profile`
-        : `${Constants.TWITTER_ROOT}`;
+    let baseHashtagUrl = '';
+    let baseSymbolUrl = '';
+    let baseMentionUrl = '';
+
+    switch (status.provider) {
+      case DataProvider.Bsky:
+        baseHashtagUrl = `${Constants.BSKY_ROOT}/hashtag`;
+        baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.BSKY_ROOT}/profile`;
+        break;
+      case DataProvider.Twitter:
+        baseHashtagUrl = `${Constants.TWITTER_ROOT}/hashtag`;
+        baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.TWITTER_ROOT}`;
+        break;
+      case DataProvider.TikTok:
+        baseHashtagUrl = `${Constants.TIKTOK_ROOT}/tag`;
+        baseSymbolUrl = `${Constants.TIKTOK_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.TIKTOK_ROOT}`;
+        break;
+    }
     let offset = 0;
     status.raw_text.facets.forEach(facet => {
       let newFacet = '';

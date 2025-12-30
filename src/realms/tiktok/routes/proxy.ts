@@ -6,13 +6,18 @@ import { fetchTikTokVideo } from '../../../providers/tiktok/conversation';
  * Fetches TikTok videos with proper headers/cookies and streams them back
  * This is needed because TikTok's CDN often 403s direct requests without proper auth
  *
+ * Key insights from yt-dlp:
+ * 1. Don't send Sec-Fetch-* headers - they can trigger bot detection
+ * 2. The tt_chain_token cookie must be sent to the CDN hostname
+ * 3. Referer should be the actual video page URL
+ * 4. Keep headers minimal and consistent
+ *
  * Usage: /tiktok/proxy?url=<encoded_video_url>&cookies=<encoded_cookies>&videoId=<id>
- * If videoId is provided and the original URL 403s, will try to fetch fresh video data
  */
 export const tiktokVideoProxy = async (c: Context) => {
   const videoUrl = c.req.query('url');
   const cookies = c.req.query('cookies');
-  const videoId = c.req.query('videoId'); // For re-fetching if URL fails
+  const videoId = c.req.query('videoId');
 
   if (!videoUrl) {
     return c.json({ error: 'Missing url parameter' }, 400);
@@ -31,55 +36,16 @@ export const tiktokVideoProxy = async (c: Context) => {
 
     console.log('Proxying TikTok video:', url.hostname + url.pathname.substring(0, 50) + '...');
 
-    // Decode cookies if they were URL-encoded (+ becomes space)
+    // Decode cookies if they were URL-encoded
     const decodedCookies = cookies ? decodeURIComponent(cookies.replace(/\+/g, ' ')) : '';
-    console.log(
-      'Using cookies:',
-      decodedCookies ? decodedCookies.substring(0, 100) + '...' : 'none'
-    );
 
-    // Build headers to mimic a real browser request
-    const requestHeaders: Record<string, string> = {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'identity',
-      'Referer': 'https://www.tiktok.com/',
-      'Origin': 'https://www.tiktok.com',
-      // Sec-Fetch headers to appear as legitimate browser media request
-      'Sec-Fetch-Dest': 'video',
-      'Sec-Fetch-Mode': 'no-cors',
-      'Sec-Fetch-Site': 'cross-site',
-      // Chrome client hints
-      'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"Windows"'
-    };
+    // Get the video ID for Referer (fallback to a generic path if not provided)
+    const refererUrl = videoId
+      ? `https://www.tiktok.com/@_/video/${videoId}`
+      : 'https://www.tiktok.com/';
 
-    // Add cookies if provided
-    if (decodedCookies) {
-      requestHeaders['Cookie'] = decodedCookies;
-    }
-
-    // Add range header if client is seeking
-    const rangeHeader = c.req.header('Range');
-    if (rangeHeader) {
-      requestHeaders['Range'] = rangeHeader;
-    }
-
-    console.log('Request headers:', Object.keys(requestHeaders).join(', '));
-
-    // Helper to try fetching a video URL
-    const tryFetchVideo = async (targetUrl: string) => {
-      return await fetch(targetUrl, {
-        headers: requestHeaders
-      });
-    };
-
-    // Try the original URL first
-    let response = await tryFetchVideo(videoUrl);
-    console.log('TikTok CDN response:', response.status, response.statusText);
+    // Try fetching with multiple strategies
+    let response = await tryFetchWithStrategies(videoUrl, decodedCookies, refererUrl, c);
 
     // If we get a 403 and have a videoId, try to fetch fresh video data
     if (response.status === 403 && videoId) {
@@ -87,13 +53,12 @@ export const tiktokVideoProxy = async (c: Context) => {
       try {
         const freshData = await fetchTikTokVideo(videoId);
         if (freshData.video && freshData.code === 200) {
-          // Extract video URL from fresh data (simplified - check web format)
-          const freshVideo = freshData.video as { video?: { playAddr?: string } };
-          const freshUrl = freshVideo?.video?.playAddr;
+          // Extract video URL from fresh data
+          const freshUrl = extractVideoUrlFromData(freshData.video);
           if (freshUrl && freshUrl !== videoUrl) {
             console.log('Got fresh video URL, retrying...');
-            response = await tryFetchVideo(freshUrl);
-            console.log('Fresh URL response:', response.status, response.statusText);
+            const freshCookies = freshData.cookies || decodedCookies;
+            response = await tryFetchWithStrategies(freshUrl, freshCookies, refererUrl, c);
           }
         }
       } catch (e) {
@@ -102,7 +67,6 @@ export const tiktokVideoProxy = async (c: Context) => {
     }
 
     if (!response.ok && response.status !== 206) {
-      // 206 is Partial Content for range requests
       console.error('TikTok CDN error:', response.status, await response.text().catch(() => ''));
       return c.json(
         { error: `TikTok CDN returned ${response.status}` },
@@ -143,6 +107,130 @@ export const tiktokVideoProxy = async (c: Context) => {
     return c.json({ error: 'Failed to proxy video' }, 500);
   }
 };
+
+/**
+ * Try fetching video with multiple strategies
+ * Attempts different header configurations to maximize success rate
+ */
+async function tryFetchWithStrategies(
+  videoUrl: string,
+  cookies: string,
+  refererUrl: string,
+  c: Context
+): Promise<Response> {
+  const rangeHeader = c.req.header('Range');
+
+  // Strategy 1: Minimal headers (most likely to work based on yt-dlp analysis)
+  // yt-dlp doesn't send Sec-Fetch-* headers for video downloads
+  const minimalHeaders: Record<string, string> = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+    Accept: '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    Referer: refererUrl
+  };
+
+  // Add cookies if provided
+  if (cookies) {
+    minimalHeaders['Cookie'] = cookies;
+  }
+
+  // Add range header if client is seeking
+  if (rangeHeader) {
+    minimalHeaders['Range'] = rangeHeader;
+  }
+
+  console.log('Strategy 1: Minimal headers');
+  let response = await fetch(videoUrl, { headers: minimalHeaders });
+  console.log('Response status:', response.status);
+
+  if (response.ok || response.status === 206) {
+    return response;
+  }
+
+  // Strategy 2: Add Accept-Encoding
+  if (response.status === 403) {
+    console.log('Strategy 2: Adding Accept-Encoding');
+    const headersWithEncoding = {
+      ...minimalHeaders,
+      'Accept-Encoding': 'identity;q=1, *;q=0'
+    };
+    response = await fetch(videoUrl, { headers: headersWithEncoding });
+    console.log('Response status:', response.status);
+
+    if (response.ok || response.status === 206) {
+      return response;
+    }
+  }
+
+  // Strategy 3: Origin header (some CDNs require this)
+  if (response.status === 403) {
+    console.log('Strategy 3: Adding Origin header');
+    const headersWithOrigin = {
+      ...minimalHeaders,
+      Origin: 'https://www.tiktok.com'
+    };
+    response = await fetch(videoUrl, { headers: headersWithOrigin });
+    console.log('Response status:', response.status);
+
+    if (response.ok || response.status === 206) {
+      return response;
+    }
+  }
+
+  // Strategy 4: Fallback to no cookies (in case cookies are the problem)
+  if (response.status === 403 && cookies) {
+    console.log('Strategy 4: Trying without cookies');
+    const headersNoCookies = { ...minimalHeaders };
+    delete headersNoCookies['Cookie'];
+    response = await fetch(videoUrl, { headers: headersNoCookies });
+    console.log('Response status:', response.status);
+  }
+
+  return response;
+}
+
+/**
+ * Extract video URL from TikTok video data
+ * Handles both web API and mobile API formats
+ */
+function extractVideoUrlFromData(
+  video: TikTokItemInfo | TikTokAwemeDetail
+): string | null {
+  // Web API format
+  if ('createTime' in video && video.video?.playAddr) {
+    return video.video.playAddr;
+  }
+
+  // Mobile API format
+  if ('aweme_id' in video || 'create_time' in video) {
+    const awemeVideo = video as TikTokAwemeDetail;
+    // Try bit_rate first for best quality
+    const bitRates = awemeVideo.video?.bit_rate;
+    if (bitRates && bitRates.length > 0) {
+      const sorted = [...bitRates].sort((a, b) => b.bit_rate - a.bit_rate);
+      const urls = sorted[0]?.play_addr?.url_list;
+      if (urls && urls.length > 0) {
+        // Prefer non-maliva URLs
+        const regionalUrl = urls.find(
+          (u: string) =>
+            u.includes('.us.') ||
+            u.includes('.eu.') ||
+            u.includes('useast') ||
+            u.includes('uswest')
+        );
+        return regionalUrl || urls[0];
+      }
+    }
+    // Fallback to play_addr
+    const playUrls = awemeVideo.video?.play_addr?.url_list;
+    if (playUrls && playUrls.length > 0) {
+      return playUrls[0];
+    }
+  }
+
+  return null;
+}
 
 /**
  * Handle CORS preflight requests

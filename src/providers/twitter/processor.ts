@@ -3,7 +3,7 @@ import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
 import { handleMosaic } from '../../helpers/mosaic';
 import { unescapeText } from '../../helpers/utils';
-import { processMedia } from '../../helpers/media';
+import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
@@ -421,7 +421,7 @@ export const buildAPITwitterStatus = async (
         width: card.broadcast.width,
         height: card.broadcast.height,
         duration: 0,
-        variants: []
+        formats: []
       });
       apiStatus.media.all = apiStatus.media?.all ?? [];
       apiStatus.media.all?.push({
@@ -434,7 +434,7 @@ export const buildAPITwitterStatus = async (
         width: card.broadcast.width,
         height: card.broadcast.height,
         duration: 0,
-        variants: []
+        formats: []
       } as APIVideo);
     }
     if (card.poll) {
@@ -590,6 +590,46 @@ export const buildAPITwitterStatus = async (
     if ((apiStatus.media.all?.length ?? 0) < 1 && !apiStatus.media.external) {
       // @ts-expect-error media is not required in legacy API if empty
       delete apiStatus.media;
+    }
+
+    // Populate variants from formats for legacy API compatibility
+    if (apiStatus.media?.videos) {
+      apiStatus.media.videos.forEach(video => {
+        if (video.formats && video.formats.length > 0) {
+          // @ts-expect-error variants is only for legacy API
+          video.variants = video.formats.map(convertFormatToVariant);
+        }
+      });
+    }
+    if (apiStatus.media?.all) {
+      apiStatus.media.all.forEach(media => {
+        if (media.type === 'video' || media.type === 'gif') {
+          const video = media as APIVideo;
+          if (video.formats && video.formats.length > 0) {
+            // @ts-expect-error variants is only for legacy API
+            video.variants = video.formats.map(convertFormatToVariant);
+          }
+        }
+      });
+    }
+    if (apiStatus.quote?.media?.videos) {
+      apiStatus.quote.media.videos.forEach(video => {
+        if (video.formats && video.formats.length > 0) {
+          // @ts-expect-error variants is only for legacy API
+          video.variants = video.formats.map(convertFormatToVariant);
+        }
+      });
+    }
+    if (apiStatus.quote?.media?.all) {
+      apiStatus.quote.media.all.forEach(media => {
+        if (media.type === 'video' || media.type === 'gif') {
+          const video = media as APIVideo;
+          if (video.formats && video.formats.length > 0) {
+            // @ts-expect-error variants is only for legacy API
+            video.variants = video.formats.map(convertFormatToVariant);
+          }
+        }
+      });
     }
   }
 

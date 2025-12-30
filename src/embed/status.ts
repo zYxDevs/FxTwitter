@@ -149,7 +149,7 @@ export const handleStatus = async (
     // Get proxy base URL from the current request for TikTok video proxy
     const requestUrl = new URL(c.req.url);
     const proxyBase = `${requestUrl.protocol}//${requestUrl.host}`;
-    thread = await constructTikTokVideo(statusId, proxyBase);
+    thread = await constructTikTokVideo(statusId, proxyBase, userAgent);
     console.log('tiktok video', JSON.stringify(thread));
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);

@@ -5,10 +5,24 @@ import { Constants } from '../../../constants';
 import { Experiment, experimentCheck } from '../../../experiments';
 import { Strings } from '../../../strings';
 import { InputFlags } from '../../../types/types';
+import { resolveShortUrl, isShortCode } from '../../../providers/tiktok/conversation';
 
 export const tiktokVideoRequest = async (c: Context) => {
   console.log('tiktok video request!!!');
-  const { id } = c.req.param();
+  let { id } = c.req.param();
+
+  // Check if this is a shorthand URL (e.g., /t/ZP8yxgATu)
+  // Shorthand codes are alphanumeric, while video IDs are purely numeric
+  if (isShortCode(id)) {
+    console.log('Detected shorthand code:', id);
+    const resolved = await resolveShortUrl(id);
+    if (!resolved) {
+      console.error('Failed to resolve shorthand URL:', id);
+      return c.text(Strings.ERROR_UNKNOWN, 404);
+    }
+    id = resolved.videoId;
+    console.log('Resolved to video ID:', id);
+  }
 
   const userAgent = c.req.header('User-Agent') || '';
   const url = new URL(c.req.url);

@@ -77,7 +77,12 @@ export const buildAPIBskyPost = async (
         url: status.embeds[0].playlist ?? '',
         format: video.mimeType ?? 'video/mp4',
         thumbnail_url: status.embeds[0].thumbnail ?? '',
-        variants: [],
+        formats: [
+          {
+            url: status.embeds[0].playlist ?? '',
+            container: 'm3u8' as const
+          }
+        ],
         width: status.embeds[0].aspectRatio?.width ?? status.embed.aspectRatio?.width,
         height: status.embeds[0].aspectRatio?.height ?? status.embed.aspectRatio?.height,
         duration: 0
@@ -93,10 +98,6 @@ export const buildAPIBskyPost = async (
         {
           type: 'gif',
           url: external?.uri,
-          duration: 0,
-          variants: [],
-          format: 'image/gif',
-          thumbnail_url: external?.thumb?.ref?.$link ?? '',
           width: 0,
           height: 0
         }
@@ -160,7 +161,13 @@ export const buildAPIBskyPost = async (
         url: videoUrl,
         format: video?.mimeType ?? 'video/mp4',
         thumbnail_url: status.embed?.thumbnail ?? status.embed?.media?.thumbnail ?? '',
-        variants: [],
+        formats: [
+          {
+            url: videoUrl,
+            container: 'mp4' as const,
+            codec: 'h264' as const
+          }
+        ],
         width: aspectRatio?.width,
         height: aspectRatio?.height,
         duration: 0

@@ -23,11 +23,27 @@ export interface TikTokFetchResult {
 }
 
 /**
- * Resolve a vm.tiktok.com short URL to get the video ID
+ * Resolve a TikTok short URL to get the video ID
+ * Handles both vm.tiktok.com and www.tiktok.com/t/ shorthand formats
  * These URLs redirect to the full video URL
+ *
+ * @param shortCode - Either just the code (e.g., "ZP8yxgATu") or a full shorthand URL
  */
 export const resolveShortUrl = async (shortCode: string): Promise<ResolvedTikTokUrl | null> => {
-  const shortUrl = `${TIKTOK_SHORT_HOST}/${shortCode}`;
+  // Determine if we need to construct a URL or if one was provided
+  let shortUrl: string;
+
+  if (shortCode.startsWith('http://') || shortCode.startsWith('https://')) {
+    // Full URL provided
+    shortUrl = shortCode;
+  } else if (shortCode.includes('/')) {
+    // Relative path provided (e.g., "/t/ZP8yxgATu/")
+    shortUrl = `${TIKTOK_WEB_HOST}${shortCode.startsWith('/') ? shortCode : '/' + shortCode}`;
+  } else {
+    // Just a code, use vm.tiktok.com (legacy format)
+    shortUrl = `${TIKTOK_SHORT_HOST}/${shortCode}`;
+  }
+
   console.log('Resolving TikTok short URL:', shortUrl);
 
   try {
@@ -200,8 +216,36 @@ const extractUniversalData = (html: string): TikTokUniversalData | null => {
 };
 
 /**
+ * Parse Set-Cookie header and extract all cookie name=value pairs
+ * Handles the complex format with multiple cookies and attributes
+ */
+const parseSetCookieHeader = (setCookieHeader: string): Map<string, string> => {
+  const cookies = new Map<string, string>();
+
+  // Set-Cookie headers can contain multiple cookies separated by commas
+  // but dates also contain commas, so we need to be careful
+  // The safest approach is to split on the pattern ", <cookie_name>="
+  const parts = setCookieHeader.split(/,\s*(?=[a-zA-Z_][a-zA-Z0-9_]*=)/);
+
+  for (const part of parts) {
+    // Get just the first segment before the first semicolon (the actual cookie)
+    const cookiePart = part.split(';')[0].trim();
+    const eqIndex = cookiePart.indexOf('=');
+    if (eqIndex > 0) {
+      const name = cookiePart.substring(0, eqIndex);
+      const value = cookiePart.substring(eqIndex + 1);
+      cookies.set(name, value);
+    }
+  }
+
+  return cookies;
+};
+
+/**
  * Fetch video page and extract embedded data
  * Also captures cookies needed for video proxy
+ *
+ * Key cookie: tt_chain_token - required for video CDN authentication
  */
 const fetchVideoPage = async (videoId: string): Promise<TikTokFetchResult> => {
   const url = `${TIKTOK_WEB_HOST}/@a/video/${videoId}`;
@@ -230,16 +274,50 @@ const fetchVideoPage = async (videoId: string): Promise<TikTokFetchResult> => {
     );
 
     // Capture cookies from TikTok's response (needed for video proxy)
+    // The critical cookie is tt_chain_token - it's referenced in video URLs as tk=tt_chain_token
     const setCookieHeader = response.headers.get('set-cookie');
     let cookies: string | null = null;
     if (setCookieHeader) {
-      // Extract just the cookie name=value pairs, not the metadata
-      const cookieParts = setCookieHeader
-        .split(/,(?=[^;]*=)/) // Split on comma that precedes a cookie name
-        .map(c => c.split(';')[0].trim()) // Get just the name=value part
-        .filter(c => c.includes('='));
+      const parsedCookies = parseSetCookieHeader(setCookieHeader);
+
+      // Log the cookies we found (for debugging)
+      console.log('Parsed cookies:', Array.from(parsedCookies.keys()).join(', '));
+
+      // tt_chain_token is the most important cookie for video CDN auth
+      const ttChainToken = parsedCookies.get('tt_chain_token');
+      if (ttChainToken) {
+        console.log('Found tt_chain_token');
+      }
+
+      // Build cookie string for the proxy - include important cookies
+      // Priority: tt_chain_token, sid_tt, sessionid
+      const importantCookies = [
+        'tt_chain_token',
+        'sid_tt',
+        'sessionid',
+        'tt_csrf_token',
+        'odin_tt'
+      ];
+      const cookieParts: string[] = [];
+      for (const name of importantCookies) {
+        const value = parsedCookies.get(name);
+        if (value) {
+          cookieParts.push(`${name}=${value}`);
+        }
+      }
+
+      // If we didn't get any important cookies, include all of them
+      if (cookieParts.length === 0) {
+        for (const [name, value] of parsedCookies) {
+          cookieParts.push(`${name}=${value}`);
+        }
+      }
+
       cookies = cookieParts.join('; ');
-      console.log('Captured TikTok cookies:', cookies);
+      console.log(
+        'Captured TikTok cookies:',
+        cookies.substring(0, 100) + (cookies.length > 100 ? '...' : '')
+      );
     }
 
     if (!response.ok) {
@@ -403,31 +481,43 @@ const buildApiQuery = (videoId: string, deviceId: string): URLSearchParams => {
 /**
  * Fetch video data using mobile API (most comprehensive data)
  * Based on yt-dlp's implementation with key additions:
+ * - Uses POST to multi/aweme/detail (like yt-dlp, more reliable than GET)
  * - odin_tt cookie (160 hex chars) for API authentication
  * - Proper User-Agent matching app version
  * - openudid parameter
+ * - X-Argus header (empty string, but required)
  */
 const fetchMobileApi = async (videoId: string): Promise<TikTokAwemeDetail | null> => {
   const deviceId = generateDeviceId();
   const query = buildApiQuery(videoId, deviceId);
-  const apiUrl = `${TIKTOK_API_HOST}/aweme/v1/aweme/detail/?${query.toString()}`;
+
+  // yt-dlp uses multi/aweme/detail with POST instead of aweme/detail with GET
+  const apiUrl = `${TIKTOK_API_HOST}/aweme/v1/multi/aweme/detail/?${query.toString()}`;
 
   // Generate odin_tt cookie - 160 random hex characters (critical for API auth per yt-dlp)
   const odinTt = generateHexString(160);
 
-  console.log('Fetching TikTok mobile API');
-  console.log('API URL:', apiUrl);
+  console.log('Fetching TikTok mobile API (POST multi/aweme/detail)');
 
   try {
+    // POST body with aweme_ids array (per yt-dlp)
+    const postData = new URLSearchParams({
+      aweme_ids: `[${videoId}]`,
+      request_source: '0'
+    });
+
     const response = await withTimeout((signal: AbortSignal) =>
       fetch(apiUrl, {
+        method: 'POST',
         headers: {
           'User-Agent': TIKTOK_MOBILE_UA,
           'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Cookie': `odin_tt=${odinTt}`,
           'Accept-Encoding': 'gzip, deflate',
-          'Connection': 'keep-alive'
+          'X-Argus': '' // Empty string but required per yt-dlp
         },
+        body: postData.toString(),
         signal
       })
     );
@@ -445,10 +535,22 @@ const fetchMobileApi = async (videoId: string): Promise<TikTokAwemeDetail | null
     console.log('Response length:', text.length);
     console.log('Response preview:', text.substring(0, 500));
 
-    const data = JSON.parse(text) as TikTokApiResponse;
+    // Parse the response - yt-dlp expects aweme_details array
+    const data = JSON.parse(text) as {
+      aweme_details?: TikTokAwemeDetail[];
+      aweme_detail?: TikTokAwemeDetail;
+      status_code?: number;
+    };
 
+    // Try aweme_details array first (multi endpoint)
+    if (data.aweme_details && data.aweme_details.length > 0) {
+      console.log('Extracted video data from mobile API (multi endpoint)');
+      return data.aweme_details[0];
+    }
+
+    // Fallback to single aweme_detail
     if (data.aweme_detail) {
-      console.log('Extracted video data from mobile API');
+      console.log('Extracted video data from mobile API (single endpoint)');
       return data.aweme_detail;
     }
 
@@ -542,10 +644,12 @@ export const isShortCode = (identifier: string): boolean => {
  * @param id - The TikTok video ID
  * @param proxyBase - Optional base URL for the video proxy (e.g., https://fxtwitter.com)
  *                    If provided, video URLs will be routed through the proxy
+ * @param userAgent - Optional user agent string for Telegram detection and size optimization
  */
 export const constructTikTokVideo = async (
   id: string,
-  proxyBase: string | null = null
+  proxyBase: string | null = null,
+  userAgent?: string
 ): Promise<SocialThread> => {
   const video = await fetchTikTokVideo(id);
   if (video.code !== 200) {
@@ -556,7 +660,7 @@ export const constructTikTokVideo = async (
       code: 404
     };
   }
-  const status = await buildAPITikTokStatus(video.video!, video.cookies, proxyBase);
+  const status = await buildAPITikTokStatus(video.video!, video.cookies, proxyBase, userAgent);
   return {
     status: status,
     thread: [],

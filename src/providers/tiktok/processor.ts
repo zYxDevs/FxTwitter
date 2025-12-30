@@ -1,5 +1,5 @@
 import { DataProvider } from '../../enum';
-import { APIStatus, APIPhoto, APIVideo } from '../../types/types';
+import { APIPhoto, APIVideo, APITikTokStatus, APIVideoFormat } from '../../types/types';
 
 const TIKTOK_ROOT = 'https://www.tiktok.com';
 
@@ -19,35 +19,226 @@ const isMobileApiData = (video: TikTokItemInfo | TikTokAwemeDetail): video is Ti
 };
 
 /**
- * Check if a URL is from a regional CDN (preferred) vs maliva CDN (often 403s)
+ * Score a URL for reliability (higher is better)
+ * Based on yt-dlp observations:
+ * - Regional CDNs (.us., .eu., useast, uswest) are most reliable
+ * - API URLs (aweme/v1) are less reliable and may get blocked
+ * - Maliva CDN often 403s for non-browser requests
  */
-const isRegionalCdnUrl = (url: string): boolean => {
+const scoreVideoUrl = (url: string): number => {
+  let score = 0;
+
   try {
-    const hostname = new URL(url).hostname;
-    // Regional CDNs have .us., .eu., useast, uswest etc. in the hostname
-    return (
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    const pathname = urlObj.pathname;
+
+    // Regional CDNs are preferred (most reliable)
+    if (
       hostname.includes('.us.') ||
       hostname.includes('.eu.') ||
       hostname.includes('useast') ||
       hostname.includes('uswest')
-    );
+    ) {
+      score += 10;
+    }
+
+    // API URLs are less reliable per yt-dlp
+    if (pathname.includes('aweme/v1')) {
+      score -= 5;
+    }
+
+    // Maliva CDN often 403s
+    if (hostname.includes('maliva')) {
+      score -= 8;
+    }
+
+    // Prefer webapp URLs
+    if (hostname.includes('webapp')) {
+      score += 3;
+    }
+
+    // v16/v19 CDNs are generally good
+    if (hostname.match(/v\d+-webapp/)) {
+      score += 5;
+    }
   } catch {
-    return false;
+    score = -100;
   }
+
+  return score;
 };
 
 /**
- * Check if a URL is from the maliva CDN (often 403s from non-browser requests)
+ * Video variant with metadata
  */
-const isMalivaCdnUrl = (url: string): boolean => {
-  return url.includes('maliva');
+interface VideoVariant extends APIVideoFormat {
+  url: string;
+  score: number; // Reliability score
+}
+
+/**
+ * Extract all available video variants with metadata
+ * Returns an array of variants sorted by reliability score (highest first)
+ */
+const extractVideoVariants = (video: TikTokItemInfo | TikTokAwemeDetail): VideoVariant[] => {
+  let variants: VideoVariant[] = [];
+
+  if (isWebApiData(video)) {
+    // Check bitrateInfo for additional URLs with quality info
+    if (video.video?.bitrateInfo) {
+      for (const format of video.video.bitrateInfo) {
+        if (format.PlayAddr?.UrlList) {
+          variants.push({
+            url: format.PlayAddr.UrlList[0],
+            bitrate: format.Bitrate,
+            size: parseInt(format.PlayAddr.DataSize, 10),
+            container: format.Format,
+            codec: format.CodecType === 'h265_hvc1' ? 'hevc' : 'h264',
+            width: format.PlayAddr.Width,
+            height: format.PlayAddr.Height,
+            score: scoreVideoUrl(format.PlayAddr.UrlList[0])
+          });
+        }
+      }
+    }
+    // Only add the playAddr and downloadAddr if they are not in the bitrateInfo array
+    if (video.video?.playAddr) {
+      variants.push({
+        url: video.video.playAddr,
+        container: video.video.format as 'mp4' | 'webm' | 'm3u8' | undefined,
+        codec: video.video.codecType === 'h265_hvc1' ? 'hevc' : 'h264',
+        bitrate: video.video.bitrate,
+        size: parseInt(video.video.size || '0', 10),
+        width: video.video.width,
+        height: video.video.height,
+        score: scoreVideoUrl(video.video.playAddr)
+      });
+    }
+    if (video.video?.downloadAddr) {
+      variants.push({
+        url: video.video.downloadAddr,
+        container: video.video.format as 'mp4' | 'webm' | 'm3u8' | undefined,
+        codec: video.video.codecType === 'h265_hvc1' ? 'hevc' : 'h264',
+        bitrate: video.video.bitrate,
+        size: parseInt(video.video.size || '0', 10),
+        width: video.video.width,
+        height: video.video.height,
+        score: scoreVideoUrl(video.video.downloadAddr)
+      });
+    }
+    // Deduplicate based on url
+    variants = variants.filter(
+      (variant, index, self) => index === self.findIndex(v => v.url === variant.url)
+    );
+  } else if (isMobileApiData(video)) {
+    // Mobile API format - collect all URLs from bit_rate variants
+    const bitRates = video.video?.bit_rate;
+    if (bitRates && bitRates.length > 0) {
+      for (const rate of bitRates) {
+        if (rate?.play_addr?.url_list) {
+          for (const url of rate.play_addr.url_list) {
+            variants.push({
+              url: url,
+              size: rate.play_addr.data_size,
+              // TODO: Check API manually to see if we can get the container and codec
+              container: 'mp4',
+              codec: 'h264',
+              bitrate: rate.bit_rate,
+              width: rate.play_addr.width,
+              height: rate.play_addr.height,
+              score: scoreVideoUrl(url)
+            });
+          }
+        }
+      }
+    }
+    // Also check standard play/download addresses
+    if (video.video?.play_addr?.url_list) {
+      for (const url of video.video.play_addr.url_list) {
+        variants.push({
+          url: url,
+          size: video.video.play_addr.data_size,
+          container: 'mp4',
+          codec: 'h264',
+          width: video.video.play_addr.width,
+          height: video.video.play_addr.height,
+          score: scoreVideoUrl(url)
+        });
+      }
+    }
+    if (video.video?.download_addr?.url_list) {
+      for (const url of video.video.download_addr.url_list) {
+        variants.push({
+          url: url,
+          size: video.video.download_addr.data_size,
+          container: 'mp4',
+          codec: 'h264',
+          width: video.video.download_addr.width,
+          height: video.video.download_addr.height,
+          score: scoreVideoUrl(url)
+        });
+      }
+    }
+  }
+
+  // Remove duplicates based on URL
+  const uniqueVariants = variants.filter(
+    (variant, index, self) => index === self.findIndex(v => v.url === variant.url)
+  );
+
+  // Sort by score (highest first)
+  return uniqueVariants.sort((a, b) => b.score - a.score);
+};
+
+/**
+ * Select the best video variant for a given context
+ * @param variants - Array of video variants
+ * @param maxFilesize - Maximum file size in bytes (e.g., 20MB for Telegram)
+ * @returns The best variant that fits the constraints
+ */
+const selectBestVariant = (variants: VideoVariant[], maxFilesize?: number): VideoVariant | null => {
+  if (variants.length === 0) return null;
+
+  // If no size constraint, return the highest scored variant
+  if (!maxFilesize) {
+    return variants[0];
+  }
+
+  // Filter variants that fit within the size limit
+  const fittingVariants = variants.filter(v => !v.size || v.size <= maxFilesize);
+
+  if (fittingVariants.length === 0) {
+    // No variants fit, return the smallest one we have
+    const withSize = variants.filter(v => v.size);
+    if (withSize.length > 0) {
+      return withSize.sort((a, b) => (a.size || 0) - (b.size || 0))[0];
+    }
+    // Fallback to highest scored variant
+    return variants[0];
+  }
+
+  // Among fitting variants, prefer highest quality (by bitrate or dimensions)
+  return fittingVariants.sort((a, b) => {
+    // First compare by bitrate if available
+    if (a.bitrate && b.bitrate) {
+      return b.bitrate - a.bitrate;
+    }
+    // Then by resolution
+    if (a.width && b.width && a.height && b.height) {
+      return b.width * b.height - a.width * a.height;
+    }
+    // Finally by score
+    return b.score - a.score;
+  })[0];
 };
 
 /**
  * Extract the best quality video URL from video data
- * Prefers regional CDN URLs over maliva URLs which often 403
+ * Uses scoring to prefer reliable CDN URLs over potentially blocked ones
+ * @deprecated Use extractVideoVariants and selectBestVariant for better control
  */
-const extractVideoUrl = (video: TikTokItemInfo | TikTokAwemeDetail): string => {
+const _extractVideoUrl = (video: TikTokItemInfo | TikTokAwemeDetail): string => {
   const candidateUrls: string[] = [];
 
   if (isWebApiData(video)) {
@@ -58,7 +249,9 @@ const extractVideoUrl = (video: TikTokItemInfo | TikTokAwemeDetail): string => {
     // Check bitrateInfo for additional URLs (may have regional CDN)
     if (video.video?.bitrateInfo) {
       for (const format of video.video.bitrateInfo) {
-        if (format.url) candidateUrls.push(format.url);
+        if (format.PlayAddr?.UrlList) {
+          candidateUrls.push(...format.PlayAddr.UrlList);
+        }
       }
     }
   } else if (isMobileApiData(video)) {
@@ -82,36 +275,29 @@ const extractVideoUrl = (video: TikTokItemInfo | TikTokAwemeDetail): string => {
     }
   }
 
+  // Remove duplicates
+  const uniqueUrls = [...new Set(candidateUrls)];
+
   // Log all candidates for debugging
   console.log(
     'Video URL candidates:',
-    candidateUrls.map(u => {
+    uniqueUrls.map(u => {
       try {
-        return new URL(u).hostname;
+        const urlObj = new URL(u);
+        return `${urlObj.hostname} (score: ${scoreVideoUrl(u)})`;
       } catch {
         return 'invalid';
       }
     })
   );
 
-  // Prioritize regional CDN URLs
-  const regionalUrl = candidateUrls.find(url => isRegionalCdnUrl(url));
-  if (regionalUrl) {
-    console.log('Using regional CDN URL');
-    return regionalUrl;
-  }
+  // Sort by score (highest first) and return the best one
+  const sortedUrls = uniqueUrls.sort((a, b) => scoreVideoUrl(b) - scoreVideoUrl(a));
 
-  // Fall back to non-maliva URLs
-  const nonMalivaUrl = candidateUrls.find(url => !isMalivaCdnUrl(url));
-  if (nonMalivaUrl) {
-    console.log('Using non-maliva URL');
-    return nonMalivaUrl;
-  }
-
-  // Last resort: use whatever we have
-  if (candidateUrls.length > 0) {
-    console.log('Using maliva URL (last resort)');
-    return candidateUrls[0];
+  if (sortedUrls.length > 0) {
+    const bestUrl = sortedUrls[0];
+    console.log('Selected URL with score:', scoreVideoUrl(bestUrl));
+    return bestUrl;
   }
 
   return '';
@@ -383,12 +569,14 @@ const generateProxyUrl = (
  * @param video - The TikTok video data
  * @param cookies - Cookies captured from TikTok page (for video proxy)
  * @param proxyBase - Base URL for the proxy endpoint (e.g., https://fxtwitter.com)
+ * @param userAgent - User agent string to detect Telegram and apply size limits
  */
 export const buildAPITikTokStatus = async (
   video: TikTokItemInfo | TikTokAwemeDetail,
   cookies: string | null = null,
-  proxyBase: string | null = null
-): Promise<APIStatus> => {
+  proxyBase: string | null = null,
+  userAgent?: string
+): Promise<APITikTokStatus> => {
   console.log('building tiktok status', JSON.stringify(video));
   const videoId = extractVideoId(video);
   const author = extractAuthor(video);
@@ -402,7 +590,7 @@ export const buildAPITikTokStatus = async (
   console.log('createdAt', JSON.stringify(createdAt));
   console.log('music', JSON.stringify(music));
 
-  const apiStatus: APIStatus = {
+  const apiStatus: APITikTokStatus = {
     id: videoId,
     url: `${TIKTOK_ROOT}/@${author.screen_name}/video/${videoId}`,
     text: description,
@@ -411,6 +599,7 @@ export const buildAPITikTokStatus = async (
     likes: stats.likes,
     reposts: stats.reposts,
     replies: stats.replies,
+    views: stats.views,
     author: author,
     media: {},
     raw_text: {
@@ -435,33 +624,67 @@ export const buildAPITikTokStatus = async (
     }
   } else {
     // Regular video post
-    let videoUrl = extractVideoUrl(video);
     const thumbnailUrl = extractThumbnailUrl(video);
     const dimensions = extractVideoDimensions(video);
     const duration = extractDuration(video);
 
-    if (videoUrl) {
-      // Route through our proxy if a proxy base is provided
-      // This ensures proper headers/cookies are sent to TikTok's CDN
-      if (proxyBase) {
-        console.log('Routing TikTok video through proxy:', proxyBase);
-        videoUrl = generateProxyUrl(videoUrl, cookies, proxyBase, videoId);
+    // Extract all available video variants
+    const allVariants = extractVideoVariants(video);
+
+    if (allVariants.length > 0) {
+      // Detect if this is Telegram (has 20 MB file size limit)
+      const isTelegram = userAgent?.toLowerCase().includes('telegram') || false;
+      const TELEGRAM_MAX_SIZE = 20 * 1024 * 1024; // 20 MB in bytes
+
+      // Select the best variant based on constraints
+      const selectedVariant = selectBestVariant(
+        allVariants,
+        isTelegram ? TELEGRAM_MAX_SIZE : undefined
+      );
+
+      if (selectedVariant) {
+        let videoUrl = selectedVariant.url;
+
+        // Route through our proxy if a proxy base is provided
+        // This ensures proper headers/cookies are sent to TikTok's CDN
+        if (proxyBase) {
+          console.log('Routing TikTok video through proxy:', proxyBase);
+          videoUrl = generateProxyUrl(videoUrl, cookies, proxyBase, videoId);
+        }
+
+        // Build formats array with proxied URLs
+        const formats: APIVideoFormat[] = allVariants.map(v => ({
+          url: proxyBase ? generateProxyUrl(v.url, cookies, proxyBase, videoId) : v.url,
+          bitrate: v.bitrate,
+          container: v.container,
+          codec: v.codec,
+          size: v.size,
+          width: v.width,
+          height: v.height
+        }));
+
+        const videoMedia: APIVideo = {
+          type: 'video',
+          url: videoUrl,
+          thumbnail_url: thumbnailUrl,
+          width: selectedVariant.width || dimensions.width,
+          height: selectedVariant.height || dimensions.height,
+          duration: duration,
+          format: 'video/mp4',
+          filesize: selectedVariant.size,
+          formats: formats
+        };
+
+        if (isTelegram && selectedVariant.size) {
+          console.log(
+            `Selected Telegram-friendly variant: ${(selectedVariant.size / 1024 / 1024).toFixed(2)} MB`
+          );
+        }
+
+        apiStatus.media.videos = [videoMedia];
+        apiStatus.media.all = [videoMedia];
+        apiStatus.embed_card = 'player';
       }
-
-      const videoMedia: APIVideo = {
-        type: 'video',
-        url: videoUrl,
-        thumbnail_url: thumbnailUrl,
-        width: dimensions.width,
-        height: dimensions.height,
-        duration: duration,
-        format: 'video/mp4',
-        variants: []
-      };
-
-      apiStatus.media.videos = [videoMedia];
-      apiStatus.media.all = [videoMedia];
-      apiStatus.embed_card = 'player';
     }
   }
 

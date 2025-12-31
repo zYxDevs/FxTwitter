@@ -91,7 +91,7 @@ const extractVideoVariants = (video: TikTokItemInfo | TikTokAwemeDetail): VideoV
           variants.push({
             url: format.PlayAddr.UrlList[0],
             bitrate: format.Bitrate,
-            size: parseInt(format.PlayAddr.DataSize, 10),
+            size: parseInt(format.PlayAddr.DataSize, 10) || undefined,
             container: format.Format,
             codec: format.CodecType === 'h265_hvc1' ? 'hevc' : 'h264',
             width: format.PlayAddr.Width,
@@ -108,7 +108,7 @@ const extractVideoVariants = (video: TikTokItemInfo | TikTokAwemeDetail): VideoV
         container: video.video.format as 'mp4' | 'webm' | 'm3u8' | undefined,
         codec: video.video.codecType === 'h265_hvc1' ? 'hevc' : 'h264',
         bitrate: video.video.bitrate,
-        size: parseInt(video.video.size || '0', 10),
+        size: parseInt(video.video.size || '0', 10) || undefined,
         width: video.video.width,
         height: video.video.height,
         score: scoreVideoUrl(video.video.playAddr)
@@ -120,7 +120,7 @@ const extractVideoVariants = (video: TikTokItemInfo | TikTokAwemeDetail): VideoV
         container: video.video.format as 'mp4' | 'webm' | 'm3u8' | undefined,
         codec: video.video.codecType === 'h265_hvc1' ? 'hevc' : 'h264',
         bitrate: video.video.bitrate,
-        size: parseInt(video.video.size || '0', 10),
+        size: parseInt(video.video.size || '0', 10) || undefined,
         width: video.video.width,
         height: video.video.height,
         score: scoreVideoUrl(video.video.downloadAddr)

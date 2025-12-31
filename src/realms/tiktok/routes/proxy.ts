@@ -4,6 +4,54 @@ import { generateUserAgent } from '../../../helpers/useragent';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 
 /**
+ * Allowed TikTok CDN domains
+ */
+const ALLOWED_TIKTOK_DOMAINS = [
+  'tiktokcdn.com',
+  'tiktokcdn-us.com',
+  'tiktok.com',
+  'bytedance.com',
+  'bytedance.net',
+  'musical.ly',
+  'byteimg.com'
+];
+
+/**
+ * Validates that a hostname is from an allowed domain
+ * Rejects IP addresses, empty hostnames, and invalid domains
+ * Only accepts exact domain matches or proper subdomains
+ *
+ * @param hostname - The hostname to validate
+ * @param allowedDomains - Array of allowed domains
+ * @returns true if the hostname is valid, false otherwise
+ */
+function isAllowedDomain(hostname: string, allowedDomains: string[]): boolean {
+  if (!hostname) {
+    return false;
+  }
+
+  // Normalize hostname to lowercase
+  const normalizedHostname = hostname.toLowerCase();
+
+  // Check against each allowed domain
+  for (const allowedDomain of allowedDomains) {
+    const normalizedAllowedDomain = allowedDomain.toLowerCase();
+
+    // Exact match
+    if (normalizedHostname === normalizedAllowedDomain) {
+      return true;
+    }
+
+    // Subdomain match (must end with .allowedDomain)
+    if (normalizedHostname.endsWith('.' + normalizedAllowedDomain)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * TikTok video proxy endpoint
  * Fetches TikTok videos with proper headers/cookies and streams them back
  * This is needed because TikTok's CDN often 403s direct requests without proper auth
@@ -28,11 +76,7 @@ export const tiktokVideoProxy = async (c: Context) => {
   try {
     // Validate the URL is from TikTok's CDN
     const url = new URL(videoUrl);
-    if (
-      !url.hostname.includes('tiktok') &&
-      !url.hostname.includes('bytedance') &&
-      !url.hostname.includes('musical.ly')
-    ) {
+    if (!isAllowedDomain(url.hostname, ALLOWED_TIKTOK_DOMAINS)) {
       return c.json({ error: 'Invalid video URL - must be from TikTok CDN' }, 400);
     }
 

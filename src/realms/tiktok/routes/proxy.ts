@@ -196,9 +196,7 @@ async function tryFetchWithStrategies(
  * Extract video URL from TikTok video data
  * Handles both web API and mobile API formats
  */
-function extractVideoUrlFromData(
-  video: TikTokItemInfo | TikTokAwemeDetail
-): string | null {
+function extractVideoUrlFromData(video: TikTokItemInfo | TikTokAwemeDetail): string | null {
   // Web API format
   if ('createTime' in video && video.video?.playAddr) {
     return video.video.playAddr;
@@ -216,10 +214,7 @@ function extractVideoUrlFromData(
         // Prefer non-maliva URLs
         const regionalUrl = urls.find(
           (u: string) =>
-            u.includes('.us.') ||
-            u.includes('.eu.') ||
-            u.includes('useast') ||
-            u.includes('uswest')
+            u.includes('.us.') || u.includes('.eu.') || u.includes('useast') || u.includes('uswest')
         );
         return regionalUrl || urls[0];
       }

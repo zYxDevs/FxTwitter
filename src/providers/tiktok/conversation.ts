@@ -414,7 +414,9 @@ const generateDeviceId = (): string => {
   const min = 7250000000000000000n;
   const max = 7325099899999994577n;
   const range = max - min;
-  const random = BigInt(Math.floor(Math.random() * Number(range)));
+  const high = BigInt(Math.floor(Math.random() * 0x100000000)) << 32n;
+  const low = BigInt(Math.floor(Math.random() * 0x100000000));
+  const random = (high | low) % range;
   return String(min + random);
 };
 

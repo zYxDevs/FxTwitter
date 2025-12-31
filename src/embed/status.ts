@@ -757,7 +757,6 @@ export const handleStatus = async (
     }
     const snowflake = encodeSnowcode(data);
     console.log('snowflake', snowflake);
-    /* Convince Discord that you are actually a Mastodon link lol */
     let base: string;
     switch (status.provider) {
       case DataProvider.Bsky:
@@ -777,6 +776,7 @@ export const handleStatus = async (
       console.log('couldnt parse hostname for some reason', e);
     }
 
+    /* Convince Discord that you are actually a Mastodon link lol */
     headers.push(
       `<link href='{base}/users/{author}/statuses/{status}' rel='alternate' type='application/activity+json'>`.format(
         {

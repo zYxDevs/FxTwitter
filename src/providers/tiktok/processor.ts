@@ -506,18 +506,12 @@ export const buildAPITikTokStatus = async (
   proxyBase: string | null = null,
   userAgent?: string
 ): Promise<APITikTokStatus> => {
-  console.log('building tiktok status', JSON.stringify(video));
   const videoId = extractVideoId(video);
   const author = extractAuthor(video);
   const stats = extractStats(video);
   const description = extractDescription(video);
   const createdAt = extractCreatedAt(video);
   const music = extractMusic(video);
-  console.log('author', JSON.stringify(author));
-  console.log('stats', JSON.stringify(stats));
-  console.log('description', JSON.stringify(description));
-  console.log('createdAt', JSON.stringify(createdAt));
-  console.log('music', JSON.stringify(music));
 
   const apiStatus: APITikTokStatus = {
     id: videoId,
@@ -561,7 +555,8 @@ export const buildAPITikTokStatus = async (
     const allVariants = extractVideoVariants(video);
 
     if (allVariants.length > 0) {
-      // Detect if this is Telegram (has 20 MB file size limit)
+      // Telegram has a 20 MiB size limit so we should try to find the best video within that size limit
+      // TODO: Maybe limit non-Telegram/Discord to only h264 and 20 MiB?
       const isTelegram = userAgent?.toLowerCase().includes('telegram') || false;
       const TELEGRAM_MAX_SIZE = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -577,7 +572,6 @@ export const buildAPITikTokStatus = async (
         // Route through our proxy if a proxy base is provided
         // This ensures proper headers/cookies are sent to TikTok's CDN
         if (proxyBase) {
-          console.log('Routing TikTok video through proxy:', proxyBase);
           videoUrl = generateProxyUrl(videoUrl, cookies, proxyBase, videoId);
         }
 
@@ -617,8 +611,5 @@ export const buildAPITikTokStatus = async (
     }
   }
 
-  // TODO: Add translation support similar to Twitter/Bluesky if needed
-
-  console.log('Built TikTok API status:', JSON.stringify(apiStatus));
   return apiStatus;
 };

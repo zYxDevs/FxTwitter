@@ -1,4 +1,4 @@
-/* TikTok API types based on yt-dlp's tiktok.py extractor */
+/* TikTok API types */
 
 declare interface TikTokAuthor {
   id: string;

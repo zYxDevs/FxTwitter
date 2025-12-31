@@ -1,18 +1,20 @@
 import { Context } from 'hono';
 import { fetchTikTokVideo } from '../../../providers/tiktok/conversation';
+import { Constants } from '../../../constants';
+import { generateUserAgent } from '../../../helpers/useragent';
 
 /**
  * TikTok video proxy endpoint
  * Fetches TikTok videos with proper headers/cookies and streams them back
  * This is needed because TikTok's CDN often 403s direct requests without proper auth
  *
- * Key insights from yt-dlp:
+ * Some useful tips:
  * 1. Don't send Sec-Fetch-* headers - they can trigger bot detection
  * 2. The tt_chain_token cookie must be sent to the CDN hostname
  * 3. Referer should be the actual video page URL
  * 4. Keep headers minimal and consistent
  *
- * Usage: /tiktok/proxy?url=<encoded_video_url>&cookies=<encoded_cookies>&videoId=<id>
+ * Usage: /proxy?url=<encoded_video_url>&cookies=<encoded_cookies>&videoId=<id>
  */
 export const tiktokVideoProxy = async (c: Context) => {
   const videoUrl = c.req.query('url');
@@ -119,15 +121,16 @@ async function tryFetchWithStrategies(
   c: Context
 ): Promise<Response> {
   const rangeHeader = c.req.header('Range');
+  const [userAgent, secChUa] = generateUserAgent();
 
-  // Strategy 1: Minimal headers (most likely to work based on yt-dlp analysis)
-  // yt-dlp doesn't send Sec-Fetch-* headers for video downloads
+  // For other providers, we are usually better off with the full headers
+  // But for TikTok, it usually fails if you include that many headers. No idea how that makes sense.
   const minimalHeaders: Record<string, string> = {
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-    Accept: '*/*',
+    'User-Agent': userAgent,
+    'sec-ch-ua': secChUa,
+    'Accept': '*/*',
     'Accept-Language': 'en-US,en;q=0.9',
-    Referer: refererUrl
+    'Referer': refererUrl
   };
 
   // Add cookies if provided

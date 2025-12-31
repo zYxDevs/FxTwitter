@@ -20,7 +20,6 @@ const isMobileApiData = (video: TikTokItemInfo | TikTokAwemeDetail): video is Ti
 
 /**
  * Score a URL for reliability (higher is better)
- * Based on yt-dlp observations:
  * - Regional CDNs (.us., .eu., useast, uswest) are most reliable
  * - API URLs (aweme/v1) are less reliable and may get blocked
  * - Maliva CDN often 403s for non-browser requests
@@ -43,7 +42,7 @@ const scoreVideoUrl = (url: string): number => {
       score += 10;
     }
 
-    // API URLs are less reliable per yt-dlp
+    // aweme URLs are less reliable
     if (pathname.includes('aweme/v1')) {
       score -= 5;
     }

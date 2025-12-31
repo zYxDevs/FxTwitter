@@ -408,7 +408,7 @@ const fetchVideoPage = async (videoId: string): Promise<TikTokFetchResult> => {
 };
 
 /**
- * Build device ID for mobile API requests (similar to yt-dlp)
+ * Build device ID for mobile API requests
  */
 const generateDeviceId = (): string => {
   const min = 7250000000000000000n;
@@ -419,8 +419,8 @@ const generateDeviceId = (): string => {
 };
 
 /**
- * Build mobile API query parameters (based on yt-dlp)
- * Key params that yt-dlp uses that we need: openudid, proper aid, synced versions
+ * Build mobile API query parameters
+ * Key params that we need: openudid, proper aid, synced versions
  */
 const buildApiQuery = (videoId: string, deviceId: string): URLSearchParams => {
   // Version code is formatted as XXYYZZ from X.Y.Z (e.g., 35.1.3 -> 350103)
@@ -471,7 +471,6 @@ const buildApiQuery = (videoId: string, deviceId: string): URLSearchParams => {
     region: 'US',
     ts: String(Math.floor(Date.now() / 1000)),
     device_id: deviceId,
-    // Key missing params from yt-dlp:
     openudid: generateHexString(16)
   });
 
@@ -480,8 +479,7 @@ const buildApiQuery = (videoId: string, deviceId: string): URLSearchParams => {
 
 /**
  * Fetch video data using mobile API (most comprehensive data)
- * Based on yt-dlp's implementation with key additions:
- * - Uses POST to multi/aweme/detail (like yt-dlp, more reliable than GET)
+ * - Uses POST to multi/aweme/detail (more reliable than GET)
  * - odin_tt cookie (160 hex chars) for API authentication
  * - Proper User-Agent matching app version
  * - openudid parameter
@@ -491,16 +489,15 @@ const fetchMobileApi = async (videoId: string): Promise<TikTokAwemeDetail | null
   const deviceId = generateDeviceId();
   const query = buildApiQuery(videoId, deviceId);
 
-  // yt-dlp uses multi/aweme/detail with POST instead of aweme/detail with GET
   const apiUrl = `${TIKTOK_API_HOST}/aweme/v1/multi/aweme/detail/?${query.toString()}`;
 
-  // Generate odin_tt cookie - 160 random hex characters (critical for API auth per yt-dlp)
+  // Generate odin_tt cookie - 160 random hex characters
   const odinTt = generateHexString(160);
 
   console.log('Fetching TikTok mobile API (POST multi/aweme/detail)');
 
   try {
-    // POST body with aweme_ids array (per yt-dlp)
+    // POST body with aweme_ids array
     const postData = new URLSearchParams({
       aweme_ids: `[${videoId}]`,
       request_source: '0'
@@ -515,7 +512,7 @@ const fetchMobileApi = async (videoId: string): Promise<TikTokAwemeDetail | null
           'Content-Type': 'application/x-www-form-urlencoded',
           'Cookie': `odin_tt=${odinTt}`,
           'Accept-Encoding': 'gzip, deflate',
-          'X-Argus': '' // Empty string but required per yt-dlp
+          'X-Argus': '' // yt-dlp sets this as an empty string, not sure if it's required or not
         },
         body: postData.toString(),
         signal
@@ -535,7 +532,7 @@ const fetchMobileApi = async (videoId: string): Promise<TikTokAwemeDetail | null
     console.log('Response length:', text.length);
     console.log('Response preview:', text.substring(0, 500));
 
-    // Parse the response - yt-dlp expects aweme_details array
+    // Parse the response
     const data = JSON.parse(text) as {
       aweme_details?: TikTokAwemeDetail[];
       aweme_detail?: TikTokAwemeDetail;

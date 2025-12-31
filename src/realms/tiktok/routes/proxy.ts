@@ -9,6 +9,7 @@ import { ContentfulStatusCode } from 'hono/utils/http-status';
 const ALLOWED_TIKTOK_DOMAINS = [
   'tiktokcdn.com',
   'tiktokcdn-us.com',
+  'tiktokcdn-eu.com',
   'tiktok.com',
   'bytedance.com',
   'bytedance.net',

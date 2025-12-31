@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { fetchTikTokVideo } from '../../../providers/tiktok/conversation';
 import { generateUserAgent } from '../../../helpers/useragent';
+import { ContentfulStatusCode } from 'hono/utils/http-status';
 
 /**
  * TikTok video proxy endpoint
@@ -71,7 +72,7 @@ export const tiktokVideoProxy = async (c: Context) => {
       console.error('TikTok CDN error:', response.status, await response.text().catch(() => ''));
       return c.json(
         { error: `TikTok CDN returned ${response.status}` },
-        response.status as 400 | 403 | 404 | 500
+        response.status as ContentfulStatusCode
       );
     }
 

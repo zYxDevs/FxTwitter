@@ -17,6 +17,23 @@ tiktok.get('/api/v1/statuses/:snowcode', activityRequest);
 tiktok.get('/proxy', tiktokVideoProxy);
 tiktok.options('/proxy', tiktokVideoProxyOptions);
 
+tiktok.get('/raw/:id', async c => {
+  const { id } = c.req.param();
+  if (!id) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+  const thread = await fetchTikTokVideo(id);
+  return c.json(thread);
+});
+tiktok.get('/api/:id', async c => {
+  const { id } = c.req.param();
+  if (!id) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+  const thread = await constructTikTokVideo(id);
+  return c.json(thread);
+});
+
 // Regular video URLs: /@username/video/1234567890
 tiktok.get('/:handle/video/:id', tiktokVideoRequest);
 

@@ -5,6 +5,7 @@ import { tiktokVideoRequest } from './routes/video';
 import { oembed } from './routes/oembed';
 import { tiktokVideoProxy, tiktokVideoProxyOptions } from './routes/proxy';
 import { trimTrailingSlash } from 'hono/trailing-slash';
+import { constructTikTokVideo, fetchTikTokVideo } from '../../providers/tiktok/conversation';
 
 export const tiktok = new Hono();
 tiktok.use(trimTrailingSlash());

@@ -7,7 +7,7 @@ import { handleActivity } from '../../../embed/activity';
 export const activityRequest = async (c: Context) => {
   const { snowcode } = c.req.param();
 
-  /* This throws the necessary data to handleStatus (in status.ts) */
+  /* This throws the necessary data to handleActivity (in activity.ts) */
   const statusResponse = await handleActivity(c, snowcode ?? '0', DataProvider.TikTok);
 
   if (statusResponse) {

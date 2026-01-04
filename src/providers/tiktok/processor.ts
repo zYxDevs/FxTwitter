@@ -544,15 +544,8 @@ export const buildAPITikTokStatus = async (
     provider: DataProvider.TikTok
   };
 
-  // Handle image slideshow posts
-  if (isImagePost(video)) {
-    const images = extractImages(video);
-    if (images.length > 0) {
-      apiStatus.media.photos = images;
-      apiStatus.media.all = images;
-      apiStatus.embed_card = 'summary_large_image';
-    }
-  } else {
+  // Handle video posts first (prioritize videos over images)
+  if (!isImagePost(video)) {
     // Regular video post
     const thumbnailUrl = extractThumbnailUrl(video);
     const dimensions = extractVideoDimensions(video);
@@ -616,6 +609,14 @@ export const buildAPITikTokStatus = async (
         apiStatus.media.all = [videoMedia];
         apiStatus.embed_card = 'player';
       }
+    }
+  } else {
+    // Image slideshow posts (only if no video)
+    const images = extractImages(video);
+    if (images.length > 0) {
+      apiStatus.media.photos = images;
+      apiStatus.media.all = images;
+      apiStatus.embed_card = 'summary_large_image';
     }
   }
 

@@ -8,6 +8,7 @@ declare interface TikTokAuthor {
   avatarMedium: string;
   avatarLarger: string;
   signature: string;
+  createTime: number;
   verified: boolean;
   secUid: string;
   openFavorite: boolean;
@@ -17,6 +18,7 @@ declare interface TikTokAuthor {
   heartCount?: number;
   videoCount?: number;
   diggCount?: number;
+  privateAccount?: boolean;
 }
 
 declare interface TikTokMusic {
@@ -74,6 +76,24 @@ declare interface TikTokVideo {
   size?: string;
   bitrateInfo?: TikTokVideoFormat[];
 }
+declare interface TikTokVideoStatsV2 {
+  diggCount: string;
+  shareCount: string;
+  commentCount: string;
+  playCount: string;
+  collectCount: string;
+  repostCount: string;
+}
+
+declare interface TikTokAuthorStatsV2 {
+  followerCount: string;
+  followingCount: string;
+  heart: string;
+  heartCount: string;
+  videoCount: string;
+  diggCount: string;
+  friendCount: string;
+}
 
 declare interface TikTokImagePost {
   images: TikTokImage[];
@@ -117,6 +137,8 @@ declare interface TikTokItemInfo {
   contents?: TikTokContent[];
   imagePost?: TikTokImagePost;
   textExtra?: TikTokTextExtra[];
+  statsV2: TikTokVideoStatsV2;
+  authorStatsV2: TikTokAuthorStatsV2;
 }
 
 declare interface TikTokContent {

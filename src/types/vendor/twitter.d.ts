@@ -51,7 +51,7 @@ type TweetMediaSize = {
   resize: 'crop' | 'fit';
 };
 
-type TweetMediaFormat = {
+type TweetMediaVariant = {
   bitrate: number;
   content_type: string;
   url: string;
@@ -89,7 +89,7 @@ type TweetMedia = {
   video_info?: {
     aspect_ratio: [number, number];
     duration_millis: number;
-    variants: TweetMediaFormat[];
+    variants: TweetMediaVariant[];
   };
 };
 

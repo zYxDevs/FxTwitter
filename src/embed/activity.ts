@@ -24,6 +24,7 @@ import {
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
+import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { renderArticleToHtml, DISCORD_ARTICLE_MAX_LENGTH } from '../helpers/article';
 import { TwitterApiMedia, TwitterApiImage, TwitterApiVideo } from '../types/vendor/twitter';
 
@@ -196,18 +197,26 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
 };
 
 const linkifyMentions = (text: string, status: APIStatus) => {
-  const baseUrl =
-    status.provider === DataProvider.Bsky
-      ? `${Constants.BSKY_ROOT}/profile`
-      : `${Constants.TWITTER_ROOT}`;
+  let baseUrl = '';
+  switch (status.provider) {
+    case DataProvider.Bsky:
+      baseUrl = `${Constants.BSKY_ROOT}/profile/`;
+      break;
+    case DataProvider.Twitter:
+      baseUrl = `${Constants.TWITTER_ROOT}/`;
+      break;
+    case DataProvider.TikTok:
+      baseUrl = `${Constants.TIKTOK_ROOT}/@`;
+      break;
+  }
   const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)/g);
 
   console.log('matches', matches);
   // deduplicate mentions
   [...new Set(matches ?? [])]?.forEach(mention => {
     text = text.replace(
-      new RegExp(`(?<!https?:\\/\\/[\\w.:/]+)${mention}(?=\\W|$)`, 'g'),
-      `<a href="${baseUrl}/${mention.slice(1)}">${mention}</a>`
+      new RegExp(`(?<!https?:\\/\\/[\\w.:/]+)${escapeRegex(mention)}(?=\\W|$)`, 'g'),
+      `<a href="${baseUrl}${mention.slice(1)}">${mention}</a>`
     );
   });
   console.log('text', text);
@@ -215,10 +224,18 @@ const linkifyMentions = (text: string, status: APIStatus) => {
 };
 
 const linkifyHashtags = (text: string, status: APIStatus) => {
-  const baseUrl =
-    status.provider === DataProvider.Bsky
-      ? `${Constants.BSKY_ROOT}/hashtag`
-      : `${Constants.TWITTER_ROOT}/hashtag`;
+  let baseUrl = '';
+  switch (status.provider) {
+    case DataProvider.Bsky:
+      baseUrl = `${Constants.BSKY_ROOT}/hashtag`;
+      break;
+    case DataProvider.Twitter:
+      baseUrl = `${Constants.TWITTER_ROOT}/hashtag`;
+      break;
+    case DataProvider.TikTok:
+      baseUrl = `${Constants.TIKTOK_ROOT}/tag`;
+      break;
+  }
   const matches = text.match(/(?<!https?:\/\/[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)/g);
   console.log('matches', matches);
   // deduplicate hashtags
@@ -251,15 +268,27 @@ const formatStatus = (text: string, status: APIStatus) => {
   if (status.raw_text && enableFacets) {
     text = status.raw_text.text;
 
-    const baseHashtagUrl =
-      status.provider === DataProvider.Bsky
-        ? `${Constants.BSKY_ROOT}/hashtag`
-        : `${Constants.TWITTER_ROOT}/hashtag`;
-    const baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
-    const baseMentionUrl =
-      status.provider === DataProvider.Bsky
-        ? `${Constants.BSKY_ROOT}/profile`
-        : `${Constants.TWITTER_ROOT}`;
+    let baseHashtagUrl = '';
+    let baseSymbolUrl = '';
+    let baseMentionUrl = '';
+
+    switch (status.provider) {
+      case DataProvider.Bsky:
+        baseHashtagUrl = `${Constants.BSKY_ROOT}/hashtag`;
+        baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.BSKY_ROOT}/profile/`;
+        break;
+      case DataProvider.Twitter:
+        baseHashtagUrl = `${Constants.TWITTER_ROOT}/hashtag`;
+        baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.TWITTER_ROOT}/`;
+        break;
+      case DataProvider.TikTok:
+        baseHashtagUrl = `${Constants.TIKTOK_ROOT}/tag`;
+        baseSymbolUrl = `${Constants.TIKTOK_ROOT}/search?q=%24`;
+        baseMentionUrl = `${Constants.TIKTOK_ROOT}/@`;
+        break;
+    }
     let offset = 0;
     status.raw_text.facets.forEach(facet => {
       let newFacet = '';
@@ -318,7 +347,7 @@ const formatStatus = (text: string, status: APIStatus) => {
           offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
           break;
         case 'mention':
-          newFacet = `<a href="${baseMentionUrl}/${facet.original}">@${facet.original}</a>`;
+          newFacet = `<a href="${baseMentionUrl}${facet.original}">@${facet.original}</a>`;
           text =
             text.slice(0, facet.indices[0] + offset) +
             newFacet +
@@ -380,6 +409,11 @@ export const handleActivity = async (
       c,
       language ?? undefined
     );
+  } else if (provider === DataProvider.TikTok) {
+    // Get proxy base URL from the current request for TikTok video proxy
+    const requestUrl = new URL(c.req.url);
+    const proxyBase = `${requestUrl.protocol}//${requestUrl.host}`;
+    thread = await constructTikTokVideo(statusId, proxyBase);
   } else {
     return returnError(c, Strings.ERROR_API_FAIL);
   }
@@ -425,7 +459,9 @@ export const handleActivity = async (
       acct: thread.status.author.screen_name,
       url: thread.status.url,
       uri: thread.status.url,
-      created_at: new Date(thread.status.author.joined).toISOString(),
+      created_at: thread.status.author.joined
+        ? new Date(thread.status.author.joined).toISOString()
+        : new Date().toISOString(),
       locked: false,
       bot: false,
       discoverable: true,
@@ -550,8 +586,10 @@ export const handleActivity = async (
               if (video.width < 400 || video.height < 400) {
                 sizeMultiplier = 2;
               }
+              // Apply video redirect workaround, but NOT for TikTok (needs its own proxy)
               if (
-                experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST)
+                experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
+                thread.status?.provider !== DataProvider.TikTok
               ) {
                 video.url = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(video.url)}`;
               }

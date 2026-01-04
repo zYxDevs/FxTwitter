@@ -80,7 +80,7 @@ export const buildAPIBskyPost = async (
         formats: [
           {
             url: status.embeds[0].playlist ?? '',
-            container: 'm3u8' as const
+            container: 'm3u8' as const // This is awful we should do something better
           }
         ],
         width: status.embeds[0].aspectRatio?.width ?? status.embed.aspectRatio?.width,

@@ -288,7 +288,6 @@ const extractDuration = (video: TikTokItemInfo | TikTokAwemeDetail): number => {
 const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
   if (isWebApiData(video)) {
     const author = video.author;
-    console.log(video.authorStatsV2);
     return {
       id: author?.id || author?.secUid || '',
       name: author?.nickname || author?.uniqueId || '',
@@ -297,13 +296,13 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
       banner_url: null,
       description: author?.signature || '',
       location: '',
-      followers: parseInt(video.authorStatsV2?.followerCount || '0', 10) || 0,
-      following: parseInt(video.authorStatsV2?.followingCount || '0', 10) || 0,
-      media_count: parseInt(video.authorStatsV2?.videoCount || '0', 10) || 0,
-      likes: parseInt(video.authorStatsV2?.heartCount || '0', 10) || 0,
+      followers: video.authorStats?.followerCount || 0,
+      following: video.authorStats?.followingCount || 0,
+      media_count: video.authorStats?.videoCount || 0,
+      likes: video.authorStats?.heartCount || 0,
       url: `${TIKTOK_ROOT}/@${author?.uniqueId || ''}`,
       protected: author?.privateAccount || false,
-      statuses: parseInt(video.authorStatsV2?.videoCount || '0', 10) || 0,
+      statuses: video.authorStats?.videoCount || 0,
       joined: author?.createTime ? new Date(author.createTime * 1000).toISOString() : '',
       birthday: null,
       website: null,

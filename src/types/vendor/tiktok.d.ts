@@ -85,6 +85,15 @@ declare interface TikTokVideoStatsV2 {
   repostCount: string;
 }
 
+declare interface TikTokAuthorStats {
+  followerCount: number;
+  followingCount: number;
+  heartCount: number;
+  videoCount: number;
+  diggCount: number;
+  friendCount: number;
+}
+
 declare interface TikTokAuthorStatsV2 {
   followerCount: string;
   followingCount: string;
@@ -93,6 +102,15 @@ declare interface TikTokAuthorStatsV2 {
   videoCount: string;
   diggCount: string;
   friendCount: string;
+}
+
+declare interface TikTokAuthorStats {
+  followerCount: number;
+  followingCount: number;
+  heartCount: number;
+  videoCount: number;
+  diggCount: number;
+  friendCount: number;
 }
 
 declare interface TikTokImagePost {
@@ -123,7 +141,6 @@ declare interface TikTokItemInfo {
   video: TikTokVideo;
   author: TikTokAuthor;
   music: TikTokMusic;
-  stats: TikTokStatistics;
   duetEnabled: boolean;
   stitchEnabled: boolean;
   shareEnabled: boolean;
@@ -138,7 +155,9 @@ declare interface TikTokItemInfo {
   imagePost?: TikTokImagePost;
   textExtra?: TikTokTextExtra[];
   statsV2: TikTokVideoStatsV2;
+  stats: TikTokStatistics;
   authorStatsV2: TikTokAuthorStatsV2;
+  authorStats: TikTokAuthorStats;
 }
 
 declare interface TikTokContent {

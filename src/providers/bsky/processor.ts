@@ -164,7 +164,7 @@ export const buildAPIBskyPost = async (
         formats: [
           {
             url: videoUrl,
-            container: 'mp4' as const,
+            container: 'mp4' as const, // TODO: Also include original m3u8, even if we can't use them in embeds
             codec: 'h264' as const
           }
         ],

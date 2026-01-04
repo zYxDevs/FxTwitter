@@ -607,7 +607,7 @@ export const buildAPITikTokStatus = async (
 
         if (isTelegram && selectedVariant.size) {
           console.log(
-            `Selected Telegram-friendly variant: ${(selectedVariant.size / 1024 / 1024).toFixed(2)} MB`
+            `Selected Telegram-friendly variant`,JSON.stringify(selectedVariant, null, 2)
           );
         }
 

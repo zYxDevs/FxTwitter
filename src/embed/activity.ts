@@ -276,17 +276,17 @@ const formatStatus = (text: string, status: APIStatus) => {
       case DataProvider.Bsky:
         baseHashtagUrl = `${Constants.BSKY_ROOT}/hashtag`;
         baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
-        baseMentionUrl = `${Constants.BSKY_ROOT}/profile`;
+        baseMentionUrl = `${Constants.BSKY_ROOT}/profile/`;
         break;
       case DataProvider.Twitter:
         baseHashtagUrl = `${Constants.TWITTER_ROOT}/hashtag`;
         baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
-        baseMentionUrl = `${Constants.TWITTER_ROOT}`;
+        baseMentionUrl = `${Constants.TWITTER_ROOT}/`;
         break;
       case DataProvider.TikTok:
         baseHashtagUrl = `${Constants.TIKTOK_ROOT}/tag`;
         baseSymbolUrl = `${Constants.TIKTOK_ROOT}/search?q=%24`;
-        baseMentionUrl = `${Constants.TIKTOK_ROOT}`;
+        baseMentionUrl = `${Constants.TIKTOK_ROOT}/@`;
         break;
     }
     let offset = 0;
@@ -347,7 +347,7 @@ const formatStatus = (text: string, status: APIStatus) => {
           offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
           break;
         case 'mention':
-          newFacet = `<a href="${baseMentionUrl}/${facet.original}">@${facet.original}</a>`;
+          newFacet = `<a href="${baseMentionUrl}${facet.original}">@${facet.original}</a>`;
           text =
             text.slice(0, facet.indices[0] + offset) +
             newFacet +

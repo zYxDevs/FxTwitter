@@ -21,7 +21,6 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
   } else if (url.includes('.mp4')) {
     container = 'mp4';
   }
-
   // Detect codec from URL or content type
   if (url.includes('hevc')) {
     codec = 'hevc';
@@ -29,7 +28,7 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
     codec = 'vp9';
   } else if (url.includes('av1')) {
     codec = 'av1';
-  } else if (container === 'mp4' || variant.content_type.includes('mp4')) {
+  } else if (container === 'mp4' || variant.content_type.includes('mp4') || url.includes('avc1')) {
     codec = 'h264'; // Default for MP4
   }
 

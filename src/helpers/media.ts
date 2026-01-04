@@ -96,7 +96,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
         }
         return !format.url.includes('hevc');
       })
-      .reduce?.((a, b) => ((a.bitrate ?? 0) > (b.bitrate ?? 0) ? a : b), formats[0]);
+      .reduce?.((a, b) => ((a.bitrate ?? 0) > (b.bitrate ?? 0) ? a : b));
 
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
       return {

@@ -336,7 +336,7 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
       protected: false,
       statuses: author?.aweme_count || 0,
       joined: '',
-      birthday: { day: 0, month: 0, year: 0 },
+      birthday: null,
       website: null
     };
   }
@@ -607,7 +607,8 @@ export const buildAPITikTokStatus = async (
 
         if (isTelegram && selectedVariant.size) {
           console.log(
-            `Selected Telegram-friendly variant`,JSON.stringify(selectedVariant, null, 2)
+            `Selected Telegram-friendly variant`,
+            JSON.stringify(selectedVariant, null, 2)
           );
         }
 

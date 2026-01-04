@@ -461,7 +461,7 @@ export const handleActivity = async (
       uri: thread.status.url,
       created_at: thread.status.author.joined
         ? new Date(thread.status.author.joined).toISOString()
-        : null,
+        : new Date().toISOString(),
       locked: false,
       bot: false,
       discoverable: true,

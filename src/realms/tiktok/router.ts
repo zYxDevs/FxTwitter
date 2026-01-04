@@ -6,6 +6,7 @@ import { oembed } from './routes/oembed';
 import { tiktokVideoProxy, tiktokVideoProxyOptions } from './routes/proxy';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import { constructTikTokVideo, fetchTikTokVideo } from '../../providers/tiktok/conversation';
+import { versionRoute } from '../common/version';
 
 export const tiktok = new Hono();
 tiktok.use(trimTrailingSlash());
@@ -42,5 +43,6 @@ tiktok.get('/:handle/video/:id', tiktokVideoRequest);
 // The :id parameter will be detected as a shorthand code and resolved in tiktokVideoRequest
 tiktok.get('/t/:id', tiktokVideoRequest);
 tiktok.get('/t/:id/', tiktokVideoRequest);
+tiktok.get('/version', c => versionRoute(c));
 
 tiktok.all('*', async c => c.redirect(getBranding(c).redirect, 302));

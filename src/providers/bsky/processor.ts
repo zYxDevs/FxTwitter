@@ -98,6 +98,8 @@ export const buildAPIBskyPost = async (
         {
           type: 'gif',
           url: external?.uri,
+          format: 'image/gif',
+          thumbnail_url: external?.thumb?.ref?.$link ?? '',
           width: 0,
           height: 0
         }

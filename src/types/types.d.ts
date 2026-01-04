@@ -141,6 +141,7 @@ declare interface APIPoll {
 
 declare interface APIMedia {
   id?: string;
+  format?: string;
   type: string;
   url: string;
   width: number;
@@ -156,7 +157,6 @@ declare interface APIPhoto extends APIMedia {
 declare interface APIVideo extends APIMedia {
   type: 'video' | 'gif';
   thumbnail_url: string;
-  format: string;
   duration: number;
   filesize?: number; // File size in bytes (when available, e.g., from TikTok)
   variants?: TweetMediaVariant[]; // Legacy API only - use formats internally

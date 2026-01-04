@@ -303,6 +303,7 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
       url: `${TIKTOK_ROOT}/@${author?.uniqueId || ''}`,
       protected: author?.privateAccount || false,
       statuses: video.authorStats?.videoCount || 0,
+      // Doesn't work with webapp.reflow.video.detail
       joined: author?.createTime ? new Date(author.createTime * 1000).toISOString() : '',
       birthday: null,
       website: null,

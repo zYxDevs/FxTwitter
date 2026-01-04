@@ -107,15 +107,6 @@ declare interface TikTokAuthorStatsV2 {
   friendCount: string;
 }
 
-declare interface TikTokAuthorStats {
-  followerCount: number;
-  followingCount: number;
-  heartCount: number;
-  videoCount: number;
-  diggCount: number;
-  friendCount: number;
-}
-
 declare interface TikTokImagePost {
   images: TikTokImage[];
   title?: string;

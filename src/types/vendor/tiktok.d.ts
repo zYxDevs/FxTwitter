@@ -77,6 +77,9 @@ declare interface TikTokVideo {
   bitrateInfo?: TikTokVideoFormat[];
 }
 declare interface TikTokVideoStatsV2 {
+  /**
+   * TikTok uses "digg" to describe likes for some reason
+   */
   diggCount: string;
   shareCount: string;
   commentCount: string;
@@ -127,6 +130,9 @@ declare interface TikTokImage {
 }
 
 declare interface TikTokStatistics {
+  /**
+   * TikTok uses "digg" to describe likes for some reason
+   */
   diggCount: number;
   shareCount: number;
   commentCount: number;
@@ -348,6 +354,9 @@ declare interface TikTokAwemeBitRate {
 }
 
 declare interface TikTokAwemeStatistics {
+  /**
+   * TikTok uses "digg" to describe likes for some reason
+   */
   digg_count: number;
   share_count: number;
   comment_count: number;

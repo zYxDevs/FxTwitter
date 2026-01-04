@@ -215,7 +215,7 @@ const linkifyMentions = (text: string, status: APIStatus) => {
   // deduplicate mentions
   [...new Set(matches ?? [])]?.forEach(mention => {
     text = text.replace(
-      new RegExp(`(?<!https?:\\/\\/[\\w.:/]+)${mention}(?=\\W|$)`, 'g'),
+      new RegExp(`(?<!https?:\\/\\/[\\w.:/]+)${escapeRegex(mention)}(?=\\W|$)`, 'g'),
       `<a href="${baseUrl}${mention.slice(1)}">${mention}</a>`
     );
   });

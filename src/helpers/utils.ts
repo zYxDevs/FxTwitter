@@ -107,3 +107,14 @@ export const wrapForeignLinks = (url: string, apiHost: string): string => {
 
   return unwrap ? `https://${apiHost}/2/hit?url=${encodeURIComponent(url)}` : url;
 };
+
+export const isParamTruthy = (param: string | undefined) => {
+  if (typeof param !== 'string') {
+    return false;
+  }
+  if (param === '') {
+    return true;
+  }
+  const value = param.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}

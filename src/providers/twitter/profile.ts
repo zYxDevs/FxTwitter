@@ -91,7 +91,10 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
 /**
  * Merges AboutAccountQuery data into an APIUser object
  */
-const mergeAboutAccountData = (user: APIUser, aboutAccount: AboutAccountQueryResponse): APIUser => {
+export const mergeAboutAccountData = (
+  user: APIUser,
+  aboutAccount: AboutAccountQueryResponse
+): APIUser => {
   const result = aboutAccount?.data?.user_result_by_screen_name?.result;
 
   if (!result) {

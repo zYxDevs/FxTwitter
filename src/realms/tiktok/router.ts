@@ -32,7 +32,9 @@ tiktok.get('/api/:id', async c => {
   if (!id) {
     return c.json({ error: 'Invalid request' }, 400);
   }
-  const thread = await constructTikTokVideo(id);
+  const url = new URL(c.req.url);
+  const proxyBase = `${url.protocol}//${url.host}`;
+  const thread = await constructTikTokVideo(id, proxyBase);
   return c.json(thread);
 });
 

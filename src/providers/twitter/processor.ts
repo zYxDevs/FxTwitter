@@ -206,22 +206,22 @@ export const buildAPITwitterStatus = async (
       });
     });
   }
-  if (status.legacy.entities) {
-    status.legacy.entities.hashtags.forEach(hashtag => {
+  if (status.legacy?.entities) {
+    status.legacy.entities.hashtags?.forEach(hashtag => {
       apiStatus.raw_text.facets.push({
         type: 'hashtag',
         indices: hashtag.indices,
         original: hashtag.text
       });
     });
-    status.legacy.entities.symbols.forEach(symbol => {
+    status.legacy.entities.symbols?.forEach(symbol => {
       apiStatus.raw_text.facets.push({
         type: 'symbol',
         indices: symbol.indices,
         original: symbol.text
       });
     });
-    status.legacy.entities.urls.forEach(url => {
+    status.legacy.entities.urls?.forEach(url => {
       apiStatus.raw_text.facets.push({
         type: 'url',
         indices: url.indices,
@@ -230,7 +230,7 @@ export const buildAPITwitterStatus = async (
         display: url.display_url
       });
     });
-    status.legacy.entities.user_mentions.forEach(mention => {
+    status.legacy.entities.user_mentions?.forEach(mention => {
       apiStatus.raw_text.facets.push({
         type: 'mention',
         indices: mention.indices,

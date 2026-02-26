@@ -7,7 +7,8 @@ export enum Experiment {
   VIDEO_REDIRECT_WORKAROUND = 'VIDEO_REDIRECT_WORKAROUND',
   ACTIVITY_EMBED = 'ACTIVITY_EMBED',
   USE_TRAFFIC_CONTROL = 'USE_TRAFFIC_CONTROL',
-  BROADCAST_STREAM_API = 'BROADCAST_STREAM_API'
+  BROADCAST_STREAM_API = 'BROADCAST_STREAM_API',
+  KITCHENSINK_MEDIA = 'KITCHENSINK_MEDIA'
 }
 
 type ExperimentConfig = {
@@ -61,6 +62,11 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
     name: 'Broadcast Stream',
     description: 'Use FxTwitter Stream to load X/Twitter broadcasts',
     percentage: 0
+  },
+  [Experiment.KITCHENSINK_MEDIA]: {
+    name: 'KitchenSink transcoder',
+    description: 'Use KitchenSink transcoder server',
+    percentage: 1
   }
 };
 

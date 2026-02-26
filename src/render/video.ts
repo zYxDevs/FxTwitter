@@ -78,16 +78,17 @@ export const renderVideo = (
     console.log('We passed checks for transcoding GIFs, feeding embed url', url);
   }
 
-  if (status.provider === DataProvider.Bsky) {
-    console.log('Embedding bsky video', url);
-  }
-
   // console.log('status', status);
   console.log('provider', status.provider);
 
   // Apply video redirect workaround for Discord/Telegram, but NOT for TikTok
   // TikTok videos need their own proxy with specific cookies/headers
   if (
+    experimentCheck(Experiment.KITCHENSINK_MEDIA, userAgent?.includes('TelegramBot')) &&
+    status.provider !== DataProvider.TikTok
+  ) {
+    url = `https://video.${getBranding(properties.context).domains[0]}${new URL(url).pathname}`;
+  } else if (
     experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
     (userAgent?.includes('Discordbot') || userAgent?.includes('TelegramBot')) &&
     status.provider !== DataProvider.TikTok

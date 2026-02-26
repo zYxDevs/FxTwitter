@@ -286,14 +286,18 @@ export const handleStatus = async (
       if (selectedMedia?.type === 'gif' && shouldTranscodeGif(c)) {
         redirectUrl = (selectedMedia as APIPhoto).transcode_url ?? redirectUrl;
       }
-
-      // Apply video redirect workaround, but NOT for TikTok (needs its own proxy)
-      if (
-        selectedMedia?.type === 'video' &&
-        experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
-        status.provider !== DataProvider.TikTok
-      ) {
-        redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
+      if (selectedMedia?.type === 'video') {
+        if (
+          experimentCheck(Experiment.KITCHENSINK_MEDIA, isTelegram) &&
+          status.provider !== DataProvider.TikTok
+        ) {
+          redirectUrl = `https://video.${getBranding(c).domains[0]}/${new URL(redirectUrl).pathname}`;
+        } else if (
+          experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
+          status.provider !== DataProvider.TikTok
+        ) {
+          redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
+        }
       }
       // Only append name if it's an image
       if (/\.(png|jpe?g|gif)(\?|$)/.test(redirectUrl) && flags.name) {

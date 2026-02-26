@@ -4,6 +4,7 @@ import { Constants } from '../constants';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
 import { formatImageUrl } from './utils';
 import { TweetMediaVariant, TweetMedia } from '../types/vendor/twitter';
+import { Experiment, experimentCheck } from '../experiments';
 
 /**
  * Convert Twitter's TweetMediaVariant to our APIVideoFormat
@@ -99,6 +100,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       .reduce?.((a, b) => ((a.bitrate ?? 0) > (b.bitrate ?? 0) ? a : b));
 
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
+      const extension = experimentCheck(Experiment.KITCHENSINK_MEDIA) ? '.webp' : '.gif';
       return {
         type: 'gif',
         id: media.id_str,
@@ -107,7 +109,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
         height: media.original_info?.height,
         transcode_url: bestFormat?.url
           .replace(Constants.TWITTER_VIDEO_BASE, `https://${getGIFTranscodeDomain(media.id_str)}`)
-          .replace('.mp4', '.gif'),
+          .replace('.mp4', extension),
         altText: media.ext_alt_text
       };
     }

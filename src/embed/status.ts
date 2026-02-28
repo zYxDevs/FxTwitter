@@ -29,6 +29,7 @@ import {
 } from '../types/types';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
+import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { TwitterApiImage } from '../types/vendor/twitter';
 
@@ -291,7 +292,11 @@ export const handleStatus = async (
           experimentCheck(Experiment.KITCHENSINK_MEDIA, isTelegram) &&
           status.provider !== DataProvider.TikTok
         ) {
-          redirectUrl = `https://video.${getBranding(c).domains[0]}/${new URL(redirectUrl).pathname}`;
+          const domain =
+            status.provider === DataProvider.Twitter
+              ? getVideoTranscodeDomain(status.id)
+              : getVideoTranscodeDomainBluesky(status.author.did);
+          redirectUrl = `https://${domain}${new URL(redirectUrl).pathname}`;
         } else if (
           experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
           status.provider !== DataProvider.TikTok

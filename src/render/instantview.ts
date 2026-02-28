@@ -15,6 +15,8 @@ import {
   RenderProperties,
   ResponseInstructions
 } from '../types/types';
+import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
+import { experimentCheck, Experiment } from '../experiments';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -77,20 +79,29 @@ const generateStatusMedia = (status: APIStatus): string => {
   let media = '';
   if (status.media?.all?.length) {
     status.media.all.forEach(mediaItem => {
+      let url = mediaItem.url;
+
+      if (experimentCheck(Experiment.KITCHENSINK_MEDIA, !!Constants.VIDEO_TRANSCODE_DOMAIN_LIST)) {
+        const domain =
+          status.provider === DataProvider.Twitter
+            ? getVideoTranscodeDomain(status.id)
+            : getVideoTranscodeDomainBluesky(status.id);
+        url = `https://${domain}${new URL(url).pathname}`;
+      }
       switch (mediaItem.type) {
         case 'photo':
           // eslint-disable-next-line no-case-declarations
           const { altText } = mediaItem as APIPhoto;
           media += `<img src="{url}" {altText}/>`.format({
             altText: altText ? `alt="${altText}"` : '',
-            url: mediaItem.url
+            url: url
           });
           break;
         case 'video':
-          media += `<video src="${mediaItem.url}" alt="${i18next.t('videoAltTextUnavailable').format({ author: status.author.name })}"/>`;
+          media += `<video src="${url}" alt="${i18next.t('videoAltTextUnavailable').format({ author: status.author.name })}"/>`;
           break;
         case 'gif':
-          media += `<video src="${mediaItem.url}" alt="${i18next.t('gifAltTextUnavailable').format({ author: status.author.name })}"/>`;
+          media += `<video src="${url}" alt="${i18next.t('gifAltTextUnavailable').format({ author: status.author.name })}"/>`;
           break;
       }
     });

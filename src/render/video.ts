@@ -4,6 +4,7 @@ import { Experiment, experimentCheck } from '../experiments';
 import { handleQuote } from '../helpers/quote';
 import { DataProvider } from '../enum';
 import {
+  APIBlueskyStatus,
   APIMedia,
   APITwitterStatus,
   APIVideo,
@@ -12,6 +13,7 @@ import {
 } from '../types/types';
 import { getBranding } from '../helpers/branding';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from '../helpers/giftranscode';
+import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 
 export const renderVideo = (
   properties: RenderProperties,
@@ -87,7 +89,11 @@ export const renderVideo = (
     experimentCheck(Experiment.KITCHENSINK_MEDIA, userAgent?.includes('TelegramBot')) &&
     status.provider !== DataProvider.TikTok
   ) {
-    url = `https://video.${getBranding(properties.context).domains[0]}${new URL(url).pathname}`;
+    const domain =
+      status.provider === DataProvider.Twitter
+        ? getVideoTranscodeDomain(status.id)
+        : getVideoTranscodeDomainBluesky(status.id);
+    url = `https://${domain}${new URL(url).pathname}`;
   } else if (
     experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
     (userAgent?.includes('Discordbot') || userAgent?.includes('TelegramBot')) &&

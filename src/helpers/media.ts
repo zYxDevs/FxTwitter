@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { APIPhoto, APIVideo, APIVideoFormat } from '../types/types';
 import { Constants } from '../constants';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
-import { formatImageUrl } from './utils';
+import { formatImageUrl, isParamTruthy } from './utils';
 import { TweetMediaVariant, TweetMedia } from '../types/vendor/twitter';
 import { Experiment, experimentCheck } from '../experiments';
 
@@ -100,7 +100,16 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       .reduce?.((a, b) => ((a.bitrate ?? 0) > (b.bitrate ?? 0) ? a : b));
 
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
-      const extension = experimentCheck(Experiment.KITCHENSINK_MEDIA) ? '.webp' : '.gif';
+      let extension = '.gif';
+      if (
+        experimentCheck(Experiment.KITCHENSINK_MEDIA) &&
+        c.req.header('user-agent')?.includes('Discordbot')
+      ) {
+        const url = new URL(c.req.url);
+        if (!isParamTruthy(url.searchParams.get('useGif') ?? undefined)) {
+          // extension = '.webp';
+        }
+      }
       return {
         type: 'gif',
         id: media.id_str,

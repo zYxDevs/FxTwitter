@@ -107,7 +107,7 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       ) {
         const url = new URL(c.req.url);
         if (!isParamTruthy(url.searchParams.get('useGif') ?? undefined)) {
-          // extension = '.webp';
+          extension = '.webp';
         }
       }
       return {

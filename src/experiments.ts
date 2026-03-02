@@ -31,7 +31,7 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
   [Experiment.TWEET_DETAIL_API]: {
     name: 'Tweet detail API',
     description: 'Use Tweet Detail API (where available with elongator)',
-    percentage: 1
+    percentage: 0
   },
   [Experiment.TRANSCODE_GIFS]: {
     name: 'Transcode GIFs',
@@ -41,7 +41,7 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
   [Experiment.IV_FORCE_THREAD_UNROLL]: {
     name: 'IV force thread unroll',
     description: 'Force thread unroll for Telegram Instant View',
-    percentage: 1
+    percentage: 0
   },
   [Experiment.VIDEO_REDIRECT_WORKAROUND]: {
     name: 'Video redirect workaround',

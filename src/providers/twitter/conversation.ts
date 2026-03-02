@@ -602,14 +602,15 @@ export const constructTwitterThread = async (
     // If we need thread but have TweetResultByRestId response, try TweetDetail
     if (processThread && typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('Need thread data, trying TweetDetail...');
-      const threadResponse = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
-      if (threadResponse?.data) {
-        response = threadResponse;
-      } else {
-        // Return single tweet if TweetDetail fails
-        writeDataPoint(c, language, status.possibly_sensitive, '200');
-        return { status: status, thread: null, author: status.author, code: 200 };
+      if (experimentCheck(Experiment.TWEET_DETAIL_API)) {
+        const threadResponse = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+        if (threadResponse?.data) {
+          response = threadResponse;
+        }
       }
+      // Return single tweet if TweetDetail fails
+      writeDataPoint(c, language, status.possibly_sensitive, '200');
+      return { status: status, thread: null, author: status.author, code: 200 };
     } else if (processThread) {
       // Can't process thread without TweetDetail
       writeDataPoint(c, language, status.possibly_sensitive, '200');

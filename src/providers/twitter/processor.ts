@@ -14,12 +14,6 @@ import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
-import {
-  GraphQLTwitterStatus,
-  GraphQLUser,
-  TwitterApiMedia,
-  TwitterArticleContentState
-} from '../../types/vendor/twitter';
 
 export const buildAPITwitterStatus = async (
   c: Context,

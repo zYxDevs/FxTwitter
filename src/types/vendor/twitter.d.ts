@@ -829,7 +829,7 @@ interface AboutAccountQueryResponse {
   };
 }
 
-export type TwitterArticleEntity = {
+type TwitterArticleEntity = {
   rest_id: string;
   id: string;
   title: string;
@@ -846,14 +846,14 @@ export type TwitterArticleEntity = {
   };
 };
 
-export type TwitterApiMedia = {
+type TwitterApiMedia = {
   id: string;
   media_key: string;
   media_id: string;
   media_info: TwitterApiImage | TwitterApiVideo;
 };
 
-export type TwitterApiImage = {
+type TwitterApiImage = {
   __typename: 'ApiImage';
   original_img_height: number;
   original_img_width: number;
@@ -866,7 +866,7 @@ export type TwitterApiImage = {
   };
 };
 
-export type TwitterApiVideo = {
+type TwitterApiVideo = {
   __typename: 'ApiVideo' | 'ApiGif';
   type: 'video' | 'animated_gif';
   id: string;
@@ -905,12 +905,12 @@ export type TwitterApiVideo = {
   };
 };
 
-export type TwitterArticleContentState = {
+type TwitterArticleContentState = {
   blocks: TwitterArticleContentBlock[];
   entityMap: TwitterArticleEntityMapEntry[];
 };
 
-export type TwitterArticleContentBlock = {
+type TwitterArticleContentBlock = {
   key: string;
   data: Record<string, unknown>;
   entityRanges: Array<{

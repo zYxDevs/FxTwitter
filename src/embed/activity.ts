@@ -26,7 +26,6 @@ import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { renderArticleToHtml, DISCORD_ARTICLE_MAX_LENGTH } from '../helpers/article';
-import { TwitterApiMedia, TwitterApiImage, TwitterApiVideo } from '../types/vendor/twitter';
 
 const convertArticleMediaToAttachment = (
   media: TwitterApiMedia

@@ -1,11 +1,3 @@
-import {
-  TwitterArticleContentState,
-  TwitterArticleContentBlock,
-  TwitterArticleEntityMapEntry,
-  TwitterApiMedia,
-  TwitterApiImage,
-  TwitterApiVideo
-} from '../types/vendor/twitter';
 import { sanitizeText, truncateWithEllipsis, wrapForeignLinks } from './utils';
 
 const DISCORD_ARTICLE_MAX_LENGTH = 10000;

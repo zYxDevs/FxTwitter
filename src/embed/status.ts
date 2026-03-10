@@ -31,7 +31,6 @@ import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
-import { TwitterApiImage } from '../types/vendor/twitter';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.

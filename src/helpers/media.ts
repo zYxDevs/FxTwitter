@@ -3,7 +3,6 @@ import { APIPhoto, APIVideo, APIVideoFormat } from '../types/types';
 import { Constants } from '../constants';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
 import { formatImageUrl, isParamTruthy } from './utils';
-import { TweetMediaVariant, TweetMedia } from '../types/vendor/twitter';
 import { Experiment, experimentCheck } from '../experiments';
 
 /**

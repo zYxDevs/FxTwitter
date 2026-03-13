@@ -348,7 +348,7 @@ export const SearchTimelineQuery: GraphQLQuery = {
   variables: {
     // rawQuery: '',
     // count: 20, // max 100
-    querySource: 'typed_query',
+    querySource: 'typed_query'
     // product: 'Latest', // | 'Top' | 'Media',
     // cursor: null
   },

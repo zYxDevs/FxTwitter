@@ -128,8 +128,6 @@ export const searchAPI = async (
         return Array.isArray(r?.data?.search_by_raw_query?.search_timeline?.timeline?.instructions);
       }
     })) as TwitterSearchTimelineResponse;
-
-    console.log('response', JSON.stringify(response));
   } catch (e) {
     console.error('Search request failed', e);
     return { code: 500, results: [], cursor: { top: null, bottom: null } };

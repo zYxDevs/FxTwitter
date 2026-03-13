@@ -68,7 +68,7 @@ defines['RELEASE_NAME'] = `"${releaseName}"`;
 
 const plugins = [];
 
-if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev) {
+if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev && !workerName.includes('canary')) {
   plugins.push(
     sentryEsbuildPlugin({
       org: process.env.SENTRY_ORG,

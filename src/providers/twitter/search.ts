@@ -39,14 +39,7 @@ const processSearchInstructions = (
     }
   };
 
-  instructions?.forEach(_instruction => {
-    const instruction = _instruction as unknown as {
-      type: string;
-      entries?: GraphQLTimelineTweetEntry[];
-      moduleItems?: Array<{ item?: { itemContent?: unknown } }>;
-      entry?: { content: GraphQLTimelineCursor };
-    };
-
+  instructions?.forEach(instruction => {
     // Paginated responses replace existing cursor entries rather than adding new ones
     if (instruction.type === 'TimelineReplaceEntry') {
       const content = instruction.entry?.content;
@@ -58,7 +51,8 @@ const processSearchInstructions = (
 
     // Media feed pagination uses TimelineAddToModule (search-grid) instead of TimelineAddEntries
     if (instruction.type === 'TimelineAddToModule') {
-      instruction.moduleItems?.forEach(moduleItem => {
+      instruction.moduleItems?.forEach(_moduleItem => {
+        const moduleItem = _moduleItem as { item?: { itemContent?: unknown } };
         const itemContent = moduleItem?.item?.itemContent;
         if (itemContent) {
           extractTweetFromItemContent(itemContent as ItemContentWithTweet);

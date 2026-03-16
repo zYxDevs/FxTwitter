@@ -703,7 +703,15 @@ type GraphQLTimelineEntry = GraphQLTimelineTweetEntry | GraphQLConversationThrea
 type TimelineInstruction =
   | TimelineAddEntriesInstruction
   | TimelineTerminateTimelineInstruction
-  | TimelineAddModulesInstruction;
+  | TimelineAddModulesInstruction
+  | TimelineReplaceEntryInstruction;
+
+type TimelineReplaceEntryInstruction = {
+  type: 'TimelineReplaceEntry';
+  entry?: {
+    content?: GraphQLTimelineCursor;
+  };
+};
 
 type TimelineAddEntriesInstruction = {
   type: 'TimelineAddEntries';

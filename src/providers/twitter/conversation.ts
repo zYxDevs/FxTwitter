@@ -314,12 +314,12 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
             const entryType = content.itemContent?.tweet_results.result?.__typename;
             if (entryType === 'Tweet') {
               bucket.statuses.push(
-                content.itemContent?.tweet_results.result as GraphQLTwitterStatus
+                content.itemContent.tweet_results.result as GraphQLTwitterStatus
               );
             }
             if (entryType === 'TweetWithVisibilityResults') {
               bucket.statuses.push(
-                content.itemContent?.tweet_results.result.tweet as GraphQLTwitterStatus
+                content.itemContent.tweet_results.result.tweet as GraphQLTwitterStatus
               );
             }
           } else if (itemContentType === 'TimelineTimelineCursor') {

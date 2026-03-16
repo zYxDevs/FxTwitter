@@ -288,7 +288,7 @@ export const fetchById = async (
   }) as Promise<TweetResultByIdResponse>;
 };
 
-const processResponse = (instructions: ThreadInstruction[]): GraphQLProcessBucket => {
+const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBucket => {
   const bucket: GraphQLProcessBucket = {
     statuses: [],
     allStatuses: [],
@@ -296,8 +296,10 @@ const processResponse = (instructions: ThreadInstruction[]): GraphQLProcessBucke
   };
   instructions?.forEach?.(instruction => {
     if (instruction.type === 'TimelineAddEntries' || instruction.type === 'TimelineAddToModule') {
-      // @ts-expect-error Use entries or moduleItems depending on the type
-      (instruction?.entries ?? instruction?.moduleItems)?.forEach(_entry => {
+      (
+        (instruction as TimelineAddEntriesInstruction)?.entries ??
+        (instruction as TimelineAddModulesInstruction)?.moduleItems
+      )?.forEach(_entry => {
         const entry = _entry as
           | GraphQLTimelineTweetEntry
           | GraphQLConversationThread
@@ -311,7 +313,7 @@ const processResponse = (instructions: ThreadInstruction[]): GraphQLProcessBucke
         if (content.__typename === 'TimelineTimelineItem') {
           const itemContentType = content.itemContent?.__typename;
           if (itemContentType === 'TimelineTweet') {
-            const entryType = content.itemContent.tweet_results.result?.__typename;
+            const entryType = content.itemContent?.tweet_results.result?.__typename;
             if (entryType === 'Tweet') {
               bucket.statuses.push(
                 content.itemContent.tweet_results.result as GraphQLTwitterStatus

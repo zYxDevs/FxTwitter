@@ -18,6 +18,15 @@ const feedToProduct = (feed: SearchFeed): string => {
   }
 };
 
+function isGraphQLTimelineCursor(obj: unknown): obj is GraphQLTimelineCursor {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    '__typename' in obj &&
+    (obj as { __typename?: string }).__typename === 'TimelineTimelineCursor'
+  );
+}
+
 const processSearchInstructions = (
   instructions: TimelineInstruction[]
 ): { statuses: GraphQLTwitterStatus[]; cursors: GraphQLTimelineCursor[] } => {
@@ -74,10 +83,10 @@ const processSearchInstructions = (
           if (itemContentType === 'TimelineTimelineCursor') {
             cursors.push(content.itemContent as GraphQLTimelineCursor);
           }
-        } else if (content.__typename === 'TimelineTimelineCursor') {
+        } else if (isGraphQLTimelineCursor(content)) {
           // In search timeline, cursors appear directly as entry content rather than
           // nested inside a TimelineTimelineItem wrapper as seen in TweetDetail
-          cursors.push(content as unknown as GraphQLTimelineCursor);
+          cursors.push(content);
         } else if (
           (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
         ) {
@@ -134,8 +143,8 @@ export const searchAPI = async (
   const instructions = response.data.search_by_raw_query.search_timeline.timeline.instructions;
   const { statuses, cursors } = processSearchInstructions(instructions);
 
-  const topCursor = cursors.find(c => c.cursorType === 'Top')?.value ?? null;
-  const bottomCursor = cursors.find(c => c.cursorType === 'Bottom')?.value ?? null;
+  const topCursor = cursors.find(cursor => cursor.cursorType === 'Top')?.value ?? null;
+  const bottomCursor = cursors.find(cursor => cursor.cursorType === 'Bottom')?.value ?? null;
 
   const builtStatuses = (
     await Promise.all(
@@ -145,7 +154,7 @@ export const searchAPI = async (
           return result;
         } catch (e) {
           console.error('Error building status', e);
-          return new Promise(resolve => resolve(null));
+          return Promise.resolve(null);
         }
       })
     )

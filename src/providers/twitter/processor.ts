@@ -590,7 +590,6 @@ export const buildAPITwitterStatus = async (
     if (apiStatus.media?.videos) {
       apiStatus.media.videos.forEach(video => {
         if (video.formats && video.formats.length > 0) {
-          // @ts-expect-error variants is only for legacy API
           video.variants = video.formats.map(convertFormatToVariant);
         }
       });
@@ -600,7 +599,6 @@ export const buildAPITwitterStatus = async (
         if (media.type === 'video' || media.type === 'gif') {
           const video = media as APIVideo;
           if (video.formats && video.formats.length > 0) {
-            // @ts-expect-error variants is only for legacy API
             video.variants = video.formats.map(convertFormatToVariant);
           }
         }
@@ -609,7 +607,6 @@ export const buildAPITwitterStatus = async (
     if (apiStatus.quote?.media?.videos) {
       apiStatus.quote.media.videos.forEach(video => {
         if (video.formats && video.formats.length > 0) {
-          // @ts-expect-error variants is only for legacy API
           video.variants = video.formats.map(convertFormatToVariant);
         }
       });
@@ -619,7 +616,6 @@ export const buildAPITwitterStatus = async (
         if (media.type === 'video' || media.type === 'gif') {
           const video = media as APIVideo;
           if (video.formats && video.formats.length > 0) {
-            // @ts-expect-error variants is only for legacy API
             video.variants = video.formats.map(convertFormatToVariant);
           }
         }

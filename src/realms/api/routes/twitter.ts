@@ -5,10 +5,10 @@ import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount'
 import { searchAPI } from '../../../providers/twitter/search';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Context } from 'hono';
+import { isParamTruthy } from '../../../helpers/utils';
 
 const shouldIncludeAboutAccount = (c: Context) => {
-  const val = c.req.query('about_account') ?? c.req.query('aboutAccount');
-  return val === '1' || val === 'true';
+  return isParamTruthy(c.req.query('about_account') ?? c.req.query('aboutAccount'));
 };
 
 export const statusAPIRequest = async (c: Context) => {

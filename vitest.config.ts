@@ -1,6 +1,23 @@
 import { defineConfig } from 'vitest/config';
+import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 
 export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      wrangler: { configPath: './wrangler.toml' },
+      // Disable remote bindings so tests don't require Cloudflare login (AI binding
+      // in wrangler.toml would otherwise trigger a remote proxy session in CI).
+      remoteBindings: false,
+      miniflare: {
+        // Override the TwitterProxy service binding from wrangler.toml since the
+        // real elongator-canary service doesn't exist locally. Tests inject their
+        // own mock via the harness argument passed to app.request().
+        serviceBindings: {
+          TwitterProxy: async () => new Response('{}')
+        }
+      }
+    })
+  ],
   define: {
     // Build-time replacements for global variables
     RELEASE_NAME: JSON.stringify('fixtweet-test'),
@@ -26,18 +43,8 @@ export default defineConfig({
     SENTRY_DSN: null
   },
   test: {
-    pool: '@cloudflare/vitest-pool-workers',
     include: ['test/*.ts'],
     globals: true,
-    poolOptions: {
-      workers: {
-        miniflare: {
-          // Basic configuration needed for tests
-          compatibilityDate: '2025-03-21',
-          compatibilityFlags: []
-        }
-      }
-    },
     coverage: {
       include: ['src/**/*.{ts,js}']
     }

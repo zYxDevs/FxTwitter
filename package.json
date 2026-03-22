@@ -18,15 +18,15 @@
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.13.0",
-    "@cloudflare/workers-types": "^4.20260313.1",
+    "@cloudflare/workers-types": "^4.20260317.1",
     "@eslint/js": "^10.0.1",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@sentry/esbuild-plugin": "^5.1.1",
     "@sentry/integrations": "^7.114.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.0",
-    "@typescript-eslint/parser": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
     "dotenv": "^17.3.1",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-config-typescript": "^3.0.0",
     "eslint-plugin-optimize-regex": "^1.2.1",
@@ -35,14 +35,14 @@
     "prettier": "^3.8.1",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
     "vitest": "^4.1.0",
-    "wrangler": "^4.73.0"
+    "typescript-eslint": "^8.57.1",
+    "wrangler": "^4.76.0"
   },
   "dependencies": {
     "@hono/sentry": "^1.2.2",
     "hono": "^4.12.8",
-    "i18next": "^25.8.18",
+    "i18next": "^25.10.4",
     "i18next-icu": "^2.4.2"
   }
 }

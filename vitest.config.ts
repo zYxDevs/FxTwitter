@@ -1,10 +1,19 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
+
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const localWranglerToml = path.join(configDir, 'wrangler.toml');
+const wranglerConfigPath = existsSync(localWranglerToml)
+  ? localWranglerToml
+  : path.join(configDir, 'wrangler.example.toml');
 
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './wrangler.toml' },
+      wrangler: { configPath: wranglerConfigPath },
       // Disable remote bindings so tests don't require Cloudflare login (AI binding
       // in wrangler.toml would otherwise trigger a remote proxy session in CI).
       remoteBindings: false,

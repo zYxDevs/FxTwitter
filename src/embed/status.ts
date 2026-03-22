@@ -288,7 +288,7 @@ export const handleStatus = async (
       }
       if (selectedMedia?.type === 'video') {
         if (
-          experimentCheck(Experiment.KITCHENSINK_MEDIA, isTelegram) &&
+          experimentCheck(Experiment.KITCHENSINK_VIDEO, isTelegram) &&
           status.provider !== DataProvider.TikTok
         ) {
           const domain =

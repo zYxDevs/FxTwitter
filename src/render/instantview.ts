@@ -81,7 +81,7 @@ const generateStatusMedia = (status: APIStatus): string => {
     status.media.all.forEach(mediaItem => {
       let url = mediaItem.url;
 
-      if (experimentCheck(Experiment.KITCHENSINK_MEDIA, !!Constants.VIDEO_TRANSCODE_DOMAIN_LIST)) {
+      if (experimentCheck(Experiment.KITCHENSINK_VIDEO, !!Constants.VIDEO_TRANSCODE_DOMAIN_LIST)) {
         const domain =
           status.provider === DataProvider.Twitter
             ? getVideoTranscodeDomain(status.id)

@@ -101,11 +101,11 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
       let extension = '.gif';
       if (
-        experimentCheck(Experiment.KITCHENSINK_MEDIA) &&
+        experimentCheck(Experiment.KITCHENSINK_GIF) &&
         c.req.header('user-agent')?.includes('Discordbot')
       ) {
         const url = new URL(c.req.url);
-        if (!isParamTruthy(url.searchParams.get('useGif') ?? undefined)) {
+        if (!isParamTruthy(url.searchParams.get('gif') ?? undefined)) {
           extension = '.webp';
         }
       }

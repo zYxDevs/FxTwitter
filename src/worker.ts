@@ -1,7 +1,6 @@
 import { Env, Hono } from 'hono';
 import { timing } from 'hono/timing';
 import { logger } from 'hono/logger';
-import { RewriteFrames } from '@sentry/integrations';
 import { sentry } from '@hono/sentry';
 import { Strings } from './strings';
 import { Constants } from './constants';
@@ -78,6 +77,7 @@ export const app = new Hono<{
 });
 
 if (SENTRY_DSN) {
+  const { RewriteFrames } = await import('@sentry/integrations');
   app.use(
     '*',
     sentry({

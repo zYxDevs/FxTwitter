@@ -185,6 +185,7 @@ declare interface APIStatus {
   likes: number;
   reposts: number;
   replies: number;
+  quotes: number;
 
   quote?: APIStatus;
   poll?: APIPoll;

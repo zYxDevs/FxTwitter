@@ -27,7 +27,8 @@ function isGraphQLTimelineCursor(obj: unknown): obj is GraphQLTimelineCursor {
   );
 }
 
-const processSearchInstructions = (
+/** Shared by SearchTimeline, UserTweets, and other GraphQL timeline instruction streams */
+export const processTimelineInstructions = (
   instructions: TimelineInstruction[]
 ): { statuses: GraphQLTwitterStatus[]; cursors: GraphQLTimelineCursor[] } => {
   const statuses: GraphQLTwitterStatus[] = [];
@@ -141,7 +142,7 @@ export const searchAPI = async (
   }
 
   const instructions = response.data.search_by_raw_query.search_timeline.timeline.instructions;
-  const { statuses, cursors } = processSearchInstructions(instructions);
+  const { statuses, cursors } = processTimelineInstructions(instructions);
 
   const topCursor = cursors.find(cursor => cursor.cursorType === 'Top')?.value ?? null;
   const bottomCursor = cursors.find(cursor => cursor.cursorType === 'Bottom')?.value ?? null;

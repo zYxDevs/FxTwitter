@@ -467,7 +467,6 @@ declare interface APITrend {
   name: string;
   rank: string | null;
   context: string | null;
-  is_ai_trend?: boolean;
   grouped_topics?: APITrendGroupedTopic[];
 }
 

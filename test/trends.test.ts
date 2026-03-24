@@ -28,7 +28,6 @@ test('timelineTrendToApiTrend builds grouped_topics and urls', () => {
     __typename: 'TimelineTrend',
     name: 'Main',
     rank: '3',
-    is_ai_trend: true,
     grouped_trends: [{ name: 'Side', url: { url: 'twitter://search/?query=Side' } }],
     trend_url: { url: 'twitter://search/?query=Main' },
     trend_metadata: { domain_context: 'News · Trending' }
@@ -37,7 +36,6 @@ test('timelineTrendToApiTrend builds grouped_topics and urls', () => {
     name: 'Main',
     rank: '3',
     context: 'News · Trending',
-    is_ai_trend: true,
     grouped_topics: [{ name: 'Side' }]
   });
 });

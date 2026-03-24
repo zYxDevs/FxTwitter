@@ -48,7 +48,6 @@ export function timelineTrendToApiTrend(raw: TimelineTrendRaw): APITrend | null 
         : null
   };
 
-  trend.is_ai_trend = raw.is_ai_trend ? true : false;
   if (grouped.length > 0) {
     trend.grouped_topics = grouped;
   }

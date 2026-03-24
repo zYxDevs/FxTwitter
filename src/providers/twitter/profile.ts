@@ -220,6 +220,21 @@ const fetchUserWithAboutAccount = async (
   };
 };
 
+/** Resolve rest_id for timeline queries (e.g. UserTweets) */
+export const getTwitterUserRestIdByScreenName = async (
+  c: Context,
+  screenName: string
+): Promise<string | null> => {
+  const { userResponse } = await fetchUserWithAboutAccount(c, screenName);
+  if (!userResponse) {
+    return null;
+  }
+  const user =
+    (userResponse as GraphQLUserResponse).data?.user?.result ??
+    (userResponse as UserResultByScreenNameResponse).data?.user_results?.result;
+  return user?.rest_id ?? null;
+};
+
 /* API for Twitter profiles (Users)
    Available for free using api.fxtwitter.com. */
 export const userAPI = async (

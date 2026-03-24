@@ -10,7 +10,10 @@ export default {
       // https://api.twitter.com/graphql
       // https://api.x.com/graphql
       const url = new URL(request);
-      const apiMethod = url.pathname.match(/(?<=(\/i\/api\/)?graphql\/\w+\/)\w+/)?.[0];
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const graphqlIdx = pathParts.indexOf('graphql');
+      const apiMethod =
+        graphqlIdx >= 0 && pathParts[graphqlIdx + 2] ? pathParts[graphqlIdx + 2] : null;
       if (!apiMethod) {
         throw new Error(`Invalid request: ${url}`);
       }
@@ -141,6 +144,25 @@ export default {
             return new Response(
               JSON.stringify({
                 data: { timeline: { timeline: { instructions: [] } } }
+              })
+            );
+          }
+        case 'UserTweets':
+          const tweetsUserId = variables.userId;
+          try {
+            const tweetsMock = await import(`../mocks/UserTweets/${tweetsUserId}.json`);
+            return new Response(JSON.stringify(tweetsMock));
+          } catch (error) {
+            console.error('Error loading UserTweets mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user: {
+                    result: {
+                      timeline: { timeline: { instructions: [] } }
+                    }
+                  }
+                }
               })
             );
           }

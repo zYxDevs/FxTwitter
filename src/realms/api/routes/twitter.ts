@@ -3,6 +3,7 @@ import { Constants } from '../../../constants';
 import { userAPI } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
+import { profileStatusesAPI } from '../../../providers/twitter/userStatuses';
 import {
   isPublicExploreTimelineKind,
   PUBLIC_EXPLORE_TIMELINE_KINDS,
@@ -59,6 +60,23 @@ export const profileAPIRequest = async (c: Context) => {
     c.header(header, value);
   }
   return c.json(profileResponse);
+};
+
+export const profileStatusesAPIRequest = async (c: Context) => {
+  const handle = c.req.param('handle') as string;
+
+  const rawCount = parseInt(c.req.query('count') ?? '20', 10);
+  const count = Number.isNaN(rawCount) ? 20 : Math.min(Math.max(rawCount, 1), 100);
+
+  const cursor = c.req.query('cursor') ?? null;
+
+  const statusesResponse = await profileStatusesAPI(handle, count, cursor, c);
+
+  c.status(statusesResponse.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(statusesResponse);
 };
 
 export const searchAPIRequest = async (c: Context) => {

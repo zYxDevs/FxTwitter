@@ -1003,11 +1003,26 @@ type TwitterGenericTimelineByIdResponse = {
   };
 };
 
+type TwitterUserTweetsResponse = {
+  data?: {
+    user?: {
+      result?: {
+        __typename?: string;
+        timeline?: {
+          timeline?: {
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+      };
+    };
+  };
+};
+
 type TimelineTrendRaw = {
   __typename?: string;
   name?: string;
   rank?: string;
-  is_ai_trend?: boolean;
   trend_metadata?: { domain_context?: string; url?: { url?: string } };
   trend_url?: { url?: string };
   grouped_trends?: Array<{ name?: string; url?: { url?: string } }>;

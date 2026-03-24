@@ -5,6 +5,7 @@ import { Strings } from '../../strings';
 import { Constants } from '../../constants';
 import {
   profileAPIRequest,
+  profileStatusesAPIRequest,
   searchAPIRequest,
   statusAPIRequest,
   threadAPIRequest,
@@ -36,6 +37,7 @@ api.get('/2/go', linkGoRequest);
 
 api.get('/2/status/:id', statusAPIRequest);
 api.get('/2/thread/:id', threadAPIRequest);
+api.get('/2/profile/:handle/statuses', profileStatusesAPIRequest);
 api.get('/2/profile/:handle', profileAPIRequest);
 api.get('/2/search', searchAPIRequest);
 api.get('/2/trends', trendsAPIRequest);

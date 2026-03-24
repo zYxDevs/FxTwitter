@@ -17,11 +17,11 @@ import { constructBlueskyThread } from '../providers/bsky/conversation';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import {
   APIMedia,
   APIPhoto,
   APIStatus,
-  APITwitterStatus,
   APIVideo,
   InputFlags,
   ResponseInstructions,

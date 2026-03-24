@@ -1,6 +1,6 @@
 /**
- * Hand-written status / thread shapes (recursive `quote`, provider variants).
- * Field types shared with the public API are imported from Zod `z.infer` in `realms/api/schemas.ts`.
+ * Hand-written status / thread shapes (provider variants).
+ * Twitter API v2 tweet payloads use `APITwitterStatus` from `z.infer` in `realms/api/schemas.ts`.
  */
 import { DataProvider } from '../enum';
 import type {
@@ -11,17 +11,11 @@ import type {
   APIPhoto,
   APIPoll,
   APITranslate,
-  APITwitterCommunity,
+  APITwitterStatus,
   APIUser,
   APIVideo,
   APIMosaicPhoto
 } from '../realms/api/schemas';
-
-/** Matches runtime Birdwatch payloads on community notes (see vendor twitter types). */
-export interface APITwitterCommunityNote {
-  text: string;
-  entities: BirdwatchEntity[];
-}
 
 export interface APIStatus {
   id: string;
@@ -66,25 +60,6 @@ export interface APIStatus {
 
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: DataProvider;
-}
-
-export interface APITwitterStatus extends APIStatus {
-  views?: number | null;
-  bookmarks?: number | null;
-  community?: APITwitterCommunity;
-  article?: {
-    created_at: string;
-    modified_at?: string;
-    id: string;
-    title: string;
-    preview_text: string;
-    cover_media: TwitterApiMedia;
-    content: TwitterArticleContentState;
-    media_entities: TwitterApiMedia[];
-  };
-  is_note_tweet: boolean;
-  community_note: APITwitterCommunityNote | null;
-  provider: DataProvider.Twitter;
 }
 
 export interface APIBlueskyStatus extends APIStatus {

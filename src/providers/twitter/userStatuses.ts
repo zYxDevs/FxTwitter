@@ -4,7 +4,8 @@ import { UserTweetsQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
 import { getTwitterUserRestIdByScreenName } from './profile';
 import { processTimelineInstructions } from './search';
-import { APISearchResults, APITwitterStatus, FetchResults } from '../../types/types';
+import type { APITwitterStatus } from '../../realms/api/schemas';
+import { APISearchResults, FetchResults } from '../../types/types';
 
 export const profileStatusesAPI = async (
   screenName: string,

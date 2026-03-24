@@ -34,7 +34,6 @@ test('API trends returns 400 for unsupported type', async () => {
     harness
   );
   expect(result.status).toEqual(400);
-  const body = (await result.json()) as APITrendsResponse;
-  expect(body.code).toBe(400);
-  expect(body.message).toBeTruthy();
+  const body = (await result.json()) as { success?: boolean };
+  expect(body.success).toBe(false);
 });

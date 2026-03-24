@@ -1,5 +1,5 @@
 /* This file contains types relevant to FxEmbed and the FxTwitter API.
-   Shared API field shapes are derived from Zod in realms/api/schemas.ts; recursive status types live in apiStatus.ts.
+   Shared API field shapes (including APITwitterStatus) are derived from Zod in realms/api/schemas.ts.
    For Twitter GraphQL types, see vendor/twitter.d.ts */
 
 import type { Context } from 'hono';
@@ -80,10 +80,10 @@ declare global {
   type APITrendsResponse = import('../realms/api/schemas').APITrendsResponse;
 
   type APIStatus = import('./apiStatus').APIStatus;
-  type APITwitterStatus = import('./apiStatus').APITwitterStatus;
+  type APITwitterStatus = import('../realms/api/schemas').APITwitterStatus;
   type APIBlueskyStatus = import('./apiStatus').APIBlueskyStatus;
   type APITikTokStatus = import('./apiStatus').APITikTokStatus;
-  type APITwitterCommunityNote = import('./apiStatus').APITwitterCommunityNote;
+  type APITwitterCommunityNote = import('../realms/api/schemas').APITwitterCommunityNote;
   type SocialPost = import('./apiStatus').SocialPost;
   type SocialThread = import('./apiStatus').SocialThread;
 

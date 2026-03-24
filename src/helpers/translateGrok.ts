@@ -1,5 +1,6 @@
 import { Context } from 'hono';
-import { APITwitterStatus, GrokTranslation } from '../types/types';
+import type { APITwitterStatus } from '../realms/api/schemas';
+import { GrokTranslation } from '../types/types';
 import { normalizeLanguage } from './language';
 import { Constants } from '../constants';
 import { twitterFetch } from '../providers/twitter/fetch';

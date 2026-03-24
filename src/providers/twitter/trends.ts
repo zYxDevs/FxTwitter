@@ -13,10 +13,6 @@ export const PUBLIC_EXPLORE_TIMELINE_KINDS = Object.keys(
   EXPLORE_TIMELINE_SECTIONS
 ) as PublicExploreTimelineKind[];
 
-export function isPublicExploreTimelineKind(value: string): value is PublicExploreTimelineKind {
-  return value in EXPLORE_TIMELINE_SECTIONS;
-}
-
 function isGraphQLTimelineCursorLoose(obj: unknown): obj is { cursorType: string; value: string } {
   return (
     typeof obj === 'object' &&

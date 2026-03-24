@@ -6,11 +6,11 @@ import { sanitizeText, wrapForeignLinks as wrapForeignLinksUtil } from '../helpe
 import { DataProvider } from '../enum';
 import { getBranding } from '../helpers/branding';
 import { renderArticleToHtml } from '../helpers/article';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import {
   APIPhoto,
   APIPoll,
   APIStatus,
-  APITwitterStatus,
   APIUser,
   RenderProperties,
   ResponseInstructions

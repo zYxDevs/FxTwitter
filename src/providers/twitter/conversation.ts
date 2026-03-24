@@ -4,7 +4,8 @@ import { Experiment, experimentCheck } from '../../experiments';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
-import { APITwitterStatus, FetchResults, InputFlags, SocialThread } from '../../types/types';
+import type { APITwitterStatus } from '../../realms/api/schemas';
+import { FetchResults, InputFlags, SocialThread } from '../../types/types';
 import {
   TweetDetailQuery,
   TweetResultByIdQuery,

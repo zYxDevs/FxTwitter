@@ -2,7 +2,8 @@ import { Context } from 'hono';
 import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
-import { APISearchResults, APITwitterStatus, FetchResults } from '../../types/types';
+import type { APITwitterStatus } from '../../realms/api/schemas';
+import { APISearchResults, FetchResults } from '../../types/types';
 
 type SearchFeed = 'latest' | 'top' | 'media';
 

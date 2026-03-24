@@ -1,5 +1,8 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { PUBLIC_EXPLORE_TIMELINE_KINDS } from '../../providers/twitter/trends';
+import {
+  PUBLIC_EXPLORE_TIMELINE_KINDS,
+  type PublicExploreTimelineKind
+} from '../../providers/twitter/trends';
 import {
   APISearchResultsSchema,
   APITrendsResponseSchema,
@@ -145,10 +148,7 @@ export const searchV2Route = createRoute({
   summary: 'Search posts',
   request: {
     query: z.object({
-      q: z
-        .string()
-        .optional()
-        .openapi({ description: 'Search query (required for a successful lookup)' }),
+      q: z.string().openapi({ description: 'Search query' }),
       feed: z.enum(['latest', 'top', 'media']).optional().openapi({
         description: 'Search tab (default latest)',
         default: 'latest'
@@ -188,11 +188,19 @@ export const trendsV2Route = createRoute({
   summary: 'Trending topics',
   request: {
     query: z.object({
-      type: z.string().optional().openapi({
-        description: trendsTypeDescription,
-        default: 'trending',
-        example: 'trending'
-      }),
+      type: z
+        .enum(
+          PUBLIC_EXPLORE_TIMELINE_KINDS as [
+            PublicExploreTimelineKind,
+            ...PublicExploreTimelineKind[]
+          ]
+        )
+        .optional()
+        .openapi({
+          description: trendsTypeDescription,
+          default: 'trending',
+          example: 'trending'
+        }),
       count: z.coerce.number().int().min(1).max(50).optional().openapi({
         description: 'Number of trends (default 20, max 50)',
         default: 20

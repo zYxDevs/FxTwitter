@@ -1,9 +1,8 @@
 /**
  * Zod + OpenAPI schemas for FxTwitter API v2 JSON responses.
- * Exported `z.infer` types are the canonical shapes for shared API fields; see `src/types/apiStatus.ts` for recursive status types.
+ * Exported `z.infer` types are the canonical shapes for shared API fields (including `APITwitterStatus`).
  */
 import { z } from '@hono/zod-openapi';
-import type { APITwitterStatus } from '../../types/apiStatus';
 
 const indicesTuple = z
   .tuple([z.number(), z.number()])
@@ -249,7 +248,9 @@ export const TwitterArticleSchema = z.object({
   media_entities: z.array(TwitterApiMediaLooseSchema)
 });
 
-export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
+/* Self-referential `z.lazy` needs an explicit Zod annotation or TS reports a circular inference error (7022/7024).
+ * `z.infer<typeof APITwitterStatusSchema>` remains the canonical output type for consumers. */
+export const APITwitterStatusSchema: z.ZodTypeAny = z
   .lazy(() =>
     z.object({
       id: z.string(),
@@ -260,7 +261,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       likes: z.number(),
       reposts: z.number(),
       replies: z.number(),
-      quote: APITwitterStatusSchema.nullish(),
+      quote: APITwitterStatusSchema.optional(),
       poll: APIPollSchema.optional(),
       author: APIUserSchema,
       media: APIMediaContainerSchema,
@@ -285,7 +286,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       community: APITwitterCommunitySchema.optional(),
       article: TwitterArticleSchema.optional(),
       is_note_tweet: z.boolean(),
-      community_note: APITwitterCommunityNoteSchema.nullish()
+      community_note: APITwitterCommunityNoteSchema.nullable()
     })
   )
   .openapi('APITwitterStatus');
@@ -367,6 +368,8 @@ export type APIExternalMedia = z.infer<typeof APIExternalMediaSchema>;
 export type APIMosaicPhoto = z.infer<typeof APIMosaicPhotoSchema>;
 export type APIBroadcast = z.infer<typeof APIBroadcastSchema>;
 export type APIUser = z.infer<typeof APIUserSchema>;
+export type APITwitterCommunityNote = z.infer<typeof APITwitterCommunityNoteSchema>;
+export type APITwitterStatus = z.infer<typeof APITwitterStatusSchema>;
 export type APITwitterCommunity = z.infer<typeof APITwitterCommunitySchema>;
 export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;

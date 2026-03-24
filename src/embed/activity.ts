@@ -11,13 +11,13 @@ import { escapeRegex } from '../helpers/utils';
 import { decodeSnowcode } from '../helpers/snowcode';
 import translationResources from '../../i18n/resources';
 import { Experiment, experimentCheck } from '../experiments';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import {
   ActivityMediaAttachment,
   ActivityStatus,
   APIPhoto,
   APIPoll,
   APIStatus,
-  APITwitterStatus,
   APIVideo,
   SocialThread
 } from '../types/types';

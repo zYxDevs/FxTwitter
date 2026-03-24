@@ -4,11 +4,7 @@ import { userAPI } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
 import { profileStatusesAPI } from '../../../providers/twitter/userStatuses';
-import {
-  isPublicExploreTimelineKind,
-  PUBLIC_EXPLORE_TIMELINE_KINDS,
-  trendsAPI
-} from '../../../providers/twitter/trends';
+import { trendsAPI } from '../../../providers/twitter/trends';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Context } from 'hono';
 import { isParamTruthy } from '../../../helpers/utils';
@@ -111,27 +107,10 @@ export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
 
 export const trendsAPIRequest: RouteHandler<typeof trendsV2Route> = async c => {
   const query = c.req.valid('query');
-  const rawType = query.type ?? 'trending';
-  if (!isPublicExploreTimelineKind(rawType)) {
-    c.status(400);
-    for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-      c.header(header, value);
-    }
-    return c.json(
-      {
-        code: 400 as const,
-        message: `Invalid type parameter. Supported values: ${PUBLIC_EXPLORE_TIMELINE_KINDS.join(', ')}`,
-        timeline_type: rawType,
-        trends: [],
-        cursor: { top: null, bottom: null }
-      },
-      400
-    );
-  }
-
+  const type = query.type ?? 'trending';
   const count = query.count ?? 20;
 
-  const trendsResponse = await trendsAPI(c, rawType, count);
+  const trendsResponse = await trendsAPI(c, type, count);
 
   c.status(trendsResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

@@ -3,6 +3,11 @@ import { Constants } from '../../../constants';
 import { userAPI } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
+import {
+  isPublicExploreTimelineKind,
+  PUBLIC_EXPLORE_TIMELINE_KINDS,
+  trendsAPI
+} from '../../../providers/twitter/trends';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Context } from 'hono';
 import { isParamTruthy } from '../../../helpers/utils';
@@ -84,4 +89,32 @@ export const searchAPIRequest = async (c: Context) => {
     c.header(header, value);
   }
   return c.json(searchResponse);
+};
+
+export const trendsAPIRequest = async (c: Context) => {
+  const rawType = c.req.query('type') ?? 'trending';
+  if (!isPublicExploreTimelineKind(rawType)) {
+    c.status(400);
+    for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+      c.header(header, value);
+    }
+    return c.json({
+      code: 400,
+      message: `Invalid type parameter. Supported values: ${PUBLIC_EXPLORE_TIMELINE_KINDS.join(', ')}`,
+      timeline_type: rawType,
+      trends: [],
+      cursor: { top: null, bottom: null }
+    });
+  }
+
+  const rawCount = parseInt(c.req.query('count') ?? '20', 10);
+  const count = Number.isNaN(rawCount) ? 20 : Math.min(Math.max(rawCount, 1), 50);
+
+  const trendsResponse = await trendsAPI(c, rawType, count);
+
+  c.status(trendsResponse.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(trendsResponse);
 };

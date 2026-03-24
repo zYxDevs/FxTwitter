@@ -1,0 +1,18 @@
+{
+  "data": {
+    "explore_page": {
+      "body": {
+        "__typename": "SegmentedTimelines",
+        "timelines": [
+          {
+            "id": "trending",
+            "labelText": "Trending",
+            "timeline": {
+              "id": "mock-trending-timeline-id"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

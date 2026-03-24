@@ -120,6 +120,30 @@ export default {
               })
             );
           }
+        case 'ExplorePage':
+          try {
+            const exploreMock = await import('../mocks/ExplorePage/default.json');
+            return new Response(JSON.stringify(exploreMock));
+          } catch (error) {
+            console.error('Error loading ExplorePage mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: { explore_page: { body: { timelines: [] } } }
+              })
+            );
+          }
+        case 'GenericTimelineById':
+          try {
+            const timelineMock = await import('../mocks/GenericTimelineById/default.json');
+            return new Response(JSON.stringify(timelineMock));
+          } catch (error) {
+            console.error('Error loading GenericTimelineById mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: { timeline: { timeline: { instructions: [] } } }
+              })
+            );
+          }
         default:
           throw new Error('Invalid request');
       }

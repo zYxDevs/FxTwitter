@@ -975,3 +975,40 @@ type TwitterSearchTimelineResponse = {
     };
   };
 };
+
+type TwitterExplorePageResponse = {
+  data?: {
+    explore_page?: {
+      body?: {
+        __typename?: string;
+        timelines?: Array<{
+          id: string;
+          labelText?: string;
+          timeline?: {
+            id?: string;
+          };
+        }>;
+      };
+    };
+  };
+};
+
+type TwitterGenericTimelineByIdResponse = {
+  data?: {
+    timeline?: {
+      timeline?: {
+        instructions?: TimelineInstruction[];
+      };
+    };
+  };
+};
+
+type TimelineTrendRaw = {
+  __typename?: string;
+  name?: string;
+  rank?: string;
+  is_ai_trend?: boolean;
+  trend_metadata?: { domain_context?: string; url?: { url?: string } };
+  trend_url?: { url?: string };
+  grouped_trends?: Array<{ name?: string; url?: { url?: string } }>;
+};

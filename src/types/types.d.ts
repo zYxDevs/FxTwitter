@@ -457,3 +457,27 @@ declare interface APISearchResults {
     bottom: string | null;
   };
 }
+
+declare interface APITrendGroupedTopic {
+  name: string;
+  url: string | null;
+}
+
+declare interface APITrend {
+  name: string;
+  rank: string | null;
+  context: string | null;
+  is_ai_trend?: boolean;
+  grouped_topics?: APITrendGroupedTopic[];
+}
+
+declare interface APITrendsResponse {
+  code: number;
+  message?: string;
+  timeline_type: string;
+  trends: APITrend[];
+  cursor: {
+    top: string | null;
+    bottom: string | null;
+  };
+}

@@ -7,7 +7,8 @@ import {
   profileAPIRequest,
   searchAPIRequest,
   statusAPIRequest,
-  threadAPIRequest
+  threadAPIRequest,
+  trendsAPIRequest
 } from './routes/twitter';
 import { oembed } from './routes/oembed';
 import { linkHitRequest, linkGoRequest } from './hit';
@@ -37,6 +38,7 @@ api.get('/2/status/:id', statusAPIRequest);
 api.get('/2/thread/:id', threadAPIRequest);
 api.get('/2/profile/:handle', profileAPIRequest);
 api.get('/2/search', searchAPIRequest);
+api.get('/2/trends', trendsAPIRequest);
 api.get('/2/owoembed', oembed);
 
 /* Current v1 API endpoints. Currently, these still go through the Twitter embed requests. API v2+ won't do this. */

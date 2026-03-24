@@ -26,7 +26,7 @@ export const statusV2Route = createRoute({
   path: '/2/status/{id}',
   summary: 'Get a single post',
   description:
-    'Returns one X/Twitter post by snowflake ID. Requires a `User-Agent` header (see API middleware). Optional `about_account` / `aboutAccount` adds account metadata when present.',
+    'Returns one X/Twitter post by snowflake ID. Optional `about_account` / `aboutAccount` adds account metadata when present.',
   request: {
     params: z.object({
       id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })

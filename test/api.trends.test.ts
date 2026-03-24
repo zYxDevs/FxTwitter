@@ -1,5 +1,4 @@
 import { test, expect } from 'vitest';
-import { APITrendsResponse } from '../src/types/types';
 import { app } from '../src/worker';
 import { botHeaders } from './helpers/data';
 import harness from './helpers/harness';

@@ -248,9 +248,44 @@ export const TwitterArticleSchema = z.object({
   media_entities: z.array(TwitterApiMediaLooseSchema)
 });
 
-/* Self-referential `z.lazy` needs an explicit Zod annotation or TS reports a circular inference error (7022/7024).
- * `z.infer<typeof APITwitterStatusSchema>` remains the canonical output type for consumers. */
-export const APITwitterStatusSchema: z.ZodTypeAny = z
+/** Explicit recursive output type so consumers are not stuck with `unknown` from `z.ZodTypeAny` + `z.lazy`. */
+export type APITwitterStatus = {
+  id: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  replies: number;
+  quote?: APITwitterStatus;
+  poll?: z.infer<typeof APIPollSchema>;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  translation?: z.infer<typeof APITranslateSchema>;
+  possibly_sensitive: boolean;
+  replying_to: {
+    screen_name: string;
+    post: string;
+  } | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'twitter';
+  views?: number | null;
+  bookmarks?: number | null;
+  community?: z.infer<typeof APITwitterCommunitySchema>;
+  article?: z.infer<typeof TwitterArticleSchema>;
+  is_note_tweet: boolean;
+  community_note: z.infer<typeof APITwitterCommunityNoteSchema> | null;
+};
+
+/* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`. */
+export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
   .lazy(() =>
     z.object({
       id: z.string(),
@@ -350,12 +385,6 @@ export const ApiQueryErrorSchema = z
   })
   .openapi('ApiQueryError');
 
-export const UserAgentErrorSchema = z
-  .object({
-    error: z.string()
-  })
-  .openapi('UserAgentError');
-
 export type APIFacet = z.infer<typeof APIFacetSchema>;
 export type APITranslate = z.infer<typeof APITranslateSchema>;
 export type APIPollChoice = z.infer<typeof APIPollChoiceSchema>;
@@ -369,7 +398,6 @@ export type APIMosaicPhoto = z.infer<typeof APIMosaicPhotoSchema>;
 export type APIBroadcast = z.infer<typeof APIBroadcastSchema>;
 export type APIUser = z.infer<typeof APIUserSchema>;
 export type APITwitterCommunityNote = z.infer<typeof APITwitterCommunityNoteSchema>;
-export type APITwitterStatus = z.infer<typeof APITwitterStatusSchema>;
 export type APITwitterCommunity = z.infer<typeof APITwitterCommunitySchema>;
 export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
@@ -378,4 +406,3 @@ export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;
 export type APITrend = z.infer<typeof APITrendSchema>;
 export type APITrendsResponse = z.infer<typeof APITrendsResponseSchema>;
 export type ApiQueryError = z.infer<typeof ApiQueryErrorSchema>;
-export type UserAgentError = z.infer<typeof UserAgentErrorSchema>;

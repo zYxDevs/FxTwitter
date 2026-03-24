@@ -4,22 +4,22 @@
 
 import type { Context } from 'hono';
 
-declare global {
-  type InputFlags = {
-    standard?: boolean;
-    direct?: boolean;
-    api?: boolean;
-    textOnly?: boolean;
-    isXDomain?: boolean;
-    forceInstantView?: boolean;
-    instantViewUnrollThreads?: boolean;
-    archive?: boolean;
-    gallery?: boolean;
-    forceMosaic?: boolean;
-    name?: string;
-    noActivity?: boolean;
-  };
+export type InputFlags = {
+  standard?: boolean;
+  direct?: boolean;
+  api?: boolean;
+  textOnly?: boolean;
+  isXDomain?: boolean;
+  forceInstantView?: boolean;
+  instantViewUnrollThreads?: boolean;
+  archive?: boolean;
+  gallery?: boolean;
+  forceMosaic?: boolean;
+  name?: string;
+  noActivity?: boolean;
+};
 
+declare global {
   interface StatusResponse {
     text?: string;
     response?: Response;

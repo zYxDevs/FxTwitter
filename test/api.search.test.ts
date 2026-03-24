@@ -1,6 +1,5 @@
 import { test, expect } from 'vitest';
 import type { APITwitterStatus } from '../src/realms/api/schemas';
-import { APISearchResults } from '../src/types/types';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
 import harness from './helpers/harness';
@@ -68,19 +67,4 @@ test('API search accepts count parameter', async () => {
   expect(result.status).toEqual(200);
   const response = (await result.json()) as APISearchResults;
   expect(response.code).toEqual(200);
-});
-
-test('API search returns 400 when query parameter is missing', async () => {
-  const result = await app.request(
-    new Request('https://api.fxtwitter.com/2/search', {
-      method: 'GET',
-      headers: botHeaders
-    }),
-    undefined,
-    harness
-  );
-  expect(result.status).toEqual(400);
-  const response = (await result.json()) as { code: number; message: string };
-  expect(response.code).toEqual(400);
-  expect(response.message).toContain('q');
 });

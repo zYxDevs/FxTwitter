@@ -12,13 +12,22 @@ import {
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Context } from 'hono';
 import { isParamTruthy } from '../../../helpers/utils';
+import type { RouteHandler } from '@hono/zod-openapi';
+import {
+  profileStatusesV2Route,
+  profileV2Route,
+  searchV2Route,
+  statusV2Route,
+  threadV2Route,
+  trendsV2Route
+} from '../routes';
 
 const shouldIncludeAboutAccount = (c: Context) => {
   return isParamTruthy(c.req.query('about_account') ?? c.req.query('aboutAccount'));
 };
 
-export const statusAPIRequest = async (c: Context) => {
-  const id = c.req.param('id') as string;
+export const statusAPIRequest: RouteHandler<typeof statusV2Route> = async c => {
+  const { id } = c.req.valid('param');
 
   let processedResponse = await constructTwitterThread(id, false, c, undefined, undefined);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
@@ -26,15 +35,14 @@ export const statusAPIRequest = async (c: Context) => {
   }
 
   c.status(processedResponse.code as ContentfulStatusCode);
-  // Add every header from Constants.API_RESPONSE_HEADERS
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse);
+  return c.json(processedResponse, processedResponse.code as 200 | 401 | 404 | 500);
 };
 
-export const threadAPIRequest = async (c: Context) => {
-  const id = c.req.param('id') as string;
+export const threadAPIRequest: RouteHandler<typeof threadV2Route> = async c => {
+  const { id } = c.req.valid('param');
 
   let processedResponse = await constructTwitterThread(id, true, c, undefined);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
@@ -42,33 +50,30 @@ export const threadAPIRequest = async (c: Context) => {
   }
 
   c.status(processedResponse.code as ContentfulStatusCode);
-  // Add every header from Constants.API_RESPONSE_HEADERS
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse);
+  return c.json(processedResponse, processedResponse.code as 200 | 401 | 404 | 500);
 };
 
-export const profileAPIRequest = async (c: Context) => {
-  const handle = c.req.param('handle') as string;
+export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c => {
+  const { handle } = c.req.valid('param');
 
   const profileResponse = await userAPI(handle, c);
 
   c.status(profileResponse.code as ContentfulStatusCode);
-  // Add every header from Constants.API_RESPONSE_HEADERS
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(profileResponse);
+  return c.json(profileResponse, profileResponse.code as 200 | 404);
 };
 
-export const profileStatusesAPIRequest = async (c: Context) => {
-  const handle = c.req.param('handle') as string;
+export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Route> = async c => {
+  const { handle } = c.req.valid('param');
+  const query = c.req.valid('query');
 
-  const rawCount = parseInt(c.req.query('count') ?? '20', 10);
-  const count = Number.isNaN(rawCount) ? 20 : Math.min(Math.max(rawCount, 1), 100);
-
-  const cursor = c.req.query('cursor') ?? null;
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
 
   const statusesResponse = await profileStatusesAPI(handle, count, cursor, c);
 
@@ -76,57 +81,55 @@ export const profileStatusesAPIRequest = async (c: Context) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(statusesResponse);
+  return c.json(statusesResponse, statusesResponse.code as 200 | 404 | 500);
 };
 
-export const searchAPIRequest = async (c: Context) => {
-  const query = c.req.query('q');
+export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
+  const query = c.req.valid('query');
+  const q = query.q;
 
-  if (!query) {
+  if (!q) {
     c.status(400);
     for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
       c.header(header, value);
     }
-    return c.json({ code: 400, message: 'Missing required query parameter: q' });
+    return c.json({ code: 400 as const, message: 'Missing required query parameter: q' }, 400);
   }
 
-  const rawFeed = c.req.query('feed') ?? 'latest';
-  const feed = (['latest', 'top', 'media'] as const).includes(rawFeed as 'latest' | 'top' | 'media')
-    ? (rawFeed as 'latest' | 'top' | 'media')
-    : 'latest';
+  const feed = query.feed ?? 'latest';
+  const count = query.count ?? 30;
+  const cursor = query.cursor ?? null;
 
-  const rawCount = parseInt(c.req.query('count') ?? '30', 10);
-  const count = Number.isNaN(rawCount) ? 30 : Math.min(Math.max(rawCount, 1), 100);
-
-  const cursor = c.req.query('cursor') ?? null;
-
-  const searchResponse = await searchAPI(query, feed, count, cursor, c);
+  const searchResponse = await searchAPI(q, feed, count, cursor, c);
 
   c.status(searchResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(searchResponse);
+  return c.json(searchResponse, searchResponse.code as 200 | 404 | 500);
 };
 
-export const trendsAPIRequest = async (c: Context) => {
-  const rawType = c.req.query('type') ?? 'trending';
+export const trendsAPIRequest: RouteHandler<typeof trendsV2Route> = async c => {
+  const query = c.req.valid('query');
+  const rawType = query.type ?? 'trending';
   if (!isPublicExploreTimelineKind(rawType)) {
     c.status(400);
     for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
       c.header(header, value);
     }
-    return c.json({
-      code: 400,
-      message: `Invalid type parameter. Supported values: ${PUBLIC_EXPLORE_TIMELINE_KINDS.join(', ')}`,
-      timeline_type: rawType,
-      trends: [],
-      cursor: { top: null, bottom: null }
-    });
+    return c.json(
+      {
+        code: 400 as const,
+        message: `Invalid type parameter. Supported values: ${PUBLIC_EXPLORE_TIMELINE_KINDS.join(', ')}`,
+        timeline_type: rawType,
+        trends: [],
+        cursor: { top: null, bottom: null }
+      },
+      400
+    );
   }
 
-  const rawCount = parseInt(c.req.query('count') ?? '20', 10);
-  const count = Number.isNaN(rawCount) ? 20 : Math.min(Math.max(rawCount, 1), 50);
+  const count = query.count ?? 20;
 
   const trendsResponse = await trendsAPI(c, rawType, count);
 
@@ -134,5 +137,5 @@ export const trendsAPIRequest = async (c: Context) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(trendsResponse);
+  return c.json(trendsResponse, trendsResponse.code as 200 | 404 | 500);
 };

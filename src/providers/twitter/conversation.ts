@@ -533,17 +533,15 @@ export const constructTwitterThread = async (
 ): Promise<SocialThread> => {
   console.log('language', language);
 
+  // Fetch status using orchestrator with appropriate method prioritization
   let response:
     | TweetDetailResponse
     | TweetResultByRestIdResponse
     | TweetResultsByRestIdsResponse
     | TweetResultsByIdsResponse
     | TweetResultByIdResponse
-    | null = null;
+    | null = await fetchSingleStatus(id, c, processThread);
   let status: APITwitterStatus;
-
-  // Fetch status using orchestrator with appropriate method prioritization
-  response = await fetchSingleStatus(id, c, processThread);
 
   if (!response) {
     writeDataPoint(c, language, null, '404');
@@ -554,9 +552,25 @@ export const constructTwitterThread = async (
   const triedTweetDetail = !!(response as TweetDetailResponse)?.data
     ?.threaded_conversation_with_injections_v2;
 
+  const isTweetDetailResponse = (
+    resp:
+      | TweetDetailResponse
+      | TweetResultByRestIdResponse
+      | TweetResultsByRestIdsResponse
+      | TweetResultsByIdsResponse
+      | TweetResultByIdResponse
+      | null
+  ) => {
+    return (
+      resp &&
+      'data' in resp &&
+      resp.data !== null &&
+      'threaded_conversation_with_injections_v2' in (resp.data || {})
+    );
+  };
+
   if (response && response.data && !triedTweetDetail) {
-    let result: GraphQLTwitterStatus | null = null;
-    result = getResultFromResponse(response);
+    const result = getResultFromResponse(response);
 
     if (!result) {
       writeDataPoint(c, language, null, '404');
@@ -609,9 +623,11 @@ export const constructTwitterThread = async (
           response = threadResponse;
         }
       }
-      // Return single tweet if TweetDetail fails
-      writeDataPoint(c, language, status.possibly_sensitive, '200');
-      return { status: status, thread: null, author: status.author, code: 200 };
+      // Return single tweet if TweetDetail fails; otherwise fall through to thread processing
+      if (!isTweetDetailResponse(response)) {
+        writeDataPoint(c, language, status.possibly_sensitive, '200');
+        return { status: status, thread: null, author: status.author, code: 200 };
+      }
     } else if (processThread) {
       // Can't process thread without TweetDetail
       writeDataPoint(c, language, status.possibly_sensitive, '200');
@@ -620,24 +636,6 @@ export const constructTwitterThread = async (
   }
 
   // Process TweetDetail response for thread data
-  // Type guard to ensure we're working with TweetDetailResponse
-  const isTweetDetailResponse = (
-    resp:
-      | TweetDetailResponse
-      | TweetResultByRestIdResponse
-      | TweetResultsByRestIdsResponse
-      | TweetResultsByIdsResponse
-      | TweetResultByIdResponse
-      | null
-  ) => {
-    return (
-      resp &&
-      'data' in resp &&
-      resp.data !== null &&
-      'threaded_conversation_with_injections_v2' in (resp.data || {})
-    );
-  };
-
   if (response && !isTweetDetailResponse(response)) {
     writeDataPoint(c, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
@@ -836,7 +834,7 @@ export const constructTwitterThread = async (
   );
 
   // Sort socialThread.thread by id converted to bigint
-  socialThread.thread?.sort((a, b) => {
+  socialThread.thread?.sort((a: APITwitterStatus, b: APITwitterStatus) => {
     const aId = BigInt(a.id);
     const bId = BigInt(b.id);
     if (aId < bId) {

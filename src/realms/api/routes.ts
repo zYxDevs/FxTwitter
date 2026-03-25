@@ -38,6 +38,10 @@ export const statusV2Route = createRoute({
       description: 'Post payload (check `code` for upstream errors mirrored as HTTP status)',
       content: { 'application/json': { schema: SocialThreadSchema } }
     },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
     401: {
       description: 'Private or unavailable post',
       content: { 'application/json': { schema: SocialThreadSchema } }
@@ -70,6 +74,10 @@ export const threadV2Route = createRoute({
       description: 'Thread payload',
       content: { 'application/json': { schema: SocialThreadSchema } }
     },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
     401: {
       description: 'Private or unavailable',
       content: { 'application/json': { schema: SocialThreadSchema } }
@@ -99,6 +107,10 @@ export const profileV2Route = createRoute({
     200: {
       description: 'Profile (check `code`)',
       content: { 'application/json': { schema: UserAPIResponseSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
     },
     404: {
       description: 'User not found',
@@ -131,6 +143,10 @@ export const profileStatusesV2Route = createRoute({
       description: 'Timeline page',
       content: { 'application/json': { schema: APISearchResultsSchema } }
     },
+    400: {
+      description: 'Invalid path or query parameters (e.g. `count` out of range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
     404: {
       description: 'User not found or empty timeline',
       content: { 'application/json': { schema: APISearchResultsSchema } }
@@ -148,7 +164,7 @@ export const searchV2Route = createRoute({
   summary: 'Search posts',
   request: {
     query: z.object({
-      q: z.string().openapi({ description: 'Search query' }),
+      q: z.string().min(1).openapi({ description: 'Search query (non-empty)', example: 'neo' }),
       feed: z.enum(['latest', 'top', 'media']).optional().openapi({
         description: 'Search tab (default latest)',
         default: 'latest'
@@ -166,7 +182,7 @@ export const searchV2Route = createRoute({
       content: { 'application/json': { schema: APISearchResultsSchema } }
     },
     400: {
-      description: 'Missing required `q`',
+      description: 'Invalid `q` parameter',
       content: { 'application/json': { schema: ApiQueryErrorSchema } }
     },
     404: {
@@ -213,8 +229,8 @@ export const trendsV2Route = createRoute({
       content: { 'application/json': { schema: APITrendsResponseSchema } }
     },
     400: {
-      description: 'Invalid `type`',
-      content: { 'application/json': { schema: APITrendsResponseSchema } }
+      description: 'Invalid query parameters (e.g. `type` or `count` out of allowed range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
     },
     404: {
       description: 'Trends unavailable',

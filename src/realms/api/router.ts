@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { apiOpenapiValidationHook } from './openapi-validation-hook';
 import { statusRequest } from '../twitter/routes/status';
 import { profileRequest } from '../twitter/routes/profile';
 import { Strings } from '../../strings';
@@ -23,7 +24,7 @@ import {
   trendsV2Route
 } from './routes';
 
-export const api = new OpenAPIHono();
+export const api = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
 
 api.use('*', async (c, next) => {
   if (!c.req.header('user-agent')) {

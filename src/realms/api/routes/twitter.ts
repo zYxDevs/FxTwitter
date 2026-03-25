@@ -84,14 +84,6 @@ export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
   const query = c.req.valid('query');
   const q = query.q;
 
-  if (!q) {
-    c.status(400);
-    for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-      c.header(header, value);
-    }
-    return c.json({ code: 400 as const, message: 'Missing required query parameter: q' }, 400);
-  }
-
   const feed = query.feed ?? 'latest';
   const count = query.count ?? 30;
   const cursor = query.cursor ?? null;

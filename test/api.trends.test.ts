@@ -1,4 +1,5 @@
 import { test, expect } from 'vitest';
+import type { APITrendsResponse } from '../src/realms/api/schemas';
 import { app } from '../src/worker';
 import { botHeaders } from './helpers/data';
 import harness from './helpers/harness';
@@ -33,6 +34,8 @@ test('API trends returns 400 for unsupported type', async () => {
     harness
   );
   expect(result.status).toEqual(400);
-  const body = (await result.json()) as { success?: boolean };
-  expect(body.success).toBe(false);
+  const body = (await result.json()) as { code?: number; message?: string };
+  expect(body.code).toBe(400);
+  expect(typeof body.message).toBe('string');
+  expect(body.message!.length).toBeGreaterThan(0);
 });

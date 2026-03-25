@@ -57,7 +57,7 @@ export const APIVideoFormatSchema = z.object({
 export const APIMediaBaseSchema = z.object({
   id: z.string().optional(),
   format: z.string().optional(),
-  type: z.string(),
+  type: z.enum(['photo', 'video', 'gif']),
   url: z.string(),
   width: z.number(),
   height: z.number()
@@ -66,7 +66,7 @@ export const APIMediaBaseSchema = z.object({
 export const APIPhotoSchema = z.object({
   id: z.string().optional(),
   format: z.string().optional(),
-  type: z.enum(['photo', 'gif']),
+  type: z.enum(['photo']),
   url: z.string(),
   width: z.number(),
   height: z.number(),

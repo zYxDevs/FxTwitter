@@ -4,6 +4,23 @@ import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
 import harness from './helpers/harness';
 
+test('API search rejects empty q with 400 and ApiQueryError shape', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/search?q=', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(400);
+  const body = (await result.json()) as { code?: number; message?: string; success?: boolean };
+  expect(body.code).toEqual(400);
+  expect(typeof body.message).toBe('string');
+  expect(body.message?.length).toBeGreaterThan(0);
+  expect(body.success).toBeUndefined();
+});
+
 test('API search returns results for query "neo"', async () => {
   const result = await app.request(
     new Request('https://api.fxtwitter.com/2/search?q=neo', {

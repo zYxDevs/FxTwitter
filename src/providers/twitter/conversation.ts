@@ -5,7 +5,7 @@ import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { APITwitterStatus } from '../../realms/api/schemas';
-import { FetchResults, InputFlags, SocialThread } from '../../types/types';
+import { InputFlags } from '../../types/types';
 import {
   TweetDetailQuery,
   TweetResultByIdQuery,
@@ -834,7 +834,7 @@ export const constructTwitterThread = async (
   );
 
   // Sort socialThread.thread by id converted to bigint
-  socialThread.thread?.sort((a: APITwitterStatus, b: APITwitterStatus) => {
+  socialThread.thread?.sort((a: APIStatus | APITwitterStatus, b: APIStatus | APITwitterStatus) => {
     const aId = BigInt(a.id);
     const bId = BigInt(b.id);
     if (aId < bId) {

@@ -27,11 +27,10 @@ export function timelineTrendToApiTrend(raw: TimelineTrendRaw): APITrend | null 
   if (!name || typeof name !== 'string') {
     return null;
   }
-  const deep = raw.trend_url?.url ?? raw.trend_metadata?.url?.url;
   const grouped =
     raw.grouped_trends
       ?.map(g => ({
-        name: typeof g.name === 'string' ? g.name : '',
+        name: typeof g.name === 'string' ? g.name : ''
       }))
       .filter(g => g.name) ?? [];
 

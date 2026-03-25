@@ -357,8 +357,7 @@ export const APISearchResultsSchema = z
   .openapi('APISearchResults');
 
 export const APITrendGroupedTopicSchema = z.object({
-  name: z.string(),
-  url: z.string().nullable()
+  name: z.string()
 });
 
 export const APITrendSchema = z.object({

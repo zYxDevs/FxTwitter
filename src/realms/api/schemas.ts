@@ -66,7 +66,7 @@ export const APIMediaBaseSchema = z.object({
 export const APIPhotoSchema = z.object({
   id: z.string().optional(),
   format: z.string().optional(),
-  type: z.enum(['photo']),
+  type: z.enum(['photo', 'gif']),
   url: z.string(),
   width: z.number(),
   height: z.number(),

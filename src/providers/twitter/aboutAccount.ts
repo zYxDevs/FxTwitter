@@ -32,10 +32,7 @@ const collectScreenNames = (response: SocialThread): Map<string, string> => {
   return screenNames;
 };
 
-const applyAboutAccountData = (
-  response: SocialThread,
-  results: GraphQLOrchestratorResult
-) => {
+const applyAboutAccountData = (response: SocialThread, results: GraphQLOrchestratorResult) => {
   const apply = (author?: APIUser | null) => {
     if (!author?.screen_name) {
       return;

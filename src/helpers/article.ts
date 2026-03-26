@@ -34,6 +34,13 @@ interface InlineLink {
   text: string;
 }
 
+/** Draft.js-style entity payloads in article block `data` (mentions, urls, hashtags, cashtags). */
+interface BlockDataEntitySpan {
+  fromIndex: number;
+  toIndex: number;
+  text: string;
+}
+
 /**
  * Collects all inline links (mentions, URLs, hashtags) from block data
  * @param block The content block
@@ -44,8 +51,8 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
   const data = block.data;
 
   // Process mentions -> link to twitter profile
-  if (data.mentions) {
-    for (const mention of data.mentions) {
+  if (Array.isArray(data.mentions)) {
+    for (const mention of data.mentions as BlockDataEntitySpan[]) {
       links.push({
         fromIndex: mention.fromIndex,
         toIndex: mention.toIndex,
@@ -56,8 +63,8 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
   }
 
   // Process URLs -> use the URL as the link (wrap for Telegram if apiHost provided)
-  if (data.urls) {
-    for (const url of data.urls) {
+  if (Array.isArray(data.urls)) {
+    for (const url of data.urls as BlockDataEntitySpan[]) {
       const href = apiHost ? wrapForeignLinks(url.text, apiHost) : url.text;
       links.push({
         fromIndex: url.fromIndex,
@@ -69,8 +76,8 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
   }
 
   // Process hashtags -> link to twitter hashtag search
-  if (data.hashtags) {
-    for (const hashtag of data.hashtags) {
+  if (Array.isArray(data.hashtags)) {
+    for (const hashtag of data.hashtags as BlockDataEntitySpan[]) {
       links.push({
         fromIndex: hashtag.fromIndex,
         toIndex: hashtag.toIndex,
@@ -81,8 +88,8 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
   }
 
   // Process cashtags (symbols) -> link to twitter search
-  if (data.cashtags) {
-    for (const cashtag of data.cashtags) {
+  if (Array.isArray(data.cashtags)) {
+    for (const cashtag of data.cashtags as BlockDataEntitySpan[]) {
       links.push({
         fromIndex: cashtag.fromIndex,
         toIndex: cashtag.toIndex,
@@ -290,7 +297,7 @@ const renderBlock = (
         if (media) {
           if (options.fullRenderer) {
             // Render inline media for Telegram
-            let mediaHtml = '';
+            let mediaHtml: string;
             if (media.media_info.__typename === 'ApiImage') {
               const image = media.media_info as TwitterApiImage;
               mediaHtml = `<img src="${image.original_img_url}" alt="" />`;
@@ -337,7 +344,7 @@ const renderBlock = (
     } else if (entityEntry?.value.type === 'MARKDOWN') {
       // Handle MARKDOWN entities (typically code blocks)
       const markdown = (entityEntry.value.data as { markdown?: string }).markdown || '';
-      let markdownHtml = '';
+      let markdownHtml: string;
 
       if (markdown.startsWith('```')) {
         // It's a code block - extract language identifier and content
@@ -401,7 +408,7 @@ const renderBlock = (
 
   // Determine block tag based on type
   // For Discord (fullRenderer = false), render headers as bold text instead of header tags
-  let blockTag = 'p';
+  let blockTag: string;
   let isHeader = false;
   switch (block.type) {
     case 'header-one':

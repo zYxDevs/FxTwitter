@@ -1,7 +1,6 @@
 import { Constants } from '../constants';
 import { DataProvider } from '../enum';
 import type { APITwitterStatus } from '../realms/api/schemas';
-import { APIStatus, APITikTokStatus } from '../types/types';
 import { formatNumber } from './utils';
 
 export const getSocialProof = (status: APIStatus): string | null => {

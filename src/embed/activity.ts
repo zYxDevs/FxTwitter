@@ -11,16 +11,6 @@ import { escapeRegex } from '../helpers/utils';
 import { decodeSnowcode } from '../helpers/snowcode';
 import translationResources from '../../i18n/resources';
 import { Experiment, experimentCheck } from '../experiments';
-import type { APITwitterStatus } from '../realms/api/schemas';
-import {
-  ActivityMediaAttachment,
-  ActivityStatus,
-  APIPhoto,
-  APIPoll,
-  APIStatus,
-  APIVideo,
-  SocialThread
-} from '../types/types';
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
@@ -138,7 +128,7 @@ interface StatusTextResult {
 }
 
 const getStatusText = (status: APIStatus): StatusTextResult => {
-  let text = '';
+  let text: string;
 
   // Check if is Twitter so we can detect article
   if (status.provider === DataProvider.Twitter) {
@@ -289,8 +279,8 @@ const formatStatus = (text: string, status: APIStatus) => {
         break;
     }
     let offset = 0;
-    status.raw_text.facets.forEach(facet => {
-      let newFacet = '';
+    status.raw_text.facets.forEach((facet: APIFacet) => {
+      let newFacet: string;
       switch (facet.type) {
         case 'bold':
           newFacet = `<b>${text.slice(facet.indices[0] + offset, facet.indices[1] + offset)}</b>`;
@@ -428,7 +418,7 @@ export const handleActivity = async (
   }
 
   // Get status text and article media
-  const statusResult = getStatusText(thread.status);
+  const statusResult = getStatusText(thread.status as APIStatus);
   const statusText = statusResult.text;
   const articleMedia = statusResult.articleMedia;
 
@@ -617,7 +607,7 @@ export const handleActivity = async (
         .filter(Boolean) as ActivityMediaAttachment[];
 
       // Merge article media attachments, excluding duplicates by id
-      const existingIds = new Set(response.media_attachments.map(a => a.id));
+      const existingIds = new Set(response.media_attachments.map((a: { id: string }) => a.id));
       const uniqueArticleAttachments = articleAttachments.filter(a => !existingIds.has(a.id));
       response.media_attachments.push(...uniqueArticleAttachments);
     } else if (thread.status.media?.external) {

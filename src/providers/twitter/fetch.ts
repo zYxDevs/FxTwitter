@@ -137,7 +137,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     headers['x-twitter-active-user'] = 'yes';
     headers['x-guest-token'] = guestToken;
     let response: unknown;
-    let apiRequest: Response | null = null;
+    let apiRequest: Response | null;
 
     try {
       if (useElongator && typeof c.env?.TwitterProxy !== 'undefined') {
@@ -176,7 +176,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         if (_response.split('\n').length > 1) {
           response = detokenize(_response);
         } else {
-          throw new Error('Failed to parse response as JSON');
+          throw new Error('Failed to parse response as JSON', { cause: _e });
         }
       }
     } catch (e: unknown) {

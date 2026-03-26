@@ -57,8 +57,9 @@ export const APIVideoFormatSchema = z.object({
 export const APIMediaBaseSchema = z.object({
   id: z.string().optional(),
   format: z.string().optional(),
-  type: z.enum(['photo', 'video', 'gif']),
+  type: z.enum(['photo', 'video', 'gif', 'mosaic_photo']),
   url: z.string(),
+  transcode_url: z.string().optional().nullable(),
   width: z.number(),
   height: z.number()
 });
@@ -70,7 +71,7 @@ export const APIPhotoSchema = z.object({
   url: z.string(),
   width: z.number(),
   height: z.number(),
-  transcode_url: z.string().optional(),
+  transcode_url: z.string().optional().nullable(),
   altText: z.string().optional()
 });
 
@@ -81,7 +82,8 @@ export const APIVideoSchema = z.object({
   url: z.string(),
   width: z.number(),
   height: z.number(),
-  thumbnail_url: z.string(),
+  thumbnail_url: z.string().optional().nullable(),
+  transcode_url: z.string().optional().nullable(),
   duration: z.number(),
   filesize: z.number().optional(),
   variants: z.array(TweetMediaVariantSchema).optional(),
@@ -184,11 +186,14 @@ export const APIUserSchema = z
         display_url: z.string()
       })
       .nullable(),
-    birthday: z.object({
-      day: z.number().optional(),
-      month: z.number().optional(),
-      year: z.number().optional()
-    }),
+    birthday: z
+      .object({
+        day: z.number().optional(),
+        month: z.number().optional(),
+        year: z.number().optional()
+      })
+      .nullable()
+      .optional(),
     verification: z
       .object({
         verified: z.boolean(),
@@ -237,15 +242,159 @@ export const APITwitterCommunityNoteSchema = z.object({
 /** Twitter GraphQL media entity — shape varies; kept loose for OpenAPI. */
 export const TwitterApiMediaLooseSchema = z.record(z.string(), z.unknown());
 
+/** Draft.js-style article body block (Twitter `content_state.blocks`). */
+export const TwitterArticleContentBlockSchema = z.object({
+  key: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  entityRanges: z.array(
+    z.object({
+      key: z.number(),
+      length: z.number(),
+      offset: z.number()
+    })
+  ),
+  inlineStyleRanges: z.array(
+    z.object({
+      length: z.number(),
+      offset: z.number(),
+      style: z.string()
+    })
+  ),
+  text: z.string(),
+  type: z.string()
+});
+
+const TwitterArticleEntityMarkdownSchema = z.object({
+  key: z.string(),
+  value: z.object({
+    type: z.literal('MARKDOWN'),
+    mutability: z.literal('Mutable'),
+    data: z.object({
+      entityKey: z.string(),
+      markdown: z.string()
+    })
+  })
+});
+
+const TwitterArticleEntityMediaSchema = z.object({
+  key: z.string(),
+  value: z.object({
+    type: z.literal('MEDIA'),
+    mutability: z.literal('Immutable'),
+    data: z.object({
+      entityKey: z.string(),
+      mediaItems: z.array(
+        z.object({
+          localMediaId: z.string(),
+          mediaCategory: z.string(),
+          mediaId: z.string()
+        })
+      )
+    })
+  })
+});
+
+const TwitterArticleEntityTweetSchema = z.object({
+  key: z.string(),
+  value: z.object({
+    type: z.literal('TWEET'),
+    mutability: z.literal('Immutable'),
+    data: z.object({
+      tweetId: z.string()
+    })
+  })
+});
+
+export const TwitterApiImageSchema = z.object({
+  __typename: z.literal('ApiImage'),
+  original_img_height: z.number(),
+  original_img_width: z.number(),
+  original_img_url: z.string(),
+  color_info: z.object({
+    palette: z.array(
+      z.object({
+        percentage: z.number(),
+        rgb: z.object({ red: z.number(), green: z.number(), blue: z.number() })
+      })
+    )
+  })
+});
+
+export const TwitterApiVideoSchema = z.object({
+  __typename: z.union([z.literal('ApiVideo'), z.literal('ApiGif')]),
+  type: z.union([z.literal('video'), z.literal('animated_gif')]),
+  id: z.string(),
+  id_str: z.string(),
+  ext_alt_text: z.string().nullable(),
+  ext_media_color: z.object({
+    palette: z.array(
+      z.object({
+        percentage: z.number(),
+        rgb: z.object({ red: z.number(), green: z.number(), blue: z.number() })
+      })
+    )
+  }),
+  media_url: z.string(),
+  media_url_https: z.string(),
+  url: z.string(),
+  display_url: z.string(),
+  expanded_url: z.string(),
+  original_info: z.object({
+    height: z.number(),
+    width: z.number()
+  }),
+  sizes: z.object({
+    original: z.object({
+      h: z.number(),
+      resize: z.literal('fit'),
+      w: z.number()
+    })
+  }),
+  video_info: z.object({
+    aspect_ratio: z.tuple([z.number(), z.number()]),
+    duration_millis: z.number(),
+    variants: z.array(
+      z.object({
+        bitrate: z.number(),
+        content_type: z.string(),
+        url: z.string()
+      })
+    )
+  })
+});
+
+const TwitterApiMediaSchema = z.object({
+  id: z.string(),
+  media_key: z.string(),
+  media_id: z.string(),
+  media_info: z.union([TwitterApiImageSchema, TwitterApiVideoSchema])
+});
+
+export const TwitterArticleEntityMapEntrySchema = z.union([
+  TwitterArticleEntityMarkdownSchema,
+  TwitterArticleEntityMediaSchema,
+  TwitterArticleEntityTweetSchema
+]);
+
+/** Mirrors Twitter `content_state`. Empty fallbacks use `default([])` so `blocks` / `entityMap` are always arrays. */
+export const TwitterArticleContentStateSchema = z.object({
+  blocks: z.array(TwitterArticleContentBlockSchema).default([]),
+  entityMap: z.array(TwitterArticleEntityMapEntrySchema).default([])
+});
+
+export type TwitterArticleContentBlock = z.infer<typeof TwitterArticleContentBlockSchema>;
+export type TwitterArticleContentState = z.infer<typeof TwitterArticleContentStateSchema>;
+export type TwitterArticleEntityMapEntry = z.infer<typeof TwitterArticleEntityMapEntrySchema>;
+
 export const TwitterArticleSchema = z.object({
   created_at: z.string(),
   modified_at: z.string().optional(),
   id: z.string(),
   title: z.string(),
   preview_text: z.string(),
-  cover_media: TwitterApiMediaLooseSchema,
-  content: z.record(z.string(), z.unknown()),
-  media_entities: z.array(TwitterApiMediaLooseSchema)
+  cover_media: TwitterApiMediaSchema,
+  content: TwitterArticleContentStateSchema,
+  media_entities: z.array(TwitterApiMediaSchema)
 });
 
 /** Explicit recursive output type so consumers are not stuck with `unknown` from `z.ZodTypeAny` + `z.lazy`. */

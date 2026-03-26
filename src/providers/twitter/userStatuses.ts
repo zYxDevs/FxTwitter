@@ -5,7 +5,6 @@ import { graphqlRequest } from './graphql/request';
 import { getTwitterUserRestIdByScreenName } from './profile';
 import { processTimelineInstructions } from './search';
 import type { APITwitterStatus } from '../../realms/api/schemas';
-import { APISearchResults, FetchResults } from '../../types/types';
 
 export const profileStatusesAPI = async (
   screenName: string,
@@ -18,7 +17,7 @@ export const profileStatusesAPI = async (
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
   }
 
-  let response: TwitterUserTweetsResponse | null = null;
+  let response: TwitterUserTweetsResponse | null;
 
   try {
     response = (await graphqlRequest(c, {

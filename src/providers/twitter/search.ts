@@ -3,7 +3,6 @@ import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
 import type { APITwitterStatus } from '../../realms/api/schemas';
-import { APISearchResults, FetchResults } from '../../types/types';
 
 type SearchFeed = 'latest' | 'top' | 'media';
 
@@ -117,7 +116,7 @@ export const searchAPI = async (
 ): Promise<APISearchResults> => {
   const product = feedToProduct(feed);
 
-  let response: TwitterSearchTimelineResponse | null = null;
+  let response: TwitterSearchTimelineResponse | null;
 
   try {
     response = (await graphqlRequest(c, {

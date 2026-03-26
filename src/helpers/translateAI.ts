@@ -1,6 +1,5 @@
 import { Context } from 'hono';
 import type { APITwitterStatus } from '../realms/api/schemas';
-import { APIBlueskyStatus, CFAITranslation } from '../types/types';
 import i18next from 'i18next';
 import { normalizeLanguage } from './language';
 
@@ -42,7 +41,7 @@ The target language is ${i18next.t(`language_${targetLang}`, { lng: 'en' })}.`
 
 /* Handles translating statuses when asked! */
 export const translateStatusAI = async (
-  status: APITwitterStatus | APIBlueskyStatus,
+  status: APITwitterStatus | APIBlueskyStatus | APIStatus,
   _language: string,
   c: Context
 ): Promise<CFAITranslation | null> => {

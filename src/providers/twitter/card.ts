@@ -1,4 +1,3 @@
-import { APIPoll, APIExternalMedia, APIBroadcast } from '../../types/types';
 import { calculateTimeLeftString } from '../../helpers/pollTime';
 import { twitterFetch } from './fetch';
 import { Context } from 'hono';

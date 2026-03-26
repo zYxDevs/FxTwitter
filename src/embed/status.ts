@@ -18,19 +18,11 @@ import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
 import type { APITwitterStatus } from '../realms/api/schemas';
-import {
-  APIMedia,
-  APIPhoto,
-  APIStatus,
-  APIVideo,
-  InputFlags,
-  ResponseInstructions,
-  SocialThread
-} from '../types/types';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { InputFlags } from '../types/types';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -294,7 +286,7 @@ export const handleStatus = async (
           const domain =
             status.provider === DataProvider.Twitter
               ? getVideoTranscodeDomain(status.id)
-              : getVideoTranscodeDomainBluesky(status.author.did);
+              : getVideoTranscodeDomainBluesky(status.author.id);
           redirectUrl = `https://${domain}${new URL(redirectUrl).pathname}`;
         } else if (
           experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&

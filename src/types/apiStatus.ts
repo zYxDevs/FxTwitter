@@ -7,7 +7,6 @@ import type {
   APIBroadcast,
   APIExternalMedia,
   APIFacet,
-  APIMedia,
   APIPhoto,
   APIPoll,
   APITranslate,
@@ -36,7 +35,7 @@ export interface APIStatus {
     external?: APIExternalMedia;
     photos?: APIPhoto[];
     videos?: APIVideo[];
-    all?: APIMedia[];
+    all?: (APIPhoto | APIVideo)[];
     mosaic?: APIMosaicPhoto;
     broadcast?: APIBroadcast;
   };

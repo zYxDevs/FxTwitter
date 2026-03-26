@@ -3,10 +3,10 @@ import { Constants } from '../constants';
 import { Experiment, experimentCheck } from '../experiments';
 import { handleQuote } from '../helpers/quote';
 import { DataProvider } from '../enum';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import {
   APIBlueskyStatus,
   APIMedia,
-  APITwitterStatus,
   APIVideo,
   RenderProperties,
   ResponseInstructions

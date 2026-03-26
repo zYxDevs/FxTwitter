@@ -9,7 +9,7 @@ export interface GraphQLQuery {
   queryId: string;
   queryName: string;
   requiresAccount: boolean;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   features?: Record<string, boolean>;
   fieldToggles?: Record<string, boolean>;
 }
@@ -17,7 +17,7 @@ export interface GraphQLQuery {
 interface GraphQLRequest {
   query: GraphQLQuery;
   validator: (response: unknown) => boolean;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   useElongator?: boolean;
 }
 

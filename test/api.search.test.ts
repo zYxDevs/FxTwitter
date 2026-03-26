@@ -1,8 +1,25 @@
 import { test, expect } from 'vitest';
-import { APISearchResults, APITwitterStatus } from '../src/types/types';
+import type { APITwitterStatus } from '../src/realms/api/schemas';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
 import harness from './helpers/harness';
+
+test('API search rejects empty q with 400 and ApiQueryError shape', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/search?q=', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(400);
+  const body = (await result.json()) as { code?: number; message?: string; success?: boolean };
+  expect(body.code).toEqual(400);
+  expect(typeof body.message).toBe('string');
+  expect(body.message?.length).toBeGreaterThan(0);
+  expect(body.success).toBeUndefined();
+});
 
 test('API search returns results for query "neo"', async () => {
   const result = await app.request(
@@ -67,19 +84,4 @@ test('API search accepts count parameter', async () => {
   expect(result.status).toEqual(200);
   const response = (await result.json()) as APISearchResults;
   expect(response.code).toEqual(200);
-});
-
-test('API search returns 400 when query parameter is missing', async () => {
-  const result = await app.request(
-    new Request('https://api.fxtwitter.com/2/search', {
-      method: 'GET',
-      headers: botHeaders
-    }),
-    undefined,
-    harness
-  );
-  expect(result.status).toEqual(400);
-  const response = (await result.json()) as { code: number; message: string };
-  expect(response.code).toEqual(400);
-  expect(response.message).toContain('q');
 });

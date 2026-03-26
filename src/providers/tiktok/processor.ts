@@ -1,5 +1,4 @@
 import { DataProvider } from '../../enum';
-import { APIPhoto, APIVideo, APITikTokStatus, APIVideoFormat } from '../../types/types';
 
 const TIKTOK_ROOT = 'https://www.tiktok.com';
 
@@ -285,7 +284,7 @@ const extractDuration = (video: TikTokItemInfo | TikTokAwemeDetail): number => {
 /**
  * Extract author information
  */
-const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
+const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail): APIUser => {
   if (isWebApiData(video)) {
     const author = video.author;
     return {

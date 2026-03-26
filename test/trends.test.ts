@@ -5,6 +5,8 @@ import {
   timelineTrendToApiTrend
 } from '../src/providers/twitter/trends';
 
+type TwitterExplorePageResponse = Parameters<typeof pickExploreTimelineId>[0];
+
 test('pickExploreTimelineId reads explore section from ExplorePage shape', () => {
   const res: TwitterExplorePageResponse = {
     data: {

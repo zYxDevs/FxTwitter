@@ -1,5 +1,6 @@
 import { test, expect } from 'vitest';
-import { TweetAPIResponse, APITwitterStatus } from '../src/types/types';
+import type { APITwitterStatus } from '../src/realms/api/schemas';
+import { TweetAPIResponse } from '../src/types/types';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
 import harness from './helpers/harness';

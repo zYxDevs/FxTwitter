@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { APIBlueskyStatus, APITwitterStatus, PolyglotTranslation } from '../types/types';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import { Constants } from '../constants';
 import { normalizeLanguage } from './language';
 
@@ -14,9 +14,9 @@ const getDomain = (): string | null => {
 
 /* Handles translating statuses when asked! */
 export const translateStatus = async (
-  status: APITwitterStatus | APIBlueskyStatus,
+  status: APITwitterStatus | APIBlueskyStatus | APIStatus,
   _language: string,
-  c: Context
+  _c: Context
 ): Promise<PolyglotTranslation | null> => {
   const language = normalizeLanguage(_language);
 

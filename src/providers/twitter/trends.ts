@@ -13,10 +13,6 @@ export const PUBLIC_EXPLORE_TIMELINE_KINDS = Object.keys(
   EXPLORE_TIMELINE_SECTIONS
 ) as PublicExploreTimelineKind[];
 
-export function isPublicExploreTimelineKind(value: string): value is PublicExploreTimelineKind {
-  return value in EXPLORE_TIMELINE_SECTIONS;
-}
-
 function isGraphQLTimelineCursorLoose(obj: unknown): obj is { cursorType: string; value: string } {
   return (
     typeof obj === 'object' &&
@@ -31,11 +27,10 @@ export function timelineTrendToApiTrend(raw: TimelineTrendRaw): APITrend | null 
   if (!name || typeof name !== 'string') {
     return null;
   }
-  const deep = raw.trend_url?.url ?? raw.trend_metadata?.url?.url;
   const grouped =
     raw.grouped_trends
       ?.map(g => ({
-        name: typeof g.name === 'string' ? g.name : '',
+        name: typeof g.name === 'string' ? g.name : ''
       }))
       .filter(g => g.name) ?? [];
 

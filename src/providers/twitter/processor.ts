@@ -7,7 +7,7 @@ import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import { APIUser, APITwitterStatus, FetchResults, APIVideo, APIPhoto } from '../../types/types';
+import type { APITwitterStatus } from '../../realms/api/schemas';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
@@ -501,8 +501,10 @@ export const buildAPITwitterStatus = async (
       title: status.article.article_results?.result?.title ?? '',
       preview_text: status.article.article_results?.result?.preview_text ?? '',
       cover_media: status.article.article_results?.result?.cover_media ?? ({} as TwitterApiMedia),
-      content:
-        status.article.article_results?.result?.content_state ?? ({} as TwitterArticleContentState),
+      content: status.article.article_results?.result?.content_state ?? {
+        blocks: [],
+        entityMap: []
+      },
       media_entities:
         status.article.article_results?.result?.media_entities ?? ([] as TwitterApiMedia[])
     };

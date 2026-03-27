@@ -653,8 +653,9 @@ type GraphQLTimelineTweet = {
 };
 
 type GraphQLTimelineCursor = {
-  cursorType: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
-  itemType: 'TimelineTimelineCursor';
+  cursorType?: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
+  cursor_type?: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
+  itemType?: 'TimelineTimelineCursor';
   value: string;
   __typename: 'TimelineTimelineCursor';
 };
@@ -665,9 +666,10 @@ interface GraphQLBaseTimeline {
 }
 
 type GraphQLTimelineItem = GraphQLBaseTimeline & {
-  entryType: 'TimelineTimelineItem';
+  entryType?: 'TimelineTimelineItem';
   __typename: 'TimelineTimelineItem';
-  itemContent: GraphQLTimelineTweet | GraphQLTimelineCursor;
+  itemContent?: GraphQLTimelineTweet | GraphQLTimelineCursor;
+  content?: GraphQLTimelineTweet | GraphQLTimelineCursor;
 };
 
 type GraphQLTimelineModule = GraphQLBaseTimeline & {
@@ -707,24 +709,28 @@ type TimelineInstruction =
   | TimelineReplaceEntryInstruction;
 
 type TimelineReplaceEntryInstruction = {
-  type: 'TimelineReplaceEntry';
+  type?: 'TimelineReplaceEntry';
+  __typename?: 'TimelineReplaceEntry';
   entry?: {
     content?: GraphQLTimelineCursor;
   };
 };
 
 type TimelineAddEntriesInstruction = {
-  type: 'TimelineAddEntries';
+  type?: 'TimelineAddEntries';
+  __typename?: 'TimelineAddEntries';
   entries: GraphQLTimelineEntry[];
 };
 
 type TimelineAddModulesInstruction = {
-  type: 'TimelineAddToModule';
+  type?: 'TimelineAddToModule';
+  __typename?: 'TimelineAddToModule';
   moduleItems: GraphQLTimelineEntry[];
 };
 
 type TimelineTerminateTimelineInstruction = {
-  type: 'TimelineTerminateTimeline';
+  type?: 'TimelineTerminateTimeline';
+  __typename?: 'TimelineTerminateTimeline';
   direction: 'Top';
 };
 type GraphQLTwitterStatusNotFoundResponse = {
@@ -1010,6 +1016,26 @@ type TwitterUserTweetsResponse = {
         __typename?: string;
         timeline?: {
           timeline?: {
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+      };
+    };
+  };
+};
+
+/** ProfileTimeline (higher per-period rate limit than UserTweets) */
+type TwitterProfileTimelineResponse = {
+  data?: {
+    user_result_by_rest_id?: {
+      rest_id?: string;
+      result?: {
+        __typename?: string;
+        profile_timeline_v2?: {
+          id?: string;
+          timeline?: {
+            id?: string;
             instructions?: TimelineInstruction[];
             metadata?: unknown;
           };

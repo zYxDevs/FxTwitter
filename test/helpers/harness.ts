@@ -150,7 +150,11 @@ export default {
         case 'UserTweets':
           const tweetsUserId = variables.userId;
           try {
-            const tweetsMock = await import(`../mocks/UserTweets/${tweetsUserId}.json`);
+            const tweetsModule = await import(`../mocks/UserTweets/${tweetsUserId}.json`);
+            const tweetsMock =
+              'default' in tweetsModule && tweetsModule.default
+                ? tweetsModule.default
+                : tweetsModule;
             return new Response(JSON.stringify(tweetsMock));
           } catch (error) {
             console.error('Error loading UserTweets mock:', error);
@@ -166,6 +170,52 @@ export default {
               })
             );
           }
+        case 'ProfileTimeline': {
+          const restId = variables.rest_id as string;
+          try {
+            const tweetsModule = await import(`../mocks/UserTweets/${restId}.json`);
+            const tweetsMock = (
+              'default' in tweetsModule && tweetsModule.default
+                ? tweetsModule.default
+                : tweetsModule
+            ) as {
+              data?: { user?: { result?: { timeline?: { timeline?: unknown } } } };
+            };
+            const inner = tweetsMock.data?.user?.result?.timeline?.timeline;
+            const wrapped = {
+              data: {
+                user_result_by_rest_id: {
+                  rest_id: restId,
+                  result: {
+                    __typename: 'User',
+                    profile_timeline_v2: {
+                      id: 'mock-profile-timeline',
+                      timeline: inner ?? { instructions: [] }
+                    }
+                  }
+                }
+              }
+            };
+            return new Response(JSON.stringify(wrapped));
+          } catch (error) {
+            console.error('Error loading ProfileTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    rest_id: restId,
+                    result: {
+                      __typename: 'User',
+                      profile_timeline_v2: {
+                        timeline: { instructions: [] }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
         default:
           throw new Error('Invalid request');
       }

@@ -1,7 +1,12 @@
 import { Context } from 'hono';
 import { buildAPITwitterStatus } from './processor';
-import { UserTweetsQuery } from './graphql/queries';
-import { graphqlRequest } from './graphql/request';
+import { ProfileTimelineQuery, UserTweetsQuery } from './graphql/queries';
+import { graphQLOrchestrator } from './graphql/orchestrator';
+import {
+  getProfileStatusesTimelineInstructions,
+  validateProfileTimelineResponse,
+  validateUserTweetsTimeline
+} from './graphql/validators';
 import { getTwitterUserRestIdByScreenName } from './profile';
 import { processTimelineInstructions } from './search';
 import type { APITwitterStatus } from '../../realms/api/schemas';
@@ -17,27 +22,39 @@ export const profileStatusesAPI = async (
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
   }
 
-  let response: TwitterUserTweetsResponse | null;
-
-  try {
-    response = (await graphqlRequest(c, {
-      query: UserTweetsQuery,
+  const results = await graphQLOrchestrator(c, [
+    {
+      key: 'tweets',
+      required: true,
+      methods: [
+        {
+          name: 'ProfileTimeline',
+          query: ProfileTimelineQuery,
+          weight: 10,
+          validator: validateProfileTimelineResponse
+        },
+        {
+          name: 'UserTweets',
+          query: UserTweetsQuery,
+          weight: 1,
+          validator: validateUserTweetsTimeline
+        }
+      ],
       variables: {
         userId,
+        rest_id: userId,
         count,
         cursor: cursor ?? null
-      },
-      validator: (_response: unknown) => {
-        const r = _response as TwitterUserTweetsResponse;
-        return Array.isArray(r?.data?.user?.result?.timeline?.timeline?.instructions);
       }
-    })) as TwitterUserTweetsResponse;
-  } catch (e) {
-    console.error('UserTweets request failed', e);
+    }
+  ]);
+
+  if (!results.tweets?.success) {
+    console.error('Profile statuses timeline request failed', results.tweets?.error);
     return { code: 500, results: [], cursor: { top: null, bottom: null } };
   }
 
-  const instructions = response?.data?.user?.result?.timeline?.timeline?.instructions;
+  const instructions = getProfileStatusesTimelineInstructions(results.tweets.data);
   if (!instructions) {
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
   }

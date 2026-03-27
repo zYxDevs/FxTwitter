@@ -219,7 +219,7 @@ const fetchUserWithAboutAccount = async (
   };
 };
 
-/** Resolve rest_id for timeline queries (e.g. UserTweets) */
+/** Resolve rest_id for timeline queries (e.g. UserTweets, ProfileTimeline) */
 export const getTwitterUserRestIdByScreenName = async (
   c: Context,
   screenName: string

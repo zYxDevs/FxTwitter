@@ -539,3 +539,65 @@ export const UserTweetsQuery: GraphQLQuery = {
   },
   features: userTweetsFeatures
 };
+
+/** Captured from x.com iOS/web ProfileTimeline — same timeline instructions as UserTweets, higher rate limit */
+const profileTimelineFeatures = {
+  ios_button_layout_fix_use_grok_annotations: false,
+  profile_foundations_has_spaces_graphql_enabled: false,
+  birdwatch_consumption_enabled: false,
+  ios_home_timeline_external_status_injections_fetch_tweet_facepile_enabled: false,
+  conversational_replies_ios_downvote_api_enabled: true,
+  graphql_unified_card_enabled: true,
+  ios_notifications_replies_mentions_device_follow_enabled: true,
+  grok_ios_tweet_detail_followups_enabled: false,
+  ios_tweet_detail_always_load_is_translatable: false,
+  tweet_context_is_enabled: true,
+  unified_cards_destination_url_params_enabled: true,
+  grok_translations_community_note_translation_is_enabled: true,
+  rito_safety_mode_features_enabled: false,
+  profile_label_improvements_pcf_edit_profile_enabled: true,
+  profile_label_improvements_pcf_settings_enabled: true,
+  view_counts_everywhere_api_enabled: true,
+  x_jetfuel_enable_frames_on_posts: true,
+  unified_cards_ad_metadata_container_dynamic_card_content_query_enabled: true,
+  grok_translations_community_note_auto_translation_is_enabled: true,
+  continue_watching_consume_graphql: false,
+  tweetypie_unmention_optimization_enabled: true,
+  grok_translations_post_auto_translation_is_enabled: true,
+  grok_ios_author_view_analyze_button_fetch_trends_enabled: false,
+  tweet_with_visibility_results_prefer_gql_media_interstitial_enabled: true,
+  ssp_ads_preroll_enabled: false,
+  grok_edit_with_grok_button_under_post_include_grok_image_annotation_in_graphql: false,
+  immersive_video_status_linkable_timestamps: true,
+  articles_preview_enabled: true,
+  articles_api_enabled: true,
+  c9s_tweet_anatomy_moderator_badge_enabled: true
+};
+
+export const ProfileTimelineQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: '3mLSzzCq-uKpJ3nqMdJBhQ',
+  queryName: 'ProfileTimeline',
+  requiresAccount: true,
+  variables: {
+    include_is_translatable: false,
+    include_community_tweet_relationship: false,
+    include_grok_analysis_button: true,
+    include_cta: false,
+    include_grok_translated_bio: false,
+    include_tweet_quick_promote_eligibility: false,
+    include_professional: false,
+    include_conversation_context: false,
+    skip_author_community_relationship: false,
+    include_pill_groups_in_modules: false,
+    include_is_member: false,
+    autoplay_enabled: true,
+    include_reply_device_follow: false,
+    include_unmention_info_override: false,
+    include_dm_muting: false,
+    is_member_target_user_id: '0',
+    // rest_id, count, cursor merged per request (cursor in variables when paginating)
+    cursor: null
+  },
+  features: profileTimelineFeatures
+};

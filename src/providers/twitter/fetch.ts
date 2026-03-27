@@ -176,7 +176,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         if (_response.split('\n').length > 1) {
           response = detokenize(_response);
         } else {
-          throw new Error('Failed to parse response as JSON', { cause: _e });
+          throw new Error(`Failed to parse response as JSON ${_e}`, { cause: _e });
         }
       }
     } catch (e: unknown) {
@@ -268,6 +268,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
+    console.log('response', JSON.stringify(response));
     return response;
   }
 

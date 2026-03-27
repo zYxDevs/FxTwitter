@@ -7,6 +7,7 @@ import {
   APISearchResultsSchema,
   APITrendsResponseSchema,
   ApiQueryErrorSchema,
+  SocialConversationSchema,
   SocialThreadSchema,
   UserAPIResponseSchema
 } from './schemas';
@@ -89,6 +90,51 @@ export const threadV2Route = createRoute({
     500: {
       description: 'Server or upstream failure',
       content: { 'application/json': { schema: SocialThreadSchema } }
+    }
+  }
+});
+
+export const conversationV2Route = createRoute({
+  method: 'get',
+  path: '/2/conversation/{id}',
+  summary: 'Get a post with its full thread and replies',
+  description:
+    'Returns a post, its full thread chain (walking all the way to the root), and replies from other users. Replies are sorted by the chosen ranking mode (default: Likes). Use the returned bottom cursor to paginate through more replies.',
+  request: {
+    params: z.object({
+      id: z.string().openapi({ description: 'Focal tweet/post snowflake ID' })
+    }),
+    query: z.object({
+      ranking_mode: z.enum(['likes', 'recency']).optional().openapi({
+        description: 'How replies are ranked (default: likes)',
+        default: 'likes'
+      }),
+      cursor: z.string().optional().openapi({
+        description: 'Pagination cursor from a prior response'
+      }),
+      ...aboutAccountQuery.shape
+    })
+  },
+  responses: {
+    200: {
+      description: 'Conversation payload with thread, replies, and pagination cursor',
+      content: { 'application/json': { schema: SocialConversationSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    401: {
+      description: 'Private or unavailable post',
+      content: { 'application/json': { schema: SocialConversationSchema } }
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: SocialConversationSchema } }
+    },
+    500: {
+      description: 'Server or upstream failure',
+      content: { 'application/json': { schema: SocialConversationSchema } }
     }
   }
 });

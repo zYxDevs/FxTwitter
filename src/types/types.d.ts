@@ -86,6 +86,7 @@ declare global {
   type APITwitterCommunityNote = import('../realms/api/schemas').APITwitterCommunityNote;
   type SocialPost = import('./apiStatus').SocialPost;
   type SocialThread = import('./apiStatus').SocialThread;
+  type SocialConversation = import('./apiStatus').SocialConversation;
 
   interface FetchResults {
     status: number;

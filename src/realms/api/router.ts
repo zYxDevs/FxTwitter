@@ -5,6 +5,7 @@ import { profileRequest } from '../twitter/routes/profile';
 import { Strings } from '../../strings';
 import { Constants } from '../../constants';
 import {
+  conversationAPIRequest,
   profileAPIRequest,
   profileStatusesAPIRequest,
   searchAPIRequest,
@@ -16,6 +17,7 @@ import { oembed } from './routes/oembed';
 import { linkHitRequest, linkGoRequest } from './hit';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import {
+  conversationV2Route,
   profileStatusesV2Route,
   profileV2Route,
   searchV2Route,
@@ -47,6 +49,7 @@ api.get('/2/go', linkGoRequest);
 
 api.openapi(statusV2Route, statusAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
+api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
 api.openapi(profileV2Route, profileAPIRequest);
 api.openapi(searchV2Route, searchAPIRequest);

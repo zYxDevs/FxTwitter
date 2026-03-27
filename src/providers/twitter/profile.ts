@@ -238,8 +238,8 @@ export const getTwitterUserRestIdByScreenName = async (
    Available for free using api.fxtwitter.com. */
 export const userAPI = async (
   username: string,
-  c: Context
-  // flags?: InputFlags
+  c: Context,
+  legacyApiUserCounts = false
 ): Promise<UserAPIResponse> => {
   // Fetch user data and AboutAccountQuery in parallel
   const { userResponse, aboutAccountResponse } = await fetchUserWithAboutAccount(c, username);
@@ -253,7 +253,10 @@ export const userAPI = async (
 
   /* Creating the response objects */
   const response: UserAPIResponse = { code: 200, message: 'OK' } as UserAPIResponse;
-  let apiUser: APIUser = (await populateUserProperties(userResponse, true)) as APIUser;
+  let apiUser: APIUser = (await populateUserProperties(
+    userResponse,
+    legacyApiUserCounts
+  )) as APIUser;
 
   /* Merge AboutAccountQuery data if available */
   if (aboutAccountResponse) {

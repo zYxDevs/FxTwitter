@@ -7,6 +7,7 @@ import { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { APITwitterStatus } from '../../realms/api/schemas';
 import { InputFlags } from '../../types/types';
 import {
+  ConversationTimelineQuery,
   TweetDetailQuery,
   TweetResultByIdQuery,
   TweetResultByRestIdQuery,
@@ -80,33 +81,64 @@ const isTweetUnavailable = (response: unknown): response is TweetStub => {
   );
 };
 
+export type TweetDetailRankingMode = 'Relevance' | 'Recency' | 'Likes';
+
+const validateThreadedConversationResponse = (_conversation: unknown): boolean => {
+  const conversation = _conversation as TweetDetailResponse;
+  const instructions = conversation?.data?.threaded_conversation_with_injections_v2?.instructions;
+  if (Array.isArray(instructions)) {
+    return true;
+  }
+  return Array.isArray(conversation?.errors);
+};
+
+/** TweetDetail (50/period) vs ConversationTimeline (150/period) at 1:3 to level rate limits */
 export const fetchTweetDetail = async (
   c: Context,
   status: string,
-  cursor: string | null = null
+  cursor: string | null = null,
+  rankingMode?: TweetDetailRankingMode
 ): Promise<TweetDetailResponse> => {
-  return graphqlRequest(c, {
-    query: TweetDetailQuery,
-    validator: (_conversation: unknown) => {
-      const conversation = _conversation as TweetDetailResponse;
-      const response = processResponse(
-        conversation?.data?.threaded_conversation_with_injections_v2?.instructions
-      );
-      const tweet = findStatusInBucket(status, response);
-      if (tweet && isGraphQLTwitterStatus(tweet)) {
-        return true;
-      }
-      console.log('invalid graphql tweet', tweet);
-      console.log('finding status', status);
-      console.log('from response', JSON.stringify(response));
+  const validator = validateThreadedConversationResponse;
 
-      return Array.isArray(conversation?.errors);
-    },
-    variables: {
-      focalTweetId: status,
-      cursor: cursor
+  const conversationTimelineRequest = () =>
+    graphqlRequest(c, {
+      query: ConversationTimelineQuery,
+      validator,
+      variables: {
+        focal_tweet_id: status,
+        cursor,
+        ...(rankingMode ? { ranking_mode: rankingMode } : {})
+      }
+    }) as Promise<TweetDetailResponse>;
+
+  const tweetDetailRequest = () =>
+    graphqlRequest(c, {
+      query: TweetDetailQuery,
+      validator,
+      variables: {
+        focalTweetId: status,
+        cursor,
+        ...(rankingMode ? { rankingMode } : {})
+      }
+    }) as Promise<TweetDetailResponse>;
+
+  const preferConversationTimeline = Math.random() * 4 < 3;
+  const [primary, fallback] = preferConversationTimeline
+    ? [conversationTimelineRequest, tweetDetailRequest]
+    : [tweetDetailRequest, conversationTimelineRequest];
+
+  try {
+    const result = await primary();
+    if (result?.data?.threaded_conversation_with_injections_v2?.instructions) {
+      return result;
     }
-  }) as Promise<TweetDetailResponse>;
+    console.log('Primary conversation endpoint returned invalid data, trying fallback');
+  } catch (e) {
+    console.log('Primary conversation endpoint failed, trying fallback', e);
+  }
+
+  return fallback();
 };
 
 export const fetchByRestId = async (
@@ -289,6 +321,39 @@ export const fetchById = async (
   }) as Promise<TweetResultByIdResponse>;
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * ConversationTimeline (iOS) uses snake_case field names while TweetDetail (web)
+ * uses camelCase. These helpers normalise access so both formats work.
+ */
+const getItemContent = (obj: any): any => obj?.itemContent ?? obj?.content;
+
+const getEntryId = (obj: any): string | undefined => obj?.entryId ?? obj?.entry_id;
+
+const getInstructionType = (obj: any): string | undefined => obj?.type ?? obj?.__typename;
+
+const normalizeCursor = (raw: any): GraphQLTimelineCursor => {
+  if (raw.cursorType) return raw as GraphQLTimelineCursor;
+  return { ...raw, cursorType: raw.cursor_type } as GraphQLTimelineCursor;
+};
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const pushTweetFromContent = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  itemContent: any,
+  target: GraphQLTwitterStatus[]
+) => {
+  if (itemContent?.__typename !== 'TimelineTweet') return;
+  const entryType = itemContent.tweet_results?.result?.__typename;
+  if (entryType === 'Tweet') {
+    target.push(itemContent.tweet_results.result as GraphQLTwitterStatus);
+  } else if (entryType === 'TweetWithVisibilityResults') {
+    target.push(itemContent.tweet_results.result.tweet as GraphQLTwitterStatus);
+  }
+};
+
 const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBucket => {
   const bucket: GraphQLProcessBucket = {
     statuses: [],
@@ -296,7 +361,8 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
     cursors: []
   };
   instructions?.forEach?.(instruction => {
-    if (instruction.type === 'TimelineAddEntries' || instruction.type === 'TimelineAddToModule') {
+    const itype = getInstructionType(instruction);
+    if (itype === 'TimelineAddEntries' || itype === 'TimelineAddToModule') {
       (
         (instruction as TimelineAddEntriesInstruction)?.entries ??
         (instruction as TimelineAddModulesInstruction)?.moduleItems
@@ -311,42 +377,99 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
         if (typeof content === 'undefined') {
           return;
         }
-        if (content.__typename === 'TimelineTimelineItem') {
-          const itemContentType = content.itemContent?.__typename;
-          if (itemContentType === 'TimelineTweet') {
-            const entryType = content.itemContent?.tweet_results.result?.__typename;
-            if (entryType === 'Tweet') {
-              bucket.statuses.push(
-                content.itemContent.tweet_results.result as GraphQLTwitterStatus
-              );
-            }
-            if (entryType === 'TweetWithVisibilityResults') {
-              bucket.statuses.push(
-                content.itemContent.tweet_results.result.tweet as GraphQLTwitterStatus
-              );
-            }
-          } else if (itemContentType === 'TimelineTimelineCursor') {
-            bucket.cursors.push(content.itemContent as GraphQLTimelineCursor);
+
+        const typename = (content as { __typename: string }).__typename;
+
+        if (typename === 'TimelineTimelineCursor') {
+          bucket.cursors.push(normalizeCursor(content));
+        } else if (typename === 'TimelineTimelineItem') {
+          const itemContent = getItemContent(content);
+          if (itemContent?.__typename === 'TimelineTweet') {
+            pushTweetFromContent(itemContent, bucket.statuses);
+          } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
+            bucket.cursors.push(normalizeCursor(itemContent));
           }
-        } else if (
-          (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
-        ) {
-          content.items.forEach(item => {
-            const itemContentType = item.item.itemContent.__typename;
-            if (itemContentType === 'TimelineTweet') {
-              const entryType = item.item.itemContent.tweet_results?.result?.__typename;
-              if (entryType === 'Tweet') {
-                bucket.statuses.push(
-                  item.item.itemContent.tweet_results.result as GraphQLTwitterStatus
-                );
-              }
-              if (entryType === 'TweetWithVisibilityResults') {
-                bucket.statuses.push(
-                  item.item.itemContent.tweet_results.result.tweet as GraphQLTwitterStatus
-                );
-              }
-            } else if (itemContentType === 'TimelineTimelineCursor') {
-              bucket.cursors.push(item.item.itemContent as GraphQLTimelineCursor);
+        } else if (typename === 'TimelineTimelineModule') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
+            const itemContent = getItemContent(item.item);
+            if (itemContent?.__typename === 'TimelineTweet') {
+              pushTweetFromContent(itemContent, bucket.statuses);
+            } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
+              bucket.cursors.push(normalizeCursor(itemContent));
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return bucket;
+};
+
+interface GraphQLConversationBucket {
+  /** Top-level tweet-* entries: ancestor chain + focal tweet */
+  chainStatuses: GraphQLTwitterStatus[];
+  /** Tweets inside conversationthread-* modules: actual replies */
+  replyStatuses: GraphQLTwitterStatus[];
+  cursors: GraphQLTimelineCursor[];
+}
+
+/**
+ * Processes TweetDetail / ConversationTimeline instructions while preserving
+ * the structural distinction between the ancestor chain (top-level tweet-*
+ * entries) and replies (conversationthread-* module entries).
+ */
+const processConversationResponse = (
+  instructions: TimelineInstruction[]
+): GraphQLConversationBucket => {
+  const bucket: GraphQLConversationBucket = {
+    chainStatuses: [],
+    replyStatuses: [],
+    cursors: []
+  };
+
+  instructions?.forEach?.(instruction => {
+    const itype = getInstructionType(instruction);
+    if (itype === 'TimelineAddEntries' || itype === 'TimelineAddToModule') {
+      (
+        (instruction as TimelineAddEntriesInstruction)?.entries ??
+        (instruction as TimelineAddModulesInstruction)?.moduleItems
+      )?.forEach(_entry => {
+        const entry = _entry as
+          | GraphQLTimelineTweetEntry
+          | GraphQLConversationThread
+          | GraphQLModuleTweetEntry;
+        const entryId = getEntryId(entry);
+        const isReplyEntry = entryId?.startsWith('conversationthread-');
+
+        const content =
+          (entry as GraphQLModuleTweetEntry)?.item ?? (entry as GraphQLTimelineTweetEntry)?.content;
+
+        if (typeof content === 'undefined') return;
+
+        const typename = (content as { __typename: string }).__typename;
+
+        if (typename === 'TimelineTimelineCursor') {
+          bucket.cursors.push(normalizeCursor(content));
+        } else if (typename === 'TimelineTimelineItem') {
+          const itemContent = getItemContent(content);
+          if (itemContent?.__typename === 'TimelineTweet') {
+            pushTweetFromContent(
+              itemContent,
+              isReplyEntry ? bucket.replyStatuses : bucket.chainStatuses
+            );
+          } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
+            bucket.cursors.push(normalizeCursor(itemContent));
+          }
+        } else if (typename === 'TimelineTimelineModule') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
+            const itemContent = getItemContent(item.item);
+            if (itemContent?.__typename === 'TimelineTweet') {
+              pushTweetFromContent(itemContent, bucket.replyStatuses);
+            } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
+              bucket.cursors.push(normalizeCursor(itemContent));
             }
           });
         }
@@ -465,6 +588,19 @@ const fetchSingleStatus = async (
           weight: processThread ? 1000 : 10,
           fallbackOnly: !processThread,
           variables: { focalTweetId: id },
+          validator: (response: unknown) => {
+            const conversation = response as TweetDetailResponse;
+            const instructions =
+              conversation?.data?.threaded_conversation_with_injections_v2?.instructions;
+            return Boolean(instructions && Array.isArray(instructions));
+          }
+        },
+        {
+          name: 'ConversationTimeline',
+          query: ConversationTimelineQuery,
+          weight: processThread ? 3000 : 30,
+          fallbackOnly: !processThread,
+          variables: { focal_tweet_id: id },
           validator: (response: unknown) => {
             const conversation = response as TweetDetailResponse;
             const instructions =
@@ -847,6 +983,109 @@ export const constructTwitterThread = async (
   });
 
   return socialThread;
+};
+
+/* Fetch and construct a conversation view: full ancestor chain + replies from others */
+export const constructTwitterConversation = async (
+  id: string,
+  c: Context,
+  rankingMode: TweetDetailRankingMode = 'Likes',
+  cursor: string | null = null
+): Promise<SocialConversation> => {
+  const response = await fetchTweetDetail(c, id, cursor, rankingMode);
+
+  if (!response?.data?.threaded_conversation_with_injections_v2?.instructions) {
+    return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
+  }
+
+  const bucket = processConversationResponse(
+    response.data.threaded_conversation_with_injections_v2.instructions
+  );
+
+  const originalStatus =
+    bucket.chainStatuses.find(s => (s.rest_id ?? s.legacy?.id_str) === id) ?? null;
+
+  if (originalStatus === null) {
+    return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
+  }
+
+  const status = (await buildAPITwitterStatus(
+    c,
+    originalStatus,
+    undefined,
+    null,
+    false
+  )) as APITwitterStatus;
+
+  if (status === null) {
+    return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
+  }
+
+  const author = status.author;
+
+  /*
+   * Thread = all chainStatuses (ancestor chain from TweetDetail top-level entries).
+   * These are already in conversation order from the API.
+   * On cursor pages (reply pagination), chainStatuses will just have the focal tweet.
+   */
+  const threadStatuses = cursor ? [originalStatus] : [...bucket.chainStatuses];
+
+  /* Build the thread */
+  const socialConversation: SocialConversation = {
+    status: status,
+    thread: [],
+    replies: [],
+    author: author,
+    cursor: null,
+    code: 200
+  };
+
+  await Promise.all(
+    threadStatuses.map(async s => {
+      const builtStatus = (await buildAPITwitterStatus(
+        c,
+        s,
+        undefined,
+        author,
+        false
+      )) as APITwitterStatus;
+      socialConversation.thread?.push(builtStatus);
+    })
+  );
+
+  socialConversation.thread?.sort((a, b) => {
+    const aId = BigInt(a.id);
+    const bId = BigInt(b.id);
+    if (aId < bId) return -1;
+    if (aId > bId) return 1;
+    return 0;
+  });
+
+  /* Build the replies (from conversationthread-* modules) */
+  await Promise.all(
+    bucket.replyStatuses.map(async s => {
+      const builtStatus = (await buildAPITwitterStatus(
+        c,
+        s,
+        undefined,
+        null,
+        false
+      )) as APITwitterStatus;
+      if (builtStatus) {
+        socialConversation.replies?.push(builtStatus);
+      }
+    })
+  );
+
+  /* Expose the bottom cursor for reply pagination */
+  const bottomCursor = bucket.cursors.find(
+    c => c.cursorType === 'Bottom' || c.cursorType === 'ShowMore'
+  );
+  if (bottomCursor) {
+    socialConversation.cursor = { bottom: bottomCursor.value };
+  }
+
+  return socialConversation;
 };
 
 export const threadAPIProvider = async (c: Context) => {

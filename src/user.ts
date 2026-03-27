@@ -28,7 +28,7 @@ export const handleProfile = async (
 ): Promise<Response> => {
   console.log('Direct?', flags?.direct);
 
-  const api = await userAPI(username, c);
+  const api = await userAPI(username, c, true);
   const user = api?.user as APIUser;
 
   /* Catch this request if it's an API response */

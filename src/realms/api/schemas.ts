@@ -484,6 +484,21 @@ export const SocialThreadSchema = z
   })
   .openapi('SocialThread');
 
+export const SocialConversationSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APITwitterStatusSchema.nullable(),
+    thread: z.array(APITwitterStatusSchema).nullable(),
+    replies: z.array(APITwitterStatusSchema).nullable(),
+    author: APIUserSchema.nullable(),
+    cursor: z
+      .object({
+        bottom: z.string().nullable()
+      })
+      .nullable()
+  })
+  .openapi('SocialConversation');
+
 export const UserAPIResponseSchema = z
   .object({
     code: z.number(),

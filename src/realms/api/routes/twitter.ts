@@ -1,4 +1,8 @@
-import { constructTwitterThread } from '../../../providers/twitter/conversation';
+import {
+  constructTwitterThread,
+  constructTwitterConversation,
+  type TweetDetailRankingMode
+} from '../../../providers/twitter/conversation';
 import { Constants } from '../../../constants';
 import { userAPI } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
@@ -10,6 +14,7 @@ import { Context } from 'hono';
 import { isParamTruthy } from '../../../helpers/utils';
 import type { RouteHandler } from '@hono/zod-openapi';
 import {
+  conversationV2Route,
   profileStatusesV2Route,
   profileV2Route,
   searchV2Route,
@@ -44,6 +49,28 @@ export const threadAPIRequest: RouteHandler<typeof threadV2Route> = async c => {
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
     processedResponse = await attachAboutAccountData(c, processedResponse);
   }
+
+  c.status(processedResponse.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(processedResponse, processedResponse.code as 200 | 401 | 404 | 500);
+};
+
+const rankingModeMap: Record<string, TweetDetailRankingMode> = {
+  likes: 'Likes',
+  recency: 'Recency',
+  relevance: 'Relevance'
+};
+
+export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = async c => {
+  const { id } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const rankingMode = rankingModeMap[query.ranking_mode ?? 'likes'] ?? 'Likes';
+  const cursor = query.cursor ?? null;
+
+  const processedResponse = await constructTwitterConversation(id, c, rankingMode, cursor);
 
   c.status(processedResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

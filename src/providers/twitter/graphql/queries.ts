@@ -158,6 +158,69 @@ export const TweetDetailQuery: GraphQLQuery = {
   }
 };
 
+/** Captured from Twitter iPhone ConversationTimeline; higher rate limit than TweetDetail */
+export const ConversationTimelineQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'b-bCN9RelT8k0fCr_s2BFg',
+  queryName: 'ConversationTimeline',
+  requiresAccount: true,
+  variables: {
+    include_grok_translated_bio: false,
+    display_location: 'Default',
+    ranking_mode: 'Relevance',
+    cta_display_location: 'TweetDetails',
+    include_unmention_info_override: false,
+    is_member_target_user_id: '0',
+    cursor: null,
+    include_conversation_context: false,
+    include_reply_device_follow: false,
+    include_is_member: false,
+    // controller_data: 'DAACDAABDAABCgABAAAAAAAAAAAKAAkW0pcLr1YgAQoACgAAAZ0uryT6AAAAAA==',
+    include_pill_groups_in_modules: false,
+    include_dm_muting: false,
+    include_community_tweet_relationship: true,
+    referrer: 'me',
+    include_grok_analysis_button: true,
+    include_professional: false,
+    include_is_translatable: true,
+    include_tweet_quick_promote_eligibility: false,
+    include_cta: true,
+    skip_author_community_relationship: false
+  },
+  features: {
+    ios_button_layout_fix_use_grok_annotations: false,
+    conversational_replies_ios_downvote_api_enabled: false,
+    ios_home_timeline_external_status_injections_fetch_tweet_facepile_enabled: false,
+    profile_foundations_has_spaces_graphql_enabled: false,
+    graphql_unified_card_enabled: true,
+    birdwatch_consumption_enabled: false,
+    ios_notifications_replies_mentions_device_follow_enabled: true,
+    grok_ios_tweet_detail_followups_enabled: false,
+    ios_tweet_detail_always_load_is_translatable: false,
+    tweet_context_is_enabled: true,
+    unified_cards_destination_url_params_enabled: true,
+    grok_translations_community_note_translation_is_enabled: true,
+    rito_safety_mode_features_enabled: false,
+    profile_label_improvements_pcf_settings_enabled: true,
+    view_counts_everywhere_api_enabled: true,
+    profile_label_improvements_pcf_edit_profile_enabled: true,
+    x_jetfuel_enable_frames_on_posts: true,
+    unified_cards_ad_metadata_container_dynamic_card_content_query_enabled: true,
+    continue_watching_consume_graphql: false,
+    grok_translations_post_auto_translation_is_enabled: false,
+    tweetypie_unmention_optimization_enabled: true,
+    grok_ios_author_view_analyze_button_fetch_trends_enabled: false,
+    grok_edit_with_grok_button_under_post_include_grok_image_annotation_in_graphql: false,
+    tweet_with_visibility_results_prefer_gql_media_interstitial_enabled: true,
+    immersive_video_status_linkable_timestamps: true,
+    ssp_ads_preroll_enabled: false,
+    grok_translations_community_note_auto_translation_is_enabled: false,
+    articles_api_enabled: true,
+    articles_preview_enabled: true,
+    c9s_tweet_anatomy_moderator_badge_enabled: true
+  }
+};
+
 export const TweetResultsByIdsQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: 'q8hBgBMTfE_-_bEaJoeHMQ',
@@ -420,7 +483,7 @@ export const GenericTimelineByIdQuery: GraphQLQuery = {
   features: exploreAndGenericTimelineFeatures
 };
 
-/** Captured from x.com web UserTweets (HAR, Mar 2026) */
+/** Captured from x.com web UserTweets */
 const userTweetsFeatures = {
   rweb_video_screen_enabled: false,
   profile_label_improvements_pcf_label_in_post_enabled: true,

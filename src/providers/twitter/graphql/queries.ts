@@ -107,7 +107,7 @@ export const TweetDetailQuery: GraphQLQuery = {
   variables: {
     // focalTweetId: 0,
     with_rux_injections: false,
-    rankingMode: 'Relevance',
+    rankingMode: 'Relevance', // | 'Recency' | 'Likes'
     includePromotedContent: false,
     withCommunity: false,
     withQuickPromoteEligibilityTweetFields: false,

@@ -123,7 +123,7 @@ export const fetchTweetDetail = async (
       }
     }) as Promise<TweetDetailResponse>;
 
-  const preferConversationTimeline = Math.random() * 4 < 3;
+  const preferConversationTimeline = false // Math.random() * 4 < 3;
   const [primary, fallback] = preferConversationTimeline
     ? [conversationTimelineRequest, tweetDetailRequest]
     : [tweetDetailRequest, conversationTimelineRequest];
@@ -598,7 +598,7 @@ const fetchSingleStatus = async (
         {
           name: 'ConversationTimeline',
           query: ConversationTimelineQuery,
-          weight: processThread ? 3000 : 30,
+          weight: 0,//processThread ? 3000 : 30,
           fallbackOnly: !processThread,
           variables: { focal_tweet_id: id },
           validator: (response: unknown) => {

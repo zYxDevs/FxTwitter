@@ -396,7 +396,14 @@ type GraphQLTwitterStatusLegacy = {
   };
   reply_count: number; // 1
   retweet_count: number; // 4
+  /** Present on retweet surfaces even when `retweeted_status_result` is omitted (e.g. some timelines). */
+  retweeted_status_id_str?: string;
   retweeted_status_result?: {
+    result: GraphQLTwitterStatus;
+  };
+  /** Same idea as `tweet_results`: newer timelines use plural `…_results` + `rest_id`. */
+  retweeted_status_results?: {
+    rest_id?: string;
     result: GraphQLTwitterStatus;
   };
   lang: string; // "en"

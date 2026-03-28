@@ -219,6 +219,17 @@ export const APIUserSchema = z
   })
   .openapi('APIUser');
 
+/** User who reposted/retweeted this status (outer wrapper); null when the payload is the original post. */
+export const APIRepostedBySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    screen_name: z.string(),
+    avatar_url: z.string().nullable().optional(),
+    url: z.string().optional()
+  })
+  .openapi('APIRepostedBy');
+
 export const APITwitterCommunitySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -431,6 +442,7 @@ export type APITwitterStatus = {
   article?: z.infer<typeof TwitterArticleSchema>;
   is_note_tweet: boolean;
   community_note: z.infer<typeof APITwitterCommunityNoteSchema> | null;
+  reposted_by: z.infer<typeof APIRepostedBySchema> | null;
 };
 
 /* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`. */
@@ -470,7 +482,8 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       community: APITwitterCommunitySchema.optional(),
       article: TwitterArticleSchema.optional(),
       is_note_tweet: z.boolean(),
-      community_note: APITwitterCommunityNoteSchema.nullable()
+      community_note: APITwitterCommunityNoteSchema.nullable(),
+      reposted_by: APIRepostedBySchema.nullable()
     })
   )
   .openapi('APITwitterStatus');
@@ -560,6 +573,7 @@ export type APIExternalMedia = z.infer<typeof APIExternalMediaSchema>;
 export type APIMosaicPhoto = z.infer<typeof APIMosaicPhotoSchema>;
 export type APIBroadcast = z.infer<typeof APIBroadcastSchema>;
 export type APIUser = z.infer<typeof APIUserSchema>;
+export type APIRepostedBy = z.infer<typeof APIRepostedBySchema>;
 export type APITwitterCommunityNote = z.infer<typeof APITwitterCommunityNoteSchema>;
 export type APITwitterCommunity = z.infer<typeof APITwitterCommunitySchema>;
 export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;

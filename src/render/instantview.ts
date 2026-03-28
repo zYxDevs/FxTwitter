@@ -122,7 +122,9 @@ const formatDate = (date: Date, language: string): string => {
   if (language.startsWith('en')) {
     language = 'en-CA'; // Use ISO dates for English to avoid problems with mm/dd vs. dd/mm
   }
-  console.log('language?', language);
+  if (language) {
+    console.log('language override:', language);
+  }
   const formatter = new Intl.DateTimeFormat(language ?? 'en-CA', {
     year: 'numeric',
     month: '2-digit',

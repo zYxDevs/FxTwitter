@@ -7,7 +7,7 @@ import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import type { APITwitterStatus } from '../../realms/api/schemas';
+import type { APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
@@ -15,34 +15,14 @@ import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
 
-export const buildAPITwitterStatus = async (
-  c: Context,
-  status: GraphQLTwitterStatus,
-  language: string | undefined,
-  threadAuthor: null | APIUser,
-  legacyAPI = false
-): Promise<APITwitterStatus | FetchResults | null> => {
-  const apiStatus = {} as APITwitterStatus;
-
-  /* Sometimes, Twitter returns a different kind of type called 'TweetWithVisibilityResults'.
-     It has slightly different attributes from the regular 'Tweet' type. We fix that up here. */
-
-  if (typeof status.core === 'undefined' && typeof status.result !== 'undefined') {
-    status = status.result;
-  }
-  /* This status is actually a retweet, so let's use the original status we are retweeting instead */
-  if (typeof status.legacy?.retweeted_status_result?.result !== 'undefined') {
-    status = status.legacy.retweeted_status_result.result;
-  }
-
+/** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
+function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
   if (typeof status.core === 'undefined' && typeof status.tweet?.core !== 'undefined') {
     status.core = status.tweet.core;
   }
-
   if (typeof status.legacy === 'undefined' && typeof status.tweet?.legacy !== 'undefined') {
-    status.legacy = status.tweet?.legacy;
+    status.legacy = status.tweet.legacy;
   }
-
   if (typeof status.views === 'undefined' && typeof status?.tweet?.views !== 'undefined') {
     status.views = status?.tweet?.views;
   }
@@ -54,6 +34,102 @@ export const buildAPITwitterStatus = async (
   }
   if (typeof status.views === 'undefined' && typeof status?.view_count_info !== 'undefined') {
     status.views = status?.view_count_info;
+  }
+}
+
+function retweeterUserFromStatus(status: GraphQLTwitterStatus): GraphQLUser | undefined {
+  return (status.core?.user_results?.result ?? status.core?.user_result?.result) as
+    | GraphQLUser
+    | undefined;
+}
+
+function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
+  if (!user || typeof user.rest_id !== 'string' || user.rest_id.length === 0) {
+    return null;
+  }
+  const screenName = user.core?.screen_name ?? user.legacy?.screen_name ?? '';
+  return {
+    id: user.rest_id,
+    name: user.core?.name ?? user.legacy?.name ?? '',
+    screen_name: screenName,
+    avatar_url:
+      user.avatar?.image_url?.replace?.('_normal', '_200x200') ??
+      user.legacy?.profile_image_url_https?.replace?.('_normal', '_200x200') ??
+      null,
+    url: screenName ? `${Constants.TWITTER_ROOT}/${screenName}` : undefined
+  };
+}
+
+/** Unwrap `TweetWithVisibilityResults` to the embedded `tweet` when present. */
+function asGraphQLTweetNode(
+  node: GraphQLTwitterStatus | undefined
+): GraphQLTwitterStatus | undefined {
+  if (!node) return undefined;
+  if (node.__typename === 'TweetWithVisibilityResults') {
+    const inner = (node as { tweet?: GraphQLTwitterStatus }).tweet;
+    if (inner) return inner;
+  }
+  return node;
+}
+
+/**
+ * Original post embedded in a retweet. GraphQL uses either `retweeted_status_result` (older)
+ * or `retweeted_status_results` (ProfileTimeline / newer — mirrors `tweet_results` naming).
+ */
+function getRetweetedOriginalFromLegacy(
+  legacy: GraphQLTwitterStatus['legacy'] | undefined
+): GraphQLTwitterStatus | undefined {
+  if (!legacy) return undefined;
+  const singular = legacy.retweeted_status_result?.result;
+  if (singular) return asGraphQLTweetNode(singular as GraphQLTwitterStatus);
+  const plural = legacy.retweeted_status_results?.result;
+  if (plural) return asGraphQLTweetNode(plural as GraphQLTwitterStatus);
+  return undefined;
+}
+
+/** Retweet card with no embed we can unwrap (rare); infer from text / legacy id. */
+function isRetweetWithoutNestedOriginal(
+  legacy: GraphQLTwitterStatus['legacy'] | undefined
+): boolean {
+  if (!legacy) return false;
+  if (getRetweetedOriginalFromLegacy(legacy)) return false;
+  if (
+    typeof legacy.retweeted_status_id_str === 'string' &&
+    legacy.retweeted_status_id_str.length > 0
+  ) {
+    return true;
+  }
+  const text = legacy.full_text || '';
+  return /^\s*RT @\S+/u.test(text);
+}
+
+export const buildAPITwitterStatus = async (
+  c: Context,
+  status: GraphQLTwitterStatus,
+  language: string | undefined,
+  threadAuthor: null | APIUser,
+  legacyAPI = false
+): Promise<APITwitterStatus | FetchResults | null> => {
+  const apiStatus = {} as APITwitterStatus;
+  let repostedBy: APIRepostedBy | null = null;
+
+  /* Sometimes, Twitter returns a different kind of type called 'TweetWithVisibilityResults'.
+     It has slightly different attributes from the regular 'Tweet' type. We fix that up here. */
+
+  if (typeof status.core === 'undefined' && typeof status.result !== 'undefined') {
+    status = status.result;
+  }
+
+  mergeTweetShellIntoStatus(status);
+
+  /* Retweet: use embedded original when present (`retweeted_status_result` or `retweeted_status_results`). */
+  const retweetOriginal = getRetweetedOriginalFromLegacy(status.legacy);
+  if (typeof retweetOriginal !== 'undefined') {
+    repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
+    status = retweetOriginal;
+    mergeTweetShellIntoStatus(status);
+  } else if (isRetweetWithoutNestedOriginal(status.legacy)) {
+    repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
   }
 
   if (typeof status.core === 'undefined') {
@@ -146,7 +222,9 @@ export const buildAPITwitterStatus = async (
   } else {
     apiStatus.views = null;
   }
-  console.log('note_tweet', JSON.stringify(status.note_tweet));
+  if (status.note_tweet) {
+    console.log('Note tweet found', JSON.stringify(status.note_tweet));
+  }
   const noteTweetText = status.note_tweet?.note_tweet_results?.result?.text;
 
   if (noteTweetText) {
@@ -157,7 +235,6 @@ export const buildAPITwitterStatus = async (
     status.legacy.entities.symbols =
       status.note_tweet?.note_tweet_results?.result?.entity_set.symbols;
 
-    console.log('We meet the conditions to use new note tweets');
     apiStatus.text = unescapeText(linkFixer(status.legacy.entities.urls, noteTweetText));
     apiStatus.is_note_tweet = true;
   } else {
@@ -383,10 +460,8 @@ export const buildAPITwitterStatus = async (
 
   /* Populate a Twitter card */
 
-  console.log('status.card', JSON.stringify(status.card));
-  console.log('status.tweet_card', JSON.stringify(status.tweet_card));
-
   if (status.card ?? status.tweet_card) {
+    console.log('Rendering card', JSON.stringify(status.card ?? status.tweet_card));
     const card = await renderCard(c, status.card ?? status.tweet_card);
     if (card.external_media) {
       apiStatus.embed_card = 'player';
@@ -487,7 +562,9 @@ export const buildAPITwitterStatus = async (
     apiStatus.embed_card = 'player';
   }
 
-  console.log('language?', language);
+  if (language) {
+    console.log('language override:', language);
+  }
 
   if (status.article) {
     apiStatus.article = {
@@ -631,6 +708,7 @@ export const buildAPITwitterStatus = async (
   }
 
   apiStatus.provider = DataProvider.Twitter;
+  apiStatus.reposted_by = repostedBy;
 
   return apiStatus;
 };

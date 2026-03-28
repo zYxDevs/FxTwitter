@@ -13,6 +13,18 @@ import {
   UserAPIResponseSchema
 } from './schemas';
 
+/** X search treats underscores as non-content for empty-query behavior; require another character after stripping `_` and whitespace. */
+const twitterSearchQueryHasEffectiveContent = (raw: string): boolean =>
+  raw.replace(/_/g, '').trim().length > 0;
+
+const twitterSearchQueryString = (openapiMeta: { description: string; example: string }) =>
+  z
+    .string()
+    .refine(twitterSearchQueryHasEffectiveContent, {
+      message: 'Search query must not be empty'
+    })
+    .openapi(openapiMeta);
+
 const aboutAccountQuery = z.object({
   about_account: z.string().optional().openapi({
     description: 'If truthy, include `about_account` on author when available',
@@ -213,7 +225,10 @@ export const searchV2Route = createRoute({
   summary: 'Search posts',
   request: {
     query: z.object({
-      q: z.string().min(1).openapi({ description: 'Search query (non-empty)', example: 'neo' }),
+      q: twitterSearchQueryString({
+        description: 'Search query (non-empty)',
+        example: 'puppies'
+      }),
       feed: z.enum(['latest', 'top', 'media']).optional().openapi({
         description: 'Search tab (default latest)',
         default: 'latest'
@@ -258,7 +273,10 @@ export const typeaheadV2Route = createRoute({
     'Autocomplete-style suggestions from X REST `1.1/search/typeahead.json`: users (as `APIUser` with counts and bio omitted when unknown), topics (including hashtag-style trends), and events.',
   request: {
     query: z.object({
-      q: z.string().min(1).openapi({ description: 'Prefix or query string', example: 'example' }),
+      q: twitterSearchQueryString({
+        description: 'Prefix or query string',
+        example: 'example'
+      }),
       result_type: z.string().optional().openapi({
         description: typeaheadResultTypeDescription,
         example: 'events,users,topics'

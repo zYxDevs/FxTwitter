@@ -3,7 +3,57 @@ import { twitterFetch } from './fetch';
 import { Context } from 'hono';
 import { Constants } from '../../constants';
 
-/* Renders card for polls and non-Twitter video embeds (i.e. YouTube) */
+type CardBindingValue = {
+  string_value?: string;
+  boolean_value?: boolean;
+  image_value?: { url?: string; width?: number; height?: number; alt?: string };
+};
+
+const WEBSITE_TWITTER_CARD_NAMES = new Set([
+  'summary_large_image',
+  'summary',
+  'summary_photo_image',
+  'promo_image',
+  'summary_large_image_app'
+]);
+
+const WEBSITE_CARD_IMAGE_KEYS = [
+  'summary_photo_image_large',
+  'photo_image_full_size_large',
+  'summary_photo_image',
+  'photo_image_full_size',
+  'summary_photo_image_x_large',
+  'photo_image_full_size_x_large',
+  'thumbnail_image_large',
+  'thumbnail_image',
+  'thumbnail_image_original',
+  'summary_photo_image_original',
+  'photo_image_full_size_original'
+] as const;
+
+function strBinding(b: Record<string, CardBindingValue>, key: string): string | undefined {
+  const v = b[key]?.string_value;
+  return typeof v === 'string' && v.length > 0 ? v : undefined;
+}
+
+function pickWebsiteCardImage(
+  b: Record<string, CardBindingValue>
+): { url: string; width: number; height: number; alt?: string } | undefined {
+  for (const key of WEBSITE_CARD_IMAGE_KEYS) {
+    const img = b[key]?.image_value;
+    if (img?.url) {
+      return {
+        url: img.url,
+        width: img.width ?? 0,
+        height: img.height ?? 0,
+        alt: img.alt
+      };
+    }
+  }
+  return undefined;
+}
+
+/* Renders card for polls, link previews, and non-Twitter video embeds (i.e. YouTube) */
 export const renderCard = async (
   c: Context,
   card: GraphQLTwitterStatus['card']
@@ -12,19 +62,24 @@ export const renderCard = async (
   external_media?: APIExternalMedia;
   broadcast?: APIBroadcast;
   media?: { videos: TweetMedia[]; photos: TweetMedia[] };
+  website_card?: {
+    url: string;
+    title?: string;
+    description?: string;
+    domain?: string;
+    card_name?: string;
+    image?: { url: string; width: number; height: number; alt?: string };
+  };
 }> => {
   if (!Array.isArray(card.legacy?.binding_values)) {
     return {};
   }
 
-  const binding_values: Record<
-    string,
-    { string_value?: string; boolean_value?: boolean; image_value?: { url: string } }
-  > = {};
+  const binding_values: Record<string, CardBindingValue> = {};
 
   card.legacy.binding_values.forEach(value => {
     if (value.key && value.value) {
-      binding_values[value.key] = value.value;
+      binding_values[value.key] = value.value as CardBindingValue;
     }
   });
 
@@ -165,6 +220,42 @@ export const renderCard = async (
     } catch (e) {
       console.error('Failed to parse unified card JSON', e);
     }
+  }
+
+  const cardMeta = card as GraphQLTwitterCard;
+  const cardName = cardMeta.name;
+  const cardUrl =
+    strBinding(binding_values, 'card_url') ||
+    (typeof cardMeta.url === 'string' && cardMeta.url.length > 0 ? cardMeta.url : undefined);
+
+  const namedWebsite =
+    cardName &&
+    WEBSITE_TWITTER_CARD_NAMES.has(cardName) &&
+    cardUrl &&
+    !strBinding(binding_values, 'player_url');
+  const imagePreview = pickWebsiteCardImage(binding_values);
+  const heuristicWebsite =
+    !cardName &&
+    Boolean(cardUrl) &&
+    Boolean(strBinding(binding_values, 'title')) &&
+    Boolean(imagePreview) &&
+    !binding_values.choice1_count?.string_value &&
+    !binding_values.player_url?.string_value;
+
+  if ((namedWebsite || heuristicWebsite) && cardUrl) {
+    const title = strBinding(binding_values, 'title');
+    const description = strBinding(binding_values, 'description');
+    const domain = strBinding(binding_values, 'domain') || strBinding(binding_values, 'vanity_url');
+    return {
+      website_card: {
+        url: cardUrl,
+        title,
+        description,
+        domain,
+        card_name: cardName,
+        image: imagePreview
+      }
+    };
   }
 
   return {};

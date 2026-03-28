@@ -11,7 +11,8 @@ import {
   searchAPIRequest,
   statusAPIRequest,
   threadAPIRequest,
-  trendsAPIRequest
+  trendsAPIRequest,
+  typeaheadAPIRequest
 } from './routes/twitter';
 import { oembed } from './routes/oembed';
 import { linkHitRequest, linkGoRequest } from './hit';
@@ -23,7 +24,8 @@ import {
   searchV2Route,
   statusV2Route,
   threadV2Route,
-  trendsV2Route
+  trendsV2Route,
+  typeaheadV2Route
 } from './routes';
 
 export const api = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
@@ -53,6 +55,7 @@ api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
 api.openapi(profileV2Route, profileAPIRequest);
 api.openapi(searchV2Route, searchAPIRequest);
+api.openapi(typeaheadV2Route, typeaheadAPIRequest);
 api.openapi(trendsV2Route, trendsAPIRequest);
 
 api.get('/2/owoembed', oembed);

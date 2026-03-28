@@ -35,12 +35,31 @@ function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
   if (typeof status.views === 'undefined' && typeof status?.view_count_info !== 'undefined') {
     status.views = status?.view_count_info;
   }
+  const nested = status.tweet as Partial<GraphQLTwitterStatus> | undefined;
+  if (typeof status.card === 'undefined' && nested?.card) {
+    status.card = nested.card;
+  }
+  if (typeof status.tweet_card === 'undefined' && nested && 'tweet_card' in nested) {
+    const nc = (nested as { tweet_card?: GraphQLTwitterStatus['tweet_card'] }).tweet_card;
+    if (nc) status.tweet_card = nc;
+  }
 }
 
 function retweeterUserFromStatus(status: GraphQLTwitterStatus): GraphQLUser | undefined {
   return (status.core?.user_results?.result ?? status.core?.user_result?.result) as
     | GraphQLUser
     | undefined;
+}
+
+/** Card `card_url` is usually a t.co short link; tweet URL entities carry the expanded destination. */
+function expandedCardUrl(
+  cardUrl: string,
+  urlEntities: GraphQLTwitterStatus['legacy']['entities']['urls'] | undefined
+): string {
+  if (!urlEntities?.length) return cardUrl;
+  const match = urlEntities.find(e => e.url === cardUrl);
+  const expanded = match?.expanded_url;
+  return typeof expanded === 'string' && expanded.length > 0 ? expanded : cardUrl;
 }
 
 function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
@@ -533,6 +552,22 @@ export const buildAPITwitterStatus = async (
           }
         });
       }
+    }
+    if (card.website_card) {
+      const wc = card.website_card;
+      apiStatus.card = {
+        url: expandedCardUrl(wc.url, status.legacy.entities?.urls),
+        title: wc.title,
+        description: wc.description,
+        domain: wc.domain,
+        card_name: wc.card_name,
+        image: {
+          width: wc.image?.width,
+          height: wc.image?.height,
+          url: wc.image?.url,
+          alt: wc.image?.alt
+        }
+      };
     }
   } else {
     /* Determine if the status contains a YouTube link (either youtube.com or youtu.be) so we can include it */

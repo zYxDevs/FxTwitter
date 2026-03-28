@@ -323,6 +323,15 @@ export const handleStatus = async (
     siteName = i18next.t('threadIndicator', { brandingName: siteName });
   }
 
+  if (
+    status.provider === DataProvider.Twitter &&
+    (status as APITwitterStatus).card?.domain &&
+    (status as APITwitterStatus).embed_card !== 'player'
+  ) {
+    const d = (status as APITwitterStatus).card!.domain!.replace(/^www\./, '');
+    siteName = `${originalSiteName} · ${d}`;
+  }
+
   let newText = status.text;
 
   /* Base headers included in all responses */

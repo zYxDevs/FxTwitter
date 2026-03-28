@@ -5,6 +5,7 @@ import {
 } from '../../providers/twitter/trends';
 import {
   APISearchResultsSchema,
+  APITypeaheadResponseSchema,
   APITrendsResponseSchema,
   ApiQueryErrorSchema,
   SocialConversationSchema,
@@ -143,6 +144,8 @@ export const profileV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}',
   summary: 'Get user profile',
+  description:
+    'Returns profile fields for a user. Optional `about_account` / `aboutAccount` (truthy) adds `about_account` on the user when available.',
   request: {
     params: z.object({
       handle: z.string().openapi({ description: 'Username without @', example: 'X' })
@@ -243,6 +246,48 @@ export const searchV2Route = createRoute({
 });
 
 const trendsTypeDescription = `Explore timeline kind. Supported: ${PUBLIC_EXPLORE_TIMELINE_KINDS.join(', ')}`;
+
+const typeaheadResultTypeDescription =
+  'Comma-separated suggestion kinds to request from X: `events`, `users`, `topics` (default: all three). Other values are ignored. Hashtag-style hits appear under `topics`.';
+
+export const typeaheadV2Route = createRoute({
+  method: 'get',
+  path: '/2/typeahead',
+  summary: 'Search typeahead suggestions',
+  description:
+    'Autocomplete-style suggestions from X REST `1.1/search/typeahead.json`: users (as `APIUser` with counts and bio omitted when unknown), topics (including hashtag-style trends), and events.',
+  request: {
+    query: z.object({
+      q: z.string().min(1).openapi({ description: 'Prefix or query string', example: 'example' }),
+      result_type: z.string().optional().openapi({
+        description: typeaheadResultTypeDescription,
+        example: 'events,users,topics'
+      }),
+      src: z.string().optional().openapi({
+        description: 'Upstream `src` hint (default: search_box)',
+        example: 'search_box'
+      })
+    })
+  },
+  responses: {
+    200: {
+      description: 'Typeahead payload',
+      content: { 'application/json': { schema: APITypeaheadResponseSchema } }
+    },
+    400: {
+      description: 'Invalid query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'Upstream returned an error payload for this query',
+      content: { 'application/json': { schema: APITypeaheadResponseSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APITypeaheadResponseSchema } }
+    }
+  }
+});
 
 export const trendsV2Route = createRoute({
   method: 'get',

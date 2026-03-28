@@ -111,6 +111,23 @@ export const APIMosaicPhotoSchema = z.object({
   })
 });
 
+/** Link preview from Twitter GraphQL (`summary_large_image`, `summary`, etc.). Exposed as `card` on `APITwitterStatus`. */
+export const APICardSchema = z.object({
+  url: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  domain: z.string().optional(),
+  card_name: z.string().optional(),
+  image: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional(),
+      url: z.string().optional(),
+      alt: z.string().optional()
+    })
+    .optional()
+});
+
 export const APIBroadcastSchema = z.object({
   url: z.string(),
   width: z.number(),
@@ -443,6 +460,7 @@ export type APITwitterStatus = {
   is_note_tweet: boolean;
   community_note: z.infer<typeof APITwitterCommunityNoteSchema> | null;
   reposted_by: z.infer<typeof APIRepostedBySchema> | null;
+  card?: z.infer<typeof APICardSchema>;
 };
 
 /* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`. */
@@ -483,7 +501,8 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       article: TwitterArticleSchema.optional(),
       is_note_tweet: z.boolean(),
       community_note: APITwitterCommunityNoteSchema.nullable(),
-      reposted_by: APIRepostedBySchema.nullable()
+      reposted_by: APIRepostedBySchema.nullable(),
+      card: APICardSchema.optional()
     })
   )
   .openapi('APITwitterStatus');
@@ -554,6 +573,49 @@ export const APITrendsResponseSchema = z
   })
   .openapi('APITrendsResponse');
 
+export const APITypeaheadTopicResultContextTypeSchema = z.object({
+  type: z.string()
+});
+
+export const APITypeaheadTopicResultContextSchema = z.object({
+  display_string: z.string().optional(),
+  redirect_url: z.string().optional(),
+  types: z.array(APITypeaheadTopicResultContextTypeSchema).optional()
+});
+
+export const APITypeaheadTopicSchema = z
+  .object({
+    topic: z.string(),
+    result_context: APITypeaheadTopicResultContextSchema.optional()
+  })
+  .openapi('APITypeaheadTopic');
+
+export const APITypeaheadEventImageSchema = z.object({
+  url: z.string(),
+  width: z.number().optional(),
+  height: z.number().optional()
+});
+
+export const APITypeaheadEventSchema = z
+  .object({
+    topic: z.string(),
+    url: z.string().optional(),
+    supporting_text: z.string().optional(),
+    primary_image: APITypeaheadEventImageSchema.optional()
+  })
+  .openapi('APITypeaheadEvent');
+
+export const APITypeaheadResponseSchema = z
+  .object({
+    code: z.number(),
+    query: z.string(),
+    num_results: z.number(),
+    users: z.array(APIUserSchema),
+    topics: z.array(APITypeaheadTopicSchema),
+    events: z.array(APITypeaheadEventSchema)
+  })
+  .openapi('APITypeaheadResponse');
+
 export const ApiQueryErrorSchema = z
   .object({
     code: z.literal(400),
@@ -582,4 +644,7 @@ export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;
 export type APITrend = z.infer<typeof APITrendSchema>;
 export type APITrendsResponse = z.infer<typeof APITrendsResponseSchema>;
+export type APITypeaheadTopic = z.infer<typeof APITypeaheadTopicSchema>;
+export type APITypeaheadEvent = z.infer<typeof APITypeaheadEventSchema>;
+export type APITypeaheadResponse = z.infer<typeof APITypeaheadResponseSchema>;
 export type ApiQueryError = z.infer<typeof ApiQueryErrorSchema>;

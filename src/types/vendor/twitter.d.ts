@@ -594,7 +594,10 @@ type GraphQLTwitterStatus = {
 };
 
 type GraphQLTwitterCard = {
-  rest_id: string; // "card://1674824189176590336",
+  rest_id?: string; // "card://1674824189176590336",
+  /** Present on TweetDetail / TweetResultByRestId for link preview cards (e.g. `summary_large_image`). */
+  name?: string;
+  url?: string;
   legacy: {
     binding_values: {
       key:

@@ -269,7 +269,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
-    // console.log('response', JSON.stringify(response));
+    console.log('response', JSON.stringify(response));
     return response;
   }
 

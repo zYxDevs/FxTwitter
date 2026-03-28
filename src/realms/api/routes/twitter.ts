@@ -9,6 +9,7 @@ import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount'
 import { searchAPI } from '../../../providers/twitter/search';
 import { profileStatusesAPI } from '../../../providers/twitter/userStatuses';
 import { trendsAPI } from '../../../providers/twitter/trends';
+import { typeaheadAPI } from '../../../providers/twitter/typeahead';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Context } from 'hono';
 import { isParamTruthy } from '../../../helpers/utils';
@@ -20,7 +21,8 @@ import {
   searchV2Route,
   statusV2Route,
   threadV2Route,
-  trendsV2Route
+  trendsV2Route,
+  typeaheadV2Route
 } from '../routes';
 
 const shouldIncludeAboutAccount = (c: Context) => {
@@ -82,7 +84,7 @@ export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = 
 export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c => {
   const { handle } = c.req.valid('param');
 
-  const profileResponse = await userAPI(handle, c);
+  const profileResponse = await userAPI(handle, c, false, shouldIncludeAboutAccount(c));
 
   c.status(profileResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -136,4 +138,18 @@ export const trendsAPIRequest: RouteHandler<typeof trendsV2Route> = async c => {
     c.header(header, value);
   }
   return c.json(trendsResponse, trendsResponse.code as 200 | 404 | 500);
+};
+
+export const typeaheadAPIRequest: RouteHandler<typeof typeaheadV2Route> = async c => {
+  const query = c.req.valid('query');
+  const response = await typeaheadAPI(query.q, c, {
+    resultType: query.result_type,
+    src: query.src
+  });
+
+  c.status(response.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(response, response.code as 200 | 404 | 500);
 };

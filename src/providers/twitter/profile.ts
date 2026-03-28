@@ -160,7 +160,7 @@ const populateUserProperties = async (
 const fetchUserWithAboutAccount = async (
   c: Context,
   screenName: string,
-  includeAboutAccount = true
+  includeAboutAccount = false
 ): Promise<{
   userResponse: GraphQLUserResponse | UserResultByScreenNameResponse | null;
   aboutAccountResponse: AboutAccountQueryResponse | null;
@@ -246,10 +246,14 @@ export const getTwitterUserRestIdByScreenName = async (
 export const userAPI = async (
   username: string,
   c: Context,
-  legacyApiUserCounts = false
+  legacyApiUserCounts = false,
+  includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
-  // Fetch user data and AboutAccountQuery in parallel
-  const { userResponse, aboutAccountResponse } = await fetchUserWithAboutAccount(c, username);
+  const { userResponse, aboutAccountResponse } = await fetchUserWithAboutAccount(
+    c,
+    username,
+    includeAboutAccount
+  );
 
   if (!userResponse || !Object.keys(userResponse).length) {
     return {

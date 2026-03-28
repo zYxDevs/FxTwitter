@@ -55,7 +55,7 @@ test('API fetch user that does not exist', async () => {
 
 test('API fetch user about_account info', async () => {
   const result = await app.request(
-    new Request('https://api.fxtwitter.com/x?about_account=true', {
+    new Request('https://api.fxtwitter.com/2/profile/x?about_account=true', {
       method: 'GET',
       headers: botHeaders
     }),

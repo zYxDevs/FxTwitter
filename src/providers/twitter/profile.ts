@@ -7,7 +7,10 @@ import {
   AboutAccountQuery
 } from './graphql/queries';
 import { validateAboutAccountQuery } from './graphql/validators';
-import { graphQLOrchestrator } from './graphql/orchestrator';
+import {
+  graphQLOrchestrator,
+  type GraphQLOrchestratorRequest
+} from './graphql/orchestrator';
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
@@ -151,57 +154,61 @@ const populateUserProperties = async (
 };
 
 /**
- * Fetches user data with AboutAccountQuery in parallel using graphQLOrchestrator
- * Uses weighted endpoint methods for rate limit leveling on user endpoints
+ * Fetches user data; optionally runs AboutAccountQuery in parallel via graphQLOrchestrator.
+ * Uses weighted endpoint methods for rate limit leveling on user endpoints.
  */
 const fetchUserWithAboutAccount = async (
   c: Context,
-  screenName: string
+  screenName: string,
+  includeAboutAccount = true
 ): Promise<{
   userResponse: GraphQLUserResponse | UserResultByScreenNameResponse | null;
   aboutAccountResponse: AboutAccountQueryResponse | null;
 }> => {
-  // Use orchestrator to run requests in parallel with endpoint methods
-  const results = await graphQLOrchestrator(c, [
-    {
-      key: 'user',
-      methods: [
-        {
-          name: 'UserByScreenName',
-          query: UserByScreenNameQuery,
-          weight: 150,
-          validator: (response: unknown) => {
-            const userResponse = response as GraphQLUserResponse;
-            const result = userResponse?.data?.user?.result;
-            return Boolean(
-              result && (result.__typename === 'User' || result.rest_id || result.core)
-            );
-          }
-        },
-        {
-          name: 'UserResultByScreenName',
-          query: UserResultByScreenNameQuery,
-          weight: 500,
-          validator: (response: unknown) => {
-            const userResponse = response as UserResultByScreenNameResponse;
-            const result = userResponse?.data?.user_results?.result;
-            return Boolean(
-              result && result.__typename === 'User' && (result.legacy || result.rest_id)
-            );
-          }
+  const userRequest: GraphQLOrchestratorRequest = {
+    key: 'user',
+    methods: [
+      {
+        name: 'UserByScreenName',
+        query: UserByScreenNameQuery,
+        weight: 150,
+        validator: (response: unknown) => {
+          const userResponse = response as GraphQLUserResponse;
+          const result = userResponse?.data?.user?.result;
+          return Boolean(
+            result && (result.__typename === 'User' || result.rest_id || result.core)
+          );
         }
-      ],
-      variables: { screen_name: screenName },
-      required: true
-    },
-    {
-      key: 'aboutAccount',
-      query: AboutAccountQuery,
-      variables: { screenName },
-      validator: validateAboutAccountQuery,
-      required: false // Supplementary request - failure is OK
-    }
-  ]);
+      },
+      {
+        name: 'UserResultByScreenName',
+        query: UserResultByScreenNameQuery,
+        weight: 500,
+        validator: (response: unknown) => {
+          const userResponse = response as UserResultByScreenNameResponse;
+          const result = userResponse?.data?.user_results?.result;
+          return Boolean(
+            result && result.__typename === 'User' && (result.legacy || result.rest_id)
+          );
+        }
+      }
+    ],
+    variables: { screen_name: screenName },
+    required: true
+  };
+
+  const aboutAccountRequest: GraphQLOrchestratorRequest = {
+    key: 'aboutAccount',
+    query: AboutAccountQuery,
+    variables: { screenName },
+    validator: validateAboutAccountQuery,
+    required: false
+  };
+
+  const results = await graphQLOrchestrator(
+    c,
+    includeAboutAccount ? [userRequest, aboutAccountRequest] : [userRequest]
+  );
 
   // Extract user response
   const userData = results.user?.success
@@ -224,7 +231,7 @@ export const getTwitterUserRestIdByScreenName = async (
   c: Context,
   screenName: string
 ): Promise<string | null> => {
-  const { userResponse } = await fetchUserWithAboutAccount(c, screenName);
+  const { userResponse } = await fetchUserWithAboutAccount(c, screenName, false);
   if (!userResponse) {
     return null;
   }

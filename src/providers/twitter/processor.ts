@@ -398,8 +398,12 @@ export const buildAPITwitterStatus = async (
 
   apiStatus.media = {};
 
-  /* We found a quote, let's process that too */
-  const quote = status.quoted_status_result ?? status.tweet?.quoted_status_result;
+  /* ConversationTimeline uses quoted_tweet_results; TweetDetail uses quoted_status_result (both unwrap via status.result). */
+  const quote =
+    status.quoted_status_result ??
+    status.tweet?.quoted_status_result ??
+    status.quoted_tweet_results ??
+    status.tweet?.quoted_tweet_results;
   if (quote) {
     const buildQuote = await buildAPITwitterStatus(c, quote, language, threadAuthor, legacyAPI);
     if ((buildQuote as FetchResults).status) {

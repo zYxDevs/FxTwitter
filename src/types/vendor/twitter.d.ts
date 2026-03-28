@@ -482,6 +482,7 @@ type GraphQLTwitterStatus = {
   };
   tweet?: {
     quoted_status_result?: GraphQLTwitterStatus;
+    quoted_tweet_results?: GraphQLTwitterStatus;
     legacy: GraphQLTwitterStatusLegacy;
     views?: {
       count: string; // "562"
@@ -518,6 +519,7 @@ type GraphQLTwitterStatus = {
   };
   source: string; // "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>"
   quoted_status_result?: GraphQLTwitterStatus;
+  quoted_tweet_results?: GraphQLTwitterStatus;
   legacy: GraphQLTwitterStatusLegacy;
   note_tweet: {
     is_expandable: boolean;

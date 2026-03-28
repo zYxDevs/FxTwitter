@@ -92,53 +92,53 @@ const validateThreadedConversationResponse = (_conversation: unknown): boolean =
   return Array.isArray(conversation?.errors);
 };
 
-/** TweetDetail (50/period) vs ConversationTimeline (150/period) at 1:3 to level rate limits */
+/**
+ * TweetDetail (50/period) vs ConversationTimeline (150/period) at 1:3 to level rate limits.
+ * Uses graphQLOrchestrator weighted selection (same distribution as the former Math.random split).
+ * @param processThread - When true, uses the same 1000/3000 weights as fetchSingleStatus for these two endpoints.
+ */
 export const fetchTweetDetail = async (
   c: Context,
   status: string,
   cursor: string | null = null,
   rankingMode?: TweetDetailRankingMode
 ): Promise<TweetDetailResponse> => {
-  const validator = validateThreadedConversationResponse;
-
-  const conversationTimelineRequest = () =>
-    graphqlRequest(c, {
-      query: ConversationTimelineQuery,
-      validator,
-      variables: {
-        focal_tweet_id: status,
-        cursor,
-        ...(rankingMode ? { ranking_mode: rankingMode } : {})
-      }
-    }) as Promise<TweetDetailResponse>;
-
-  const tweetDetailRequest = () =>
-    graphqlRequest(c, {
-      query: TweetDetailQuery,
-      validator,
-      variables: {
-        focalTweetId: status,
-        cursor,
-        ...(rankingMode ? { rankingMode } : {})
-      }
-    }) as Promise<TweetDetailResponse>;
-
-  const preferConversationTimeline = Math.random() * 4 < 3;
-  const [primary, fallback] = preferConversationTimeline
-    ? [conversationTimelineRequest, tweetDetailRequest]
-    : [tweetDetailRequest, conversationTimelineRequest];
-
-  try {
-    const result = await primary();
-    if (result?.data?.threaded_conversation_with_injections_v2?.instructions) {
-      return result;
+  const results = await graphQLOrchestrator(c, [
+    {
+      key: 'threadedConversation',
+      methods: [
+        {
+          name: 'ConversationTimeline',
+          query: ConversationTimelineQuery,
+          weight: 30,
+          validator: validateThreadedConversationResponse,
+          variables: {
+            focal_tweet_id: status,
+            cursor,
+            ...(rankingMode ? { ranking_mode: rankingMode } : {})
+          }
+        },
+        {
+          name: 'TweetDetail',
+          query: TweetDetailQuery,
+          weight: 100,
+          validator: validateThreadedConversationResponse,
+          variables: {
+            focalTweetId: status,
+            cursor,
+            ...(rankingMode ? { rankingMode } : {})
+          }
+        }
+      ],
+      required: true
     }
-    console.log('Primary conversation endpoint returned invalid data, trying fallback');
-  } catch (e) {
-    console.log('Primary conversation endpoint failed, trying fallback', e);
-  }
+  ]);
 
-  return fallback();
+  const entry = results.threadedConversation;
+  if (entry?.success && entry.data) {
+    return entry.data as TweetDetailResponse;
+  }
+  return (entry?.data ?? { data: undefined }) as TweetDetailResponse;
 };
 
 export const fetchByRestId = async (
@@ -754,7 +754,7 @@ export const constructTwitterThread = async (
     else if (typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('Need thread data, trying TweetDetail...');
       if (experimentCheck(Experiment.TWEET_DETAIL_API)) {
-        const threadResponse = (await fetchTweetDetail(c, id)) as TweetDetailResponse;
+        const threadResponse = await fetchTweetDetail(c, id, null);
         if (threadResponse?.data) {
           response = threadResponse;
         }

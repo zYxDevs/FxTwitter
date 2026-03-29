@@ -585,7 +585,7 @@ const fetchSingleStatus = async (
         {
           name: 'TweetDetail',
           query: TweetDetailQuery,
-          weight: processThread ? 1000 : 10,
+          weight: 150,
           fallbackOnly: !processThread,
           variables: { focalTweetId: id },
           validator: (response: unknown) => {
@@ -598,7 +598,7 @@ const fetchSingleStatus = async (
         {
           name: 'ConversationTimeline',
           query: ConversationTimelineQuery,
-          weight: processThread ? 3000 : 30,
+          weight: 150,
           fallbackOnly: !processThread,
           variables: { focal_tweet_id: id },
           validator: (response: unknown) => {
@@ -620,7 +620,7 @@ const fetchSingleStatus = async (
           }
         },
         {
-          name: 'TweetResultsByIds',
+          name: 'TweetResultsByIdsQuery',
           query: TweetResultsByIdsQuery,
           weight: 500,
           fallbackOnly: processThread || isApiHost,

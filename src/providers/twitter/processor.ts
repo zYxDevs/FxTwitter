@@ -253,6 +253,8 @@ export const buildAPITwitterStatus = async (
       status.note_tweet?.note_tweet_results?.result?.entity_set.hashtags;
     status.legacy.entities.symbols =
       status.note_tweet?.note_tweet_results?.result?.entity_set.symbols;
+    status.legacy.entities.user_mentions =
+      status.note_tweet?.note_tweet_results?.result?.entity_set.user_mentions;
 
     apiStatus.text = unescapeText(linkFixer(status.legacy.entities.urls, noteTweetText));
     apiStatus.is_note_tweet = true;

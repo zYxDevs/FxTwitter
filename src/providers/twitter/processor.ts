@@ -255,6 +255,7 @@ export const buildAPITwitterStatus = async (
   }
   apiStatus.likes = status.legacy.favorite_count;
   apiStatus.bookmarks = status.legacy.bookmark_count;
+  apiStatus.quotes = status.legacy.quote_count;
   apiStatus.embed_card = 'tweet';
   apiStatus.created_at = status.legacy.created_at;
   apiStatus.created_timestamp = new Date(status.legacy.created_at).getTime() / 1000;

@@ -22,8 +22,8 @@
     "@eslint/js": "^10.0.1",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@sentry/esbuild-plugin": "^5.1.1",
-    "@typescript-eslint/eslint-plugin": "^8.57.1",
-    "@typescript-eslint/parser": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
     "dotenv": "^17.3.1",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
@@ -34,7 +34,7 @@
     "prettier": "^3.8.1",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.1",
+    "typescript-eslint": "^8.57.2",
     "vitest": "^4.1.2",
     "wrangler": "^4.78.0"
   },
@@ -43,7 +43,7 @@
     "@hono/zod-openapi": "^1.2.4",
     "hono": "^4.12.9",
     "zod": "^4.3.6",
-    "i18next": "^25.10.10",
+    "i18next": "^26.0.1",
     "i18next-icu": "^2.4.3"
   }
 }

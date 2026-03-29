@@ -7,12 +7,7 @@ import { Constants } from '../../../constants';
 import { userAPI, userAPIById, parseHandleOrId } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
-import {
-  profileMediaAPI,
-  profilePhotosAPI,
-  profileStatusesAPI,
-  profileUserVideosAPI
-} from '../../../providers/twitter/userStatuses';
+import { profileMediaAPI, profileStatusesAPI } from '../../../providers/twitter/userStatuses';
 import { trendsAPI } from '../../../providers/twitter/trends';
 import { typeaheadAPI } from '../../../providers/twitter/typeahead';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -22,9 +17,7 @@ import type { RouteHandler } from '@hono/zod-openapi';
 import {
   conversationV2Route,
   profileMediaV2Route,
-  profilePhotosV2Route,
   profileStatusesV2Route,
-  profileVideosV2Route,
   profileV2Route,
   searchV2Route,
   statusV2Route,
@@ -142,36 +135,6 @@ export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = 
     c.header(header, value);
   }
   return c.json(mediaResponse, mediaResponse.code as 200 | 404 | 500);
-};
-
-export const profilePhotosAPIRequest: RouteHandler<typeof profilePhotosV2Route> = async c => {
-  const { handle } = c.req.valid('param');
-  const query = c.req.valid('query');
-
-  const cursor = query.cursor ?? null;
-
-  const photosResponse = await profilePhotosAPI(parseHandleOrId(handle), cursor, c);
-
-  c.status(photosResponse.code as ContentfulStatusCode);
-  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-    c.header(header, value);
-  }
-  return c.json(photosResponse, photosResponse.code as 200 | 404 | 500);
-};
-
-export const profileVideosAPIRequest: RouteHandler<typeof profileVideosV2Route> = async c => {
-  const { handle } = c.req.valid('param');
-  const query = c.req.valid('query');
-
-  const cursor = query.cursor ?? null;
-
-  const videosResponse = await profileUserVideosAPI(parseHandleOrId(handle), cursor, c);
-
-  c.status(videosResponse.code as ContentfulStatusCode);
-  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-    c.header(header, value);
-  }
-  return c.json(videosResponse, videosResponse.code as 200 | 404 | 500);
 };
 
 export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {

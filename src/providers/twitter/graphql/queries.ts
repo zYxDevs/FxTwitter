@@ -724,61 +724,6 @@ export const ProfileTimelineQuery: GraphQLQuery = {
   features: profileTimelineFeatures
 };
 
-/** Captured from x.com — ProfileUserPhotoTimeline (media tab / photo timeline; no autoplay flag vs ProfileTimeline) */
-export const ProfileUserPhotoTimelineQuery: GraphQLQuery = {
-  httpMethod: 'GET',
-  queryId: 'SOO5DpTVYbHq1Wxbu2E5wg',
-  queryName: 'ProfileUserPhotoTimeline',
-  requiresAccount: true,
-  variables: {
-    include_is_translatable: false,
-    include_community_tweet_relationship: false,
-    include_grok_analysis_button: true,
-    include_cta: false,
-    include_grok_translated_bio: false,
-    include_tweet_quick_promote_eligibility: false,
-    include_professional: false,
-    skip_author_community_relationship: false,
-    include_conversation_context: false,
-    include_pill_groups_in_modules: false,
-    include_is_member: false,
-    include_reply_device_follow: false,
-    include_unmention_info_override: false,
-    include_dm_muting: false,
-    is_member_target_user_id: '0',
-    cursor: null
-  },
-  features: profileTimelineFeatures
-};
-
-/** Captured from x.com — ProfileUserVideoTimeline (profile Videos tab) */
-export const ProfileUserVideoTimelineQuery: GraphQLQuery = {
-  httpMethod: 'GET',
-  queryId: '2fQui1ui8iFpiBfKakwoKg',
-  queryName: 'ProfileUserVideoTimeline',
-  requiresAccount: true,
-  variables: {
-    include_is_translatable: false,
-    include_community_tweet_relationship: false,
-    include_grok_analysis_button: true,
-    include_cta: false,
-    include_grok_translated_bio: false,
-    include_tweet_quick_promote_eligibility: false,
-    include_professional: false,
-    include_conversation_context: false,
-    skip_author_community_relationship: false,
-    include_pill_groups_in_modules: false,
-    include_is_member: false,
-    autoplay_enabled: true,
-    include_reply_device_follow: false,
-    include_unmention_info_override: false,
-    include_dm_muting: false,
-    is_member_target_user_id: '0',
-    cursor: null
-  },
-  features: profileTimelineFeatures
-};
-
 /** Captured from x.com — ProfileWithRepliesTimeline (same flags/features as ProfileTimeline) */
 export const ProfileWithRepliesTimelineQuery: GraphQLQuery = {
   httpMethod: 'GET',

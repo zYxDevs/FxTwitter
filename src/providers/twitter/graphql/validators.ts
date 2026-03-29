@@ -15,6 +15,15 @@ export const validateUserTweetsTimeline = (response: unknown): boolean => {
   return Array.isArray(r?.data?.user?.result?.timeline?.timeline?.instructions);
 };
 
+/** UserMedia can return UserTweets-shaped or profile_user_media_timeline-shaped payloads */
+export const validateUserMediaTimelineResponse = (response: unknown): boolean => {
+  if (validateUserTweetsTimeline(response)) return true;
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_media_timeline?.timeline?.instructions
+  );
+};
+
 export const validateProfileTimelineResponse = (response: unknown): boolean => {
   const r = response as TwitterProfileTimelineResponse;
   return Array.isArray(
@@ -79,6 +88,12 @@ export const getProfileStatusesTimelineInstructions = (
       ?.instructions;
   if (Array.isArray(profileVideoPath)) {
     return profileVideoPath;
+  }
+  const profileMediaPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_user_media_timeline?.timeline
+      ?.instructions;
+  if (Array.isArray(profileMediaPath)) {
+    return profileMediaPath;
   }
   return undefined;
 };

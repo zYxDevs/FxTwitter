@@ -1117,6 +1117,14 @@ type TwitterProfileTimelineResponse = {
             metadata?: unknown;
           };
         };
+        profile_user_media_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
       };
     };
   };

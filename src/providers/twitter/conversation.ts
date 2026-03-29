@@ -110,7 +110,7 @@ export const fetchTweetDetail = async (
         {
           name: 'ConversationTimeline',
           query: ConversationTimelineQuery,
-          weight: 30,
+          weight: 150,
           validator: validateThreadedConversationResponse,
           variables: {
             focal_tweet_id: status,
@@ -121,7 +121,7 @@ export const fetchTweetDetail = async (
         {
           name: 'TweetDetail',
           query: TweetDetailQuery,
-          weight: 100,
+          weight: 150,
           validator: validateThreadedConversationResponse,
           variables: {
             focalTweetId: status,

@@ -1,6 +1,11 @@
 import { Context } from 'hono';
 import branding from '../../branding.json';
 
+type ActivityIcon = {
+  default: string;
+  [key: string]: string;
+};
+
 type Branding = {
   name: string;
   domains: string[];
@@ -9,43 +14,37 @@ type Branding = {
   redirect: string;
   default?: boolean;
   color?: string;
-  activityIcons?: {
-    [key: string]: string;
-  };
+  activityIcons?: ActivityIcon | ActivityIcon[];
 };
 
 export const getBranding = (c: Context | Request): Branding => {
-  const zones = branding.zones as unknown as Branding[];
+  const zones = branding.zones as Branding[];
   const defaultBranding = zones.find(zone => zone.default) ?? zones[0];
   try {
     const url = new URL(c instanceof Request ? c.url : c.req.url);
     // get domain name, without subdomains
     const domain = url.hostname.split('.').slice(-2).join('.');
-    const zone = zones.find(zone => zone.domains.includes(domain)) ?? defaultBranding;
-
-    const result: Branding = { ...zone };
-
-    let activityIcons = result.activityIcons;
-    if (Array.isArray(activityIcons)) {
-      result.activityIcons = activityIcons[Math.floor(Math.random() * activityIcons.length)];
-    }
+    const branding = zones.find(zone => zone.domains.includes(domain)) ?? defaultBranding;
+    const fallbackIcon =
+      (branding.activityIcons as ActivityIcon)?.default ??
+      (branding.activityIcons as ActivityIcon[])?.[0]?.default ??
+      '';
 
     if (url.searchParams.get('brandingName')) {
-      result.name = url.searchParams.get('brandingName') ?? result.name;
+      branding.name = url.searchParams.get('brandingName') ?? branding.name;
     }
     if (url.searchParams.get('brandingIcon')) {
-      activityIcons = {
-        default: decodeURIComponent(
-          url.searchParams.get('brandingIcon') ?? activityIcons?.default ?? ''
-        )
+      branding.activityIcons = {
+        default: decodeURIComponent(url.searchParams.get('brandingIcon') ?? fallbackIcon)
       };
     }
     if (url.searchParams.get('brandingRedirectUrl')) {
-      result.redirect = decodeURIComponent(
-        url.searchParams.get('brandingRedirectUrl') ?? result.redirect
+      branding.redirect = decodeURIComponent(
+        url.searchParams.get('brandingRedirectUrl') ?? branding.redirect
       );
     }
-    return result;
+
+    return branding;
   } catch (_e) {
     return defaultBranding;
   }

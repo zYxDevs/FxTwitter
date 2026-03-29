@@ -3,12 +3,10 @@ import { Constants } from '../../constants';
 import { DataProvider } from '../../enum';
 import { handleMosaic } from '../../helpers/mosaic';
 import { linkFixerBsky } from '../../helpers/linkFixer';
-import { APIStatus, APIMedia } from '../../types/types';
 import i18next from 'i18next';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import { unescapeText } from '../../helpers/utils';
-import { experimentCheck, Experiment } from '../../experiments';
 
 export const buildAPIBskyPost = async (
   c: Context,
@@ -29,6 +27,7 @@ export const buildAPIBskyPost = async (
       avatar_url: status.author.avatar,
       banner_url: '', // TODO: Pull this from the actual author endpoint
       description: '',
+      raw_description: { text: '', facets: [] },
       location: '',
       followers: 0,
       following: 0,
@@ -100,7 +99,7 @@ export const buildAPIBskyPost = async (
           type: 'gif',
           url: external?.uri,
           format: 'image/gif',
-          thumbnail_url: external?.thumb?.ref?.$link ?? '',
+          // thumbnail_url: external?.thumb?.ref?.$link ?? '',
           width: 0,
           height: 0
         }
@@ -186,9 +185,7 @@ export const buildAPIBskyPost = async (
       }
     }
   }
-  apiStatus.media.all = ((apiStatus.media.photos as APIMedia[]) || []).concat(
-    apiStatus.media.videos ?? []
-  );
+  apiStatus.media.all = [...(apiStatus.media.photos ?? []), ...(apiStatus.media.videos ?? [])];
 
   /* Handle photos and mosaic if available */
   if ((apiStatus?.media.photos?.length || 0) > 1 && Constants.MOSAIC_BSKY_DOMAIN_LIST.length > 0) {

@@ -11,22 +11,15 @@ import { escapeRegex } from '../helpers/utils';
 import { decodeSnowcode } from '../helpers/snowcode';
 import translationResources from '../../i18n/resources';
 import { Experiment, experimentCheck } from '../experiments';
-import {
-  ActivityMediaAttachment,
-  ActivityStatus,
-  APIPhoto,
-  APIPoll,
-  APIStatus,
-  APITwitterStatus,
-  APIVideo,
-  SocialThread
-} from '../types/types';
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { renderArticleToHtml, DISCORD_ARTICLE_MAX_LENGTH } from '../helpers/article';
-import { TwitterApiMedia, TwitterApiImage, TwitterApiVideo } from '../types/vendor/twitter';
+import {
+  facetUtf16RangeOnPlainText,
+  normalizeUtf16EntityRange
+} from '../helpers/twitterTextIndices';
 
 const convertArticleMediaToAttachment = (
   media: TwitterApiMedia
@@ -139,7 +132,7 @@ interface StatusTextResult {
 }
 
 const getStatusText = (status: APIStatus): StatusTextResult => {
-  let text = '';
+  let text: string;
 
   // Check if is Twitter so we can detect article
   if (status.provider === DataProvider.Twitter) {
@@ -266,7 +259,15 @@ const formatStatus = (text: string, status: APIStatus) => {
   const enableFacets = false;
 
   if (status.raw_text && enableFacets) {
-    text = status.raw_text.text;
+    const plainText = status.raw_text.text;
+    text = plainText;
+
+    const noteTweetUnicodeScalarFacets =
+      status.provider === DataProvider.Twitter && (status as APITwitterStatus).is_note_tweet;
+
+    const facetUtf16RangesOnPlain = status.raw_text.facets.map(f =>
+      facetUtf16RangeOnPlainText(plainText, f, noteTweetUnicodeScalarFacets)
+    );
 
     let baseHashtagUrl = '';
     let baseSymbolUrl = '';
@@ -290,76 +291,59 @@ const formatStatus = (text: string, status: APIStatus) => {
         break;
     }
     let offset = 0;
-    status.raw_text.facets.forEach(facet => {
-      let newFacet = '';
+    status.raw_text.facets.forEach((facet: APIFacet, facetIndex: number) => {
+      const [rawStart, rawEnd] = facetUtf16RangesOnPlain[facetIndex]!;
+      const [start, end] = normalizeUtf16EntityRange(text, rawStart + offset, rawEnd + offset);
+      const oldLen = end - start;
+
+      let newFacet: string;
       switch (facet.type) {
         case 'bold':
-          newFacet = `<b>${text.slice(facet.indices[0] + offset, facet.indices[1] + offset)}</b>`;
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            newFacet +
-            text.slice(facet.indices[1] + offset);
-          offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
+          newFacet = `<b>${text.slice(start, end)}</b>`;
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'italic':
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            `<i>${text.slice(facet.indices[0] + offset, facet.indices[1] + offset)}</i>` +
-            text.slice(facet.indices[1] + offset);
-          offset += 14;
+          newFacet = `<i>${text.slice(start, end)}</i>`;
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'underline':
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            `<u>${text.slice(facet.indices[0] + offset, facet.indices[1] + offset)}</u>` +
-            text.slice(facet.indices[1] + offset);
-          offset += 14;
+          newFacet = `<u>${text.slice(start, end)}</u>`;
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'strikethrough':
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            `<s>${text.slice(facet.indices[0] + offset, facet.indices[1] + offset)}</s>` +
-            text.slice(facet.indices[1] + offset);
-          offset += 14;
+          newFacet = `<s>${text.slice(start, end)}</s>`;
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'url':
           newFacet = `<a href="${facet.replacement}">${facet.display}</a>`;
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            newFacet +
-            text.slice(facet.indices[1] + offset);
-          offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'hashtag':
           newFacet = `<a href="${baseHashtagUrl}/${facet.original}">#${facet.original}</a>`;
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            newFacet +
-            text.slice(facet.indices[1] + offset);
-          offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'symbol':
           newFacet = `<a href="${baseSymbolUrl}/${facet.original}">$${facet.original}</a>`;
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            newFacet +
-            text.slice(facet.indices[1] + offset);
-          offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'mention':
           newFacet = `<a href="${baseMentionUrl}${facet.original}">@${facet.original}</a>`;
-          text =
-            text.slice(0, facet.indices[0] + offset) +
-            newFacet +
-            text.slice(facet.indices[1] + offset);
-          offset += newFacet.length - (facet.indices[1] - facet.indices[0]);
+          text = text.slice(0, start) + newFacet + text.slice(end);
+          offset += newFacet.length - oldLen;
           break;
         case 'media':
-          text = text.slice(0, facet.indices[0] + offset) + text.slice(facet.indices[1] + offset);
-          offset -= facet.indices[1] - facet.indices[0];
+        case 'inline_media':
+          text = text.slice(0, start) + text.slice(end);
+          offset -= oldLen;
           break;
       }
-      console.log('text next step', text);
     });
     text = text.trim().replace(/\n/g, '<br>︀︀');
   } else {
@@ -429,7 +413,7 @@ export const handleActivity = async (
   }
 
   // Get status text and article media
-  const statusResult = getStatusText(thread.status);
+  const statusResult = getStatusText(thread.status as APIStatus);
   const statusText = statusResult.text;
   const articleMedia = statusResult.articleMedia;
 
@@ -618,7 +602,7 @@ export const handleActivity = async (
         .filter(Boolean) as ActivityMediaAttachment[];
 
       // Merge article media attachments, excluding duplicates by id
-      const existingIds = new Set(response.media_attachments.map(a => a.id));
+      const existingIds = new Set(response.media_attachments.map((a: { id: string }) => a.id));
       const uniqueArticleAttachments = articleAttachments.filter(a => !existingIds.has(a.id));
       response.media_attachments.push(...uniqueArticleAttachments);
     } else if (thread.status.media?.external) {

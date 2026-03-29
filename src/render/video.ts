@@ -3,10 +3,10 @@ import { Constants } from '../constants';
 import { Experiment, experimentCheck } from '../experiments';
 import { handleQuote } from '../helpers/quote';
 import { DataProvider } from '../enum';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import {
   APIBlueskyStatus,
   APIMedia,
-  APITwitterStatus,
   APIVideo,
   RenderProperties,
   ResponseInstructions
@@ -86,7 +86,7 @@ export const renderVideo = (
   // Apply video redirect workaround for Discord/Telegram, but NOT for TikTok
   // TikTok videos need their own proxy with specific cookies/headers
   if (
-    experimentCheck(Experiment.KITCHENSINK_MEDIA, userAgent?.includes('TelegramBot')) &&
+    experimentCheck(Experiment.KITCHENSINK_VIDEO, userAgent?.includes('TelegramBot')) &&
     status.provider !== DataProvider.TikTok
   ) {
     const domain =

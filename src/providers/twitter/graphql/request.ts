@@ -9,7 +9,7 @@ export interface GraphQLQuery {
   queryId: string;
   queryName: string;
   requiresAccount: boolean;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   features?: Record<string, boolean>;
   fieldToggles?: Record<string, boolean>;
 }
@@ -17,12 +17,13 @@ export interface GraphQLQuery {
 interface GraphQLRequest {
   query: GraphQLQuery;
   validator: (response: unknown) => boolean;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   useElongator?: boolean;
 }
 
 export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promise<unknown> => {
   const { query, validator, variables } = request;
+  console.log(`📤 ${query.queryName} (${JSON.stringify(variables)})`);
   const allVariables = { ...query.variables, ...(variables ?? {}) };
 
   let url = `${Constants.TWITTER_API_ROOT}/graphql/${query.queryId}/${query.queryName}`;

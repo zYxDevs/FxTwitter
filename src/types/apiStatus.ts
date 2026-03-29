@@ -25,7 +25,7 @@ export interface APIStatus {
 
   likes: number;
   reposts: number;
-  quotes: number;
+  quotes?: number;
   replies: number;
 
   quote?: APIStatus;

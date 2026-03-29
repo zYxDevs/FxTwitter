@@ -148,6 +148,7 @@ export default {
             );
           }
         case 'UserTweets':
+        case 'UserMedia':
           const tweetsUserId = variables.userId;
           try {
             const tweetsModule = await import(`../mocks/UserTweets/${tweetsUserId}.json`);
@@ -207,6 +208,98 @@ export default {
                     result: {
                       __typename: 'User',
                       profile_timeline_v2: {
+                        timeline: { instructions: [] }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+        case 'ProfileUserPhotoTimeline': {
+          const photoRestId = variables.rest_id as string;
+          try {
+            const tweetsModule = await import(`../mocks/UserTweets/${photoRestId}.json`);
+            const tweetsMock = (
+              'default' in tweetsModule && tweetsModule.default
+                ? tweetsModule.default
+                : tweetsModule
+            ) as {
+              data?: { user?: { result?: { timeline?: { timeline?: unknown } } } };
+            };
+            const inner = tweetsMock.data?.user?.result?.timeline?.timeline;
+            const wrappedPhoto = {
+              data: {
+                user_result_by_rest_id: {
+                  rest_id: photoRestId,
+                  result: {
+                    __typename: 'User',
+                    profile_user_photo_timeline: {
+                      id: 'mock-profile-photo-timeline',
+                      timeline: inner ?? { instructions: [] }
+                    }
+                  }
+                }
+              }
+            };
+            return new Response(JSON.stringify(wrappedPhoto));
+          } catch (error) {
+            console.error('Error loading ProfileUserPhotoTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    rest_id: photoRestId,
+                    result: {
+                      __typename: 'User',
+                      profile_user_photo_timeline: {
+                        timeline: { instructions: [] }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+        case 'ProfileUserVideoTimeline': {
+          const videoRestId = variables.rest_id as string;
+          try {
+            const tweetsModule = await import(`../mocks/UserTweets/${videoRestId}.json`);
+            const tweetsMock = (
+              'default' in tweetsModule && tweetsModule.default
+                ? tweetsModule.default
+                : tweetsModule
+            ) as {
+              data?: { user?: { result?: { timeline?: { timeline?: unknown } } } };
+            };
+            const inner = tweetsMock.data?.user?.result?.timeline?.timeline;
+            const wrappedVideo = {
+              data: {
+                user_result_by_rest_id: {
+                  rest_id: videoRestId,
+                  result: {
+                    __typename: 'User',
+                    profile_user_video_timeline: {
+                      id: 'mock-profile-video-timeline',
+                      timeline: inner ?? { instructions: [] }
+                    }
+                  }
+                }
+              }
+            };
+            return new Response(JSON.stringify(wrappedVideo));
+          } catch (error) {
+            console.error('Error loading ProfileUserVideoTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    rest_id: videoRestId,
+                    result: {
+                      __typename: 'User',
+                      profile_user_video_timeline: {
                         timeline: { instructions: [] }
                       }
                     }

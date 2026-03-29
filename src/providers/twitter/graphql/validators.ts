@@ -22,6 +22,37 @@ export const validateProfileTimelineResponse = (response: unknown): boolean => {
   );
 };
 
+export const validateProfileWithRepliesTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_with_replies_timeline_v2?.timeline
+      ?.instructions
+  );
+};
+
+export const validateProfileUserPhotoTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_photo_timeline?.timeline?.instructions
+  );
+};
+
+export const validateProfileUserVideoTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_video_timeline?.timeline?.instructions
+  );
+};
+
+export const getProfilePhotoTimelineInstructions = (
+  response: unknown
+): TimelineInstruction[] | undefined => {
+  const r = response as TwitterProfileTimelineResponse;
+  const instructions =
+    r?.data?.user_result_by_rest_id?.result?.profile_user_photo_timeline?.timeline?.instructions;
+  return Array.isArray(instructions) ? instructions : undefined;
+};
+
 /** Normalize UserTweets vs ProfileTimeline GraphQL shapes for shared processing */
 export const getProfileStatusesTimelineInstructions = (
   response: unknown
@@ -36,6 +67,18 @@ export const getProfileStatusesTimelineInstructions = (
     asProfile?.data?.user_result_by_rest_id?.result?.profile_timeline_v2?.timeline?.instructions;
   if (Array.isArray(profilePath)) {
     return profilePath;
+  }
+  const profileRepliesPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_with_replies_timeline_v2?.timeline
+      ?.instructions;
+  if (Array.isArray(profileRepliesPath)) {
+    return profileRepliesPath;
+  }
+  const profileVideoPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_user_video_timeline?.timeline
+      ?.instructions;
+  if (Array.isArray(profileVideoPath)) {
+    return profileVideoPath;
   }
   return undefined;
 };

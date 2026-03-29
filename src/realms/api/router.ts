@@ -7,7 +7,10 @@ import { Constants } from '../../constants';
 import {
   conversationAPIRequest,
   profileAPIRequest,
+  profileMediaAPIRequest,
+  profilePhotosAPIRequest,
   profileStatusesAPIRequest,
+  profileVideosAPIRequest,
   searchAPIRequest,
   statusAPIRequest,
   threadAPIRequest,
@@ -19,7 +22,10 @@ import { linkHitRequest, linkGoRequest } from './hit';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import {
   conversationV2Route,
+  profileMediaV2Route,
+  profilePhotosV2Route,
   profileStatusesV2Route,
+  profileVideosV2Route,
   profileV2Route,
   searchV2Route,
   statusV2Route,
@@ -53,6 +59,9 @@ api.openapi(statusV2Route, statusAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
+api.openapi(profileMediaV2Route, profileMediaAPIRequest);
+api.openapi(profilePhotosV2Route, profilePhotosAPIRequest);
+api.openapi(profileVideosV2Route, profileVideosAPIRequest);
 api.openapi(profileV2Route, profileAPIRequest);
 api.openapi(searchV2Route, searchAPIRequest);
 api.openapi(typeaheadV2Route, typeaheadAPIRequest);

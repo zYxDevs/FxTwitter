@@ -1,3 +1,4 @@
+import { Constants } from '../constants';
 import {
   TwitterArticleContentState,
   TwitterArticleContentBlock,
@@ -57,7 +58,7 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
       links.push({
         fromIndex: mention.fromIndex,
         toIndex: mention.toIndex,
-        href: `https://x.com/${mention.text}`,
+        href: `${Constants.TWITTER_ROOT}/${mention.text}`,
         text: `@${mention.text}`
       });
     }
@@ -82,7 +83,7 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
       links.push({
         fromIndex: hashtag.fromIndex,
         toIndex: hashtag.toIndex,
-        href: `https://x.com/hashtag/${hashtag.text}`,
+        href: `${Constants.TWITTER_ROOT}/hashtag/${hashtag.text}`,
         text: `#${hashtag.text}`
       });
     }
@@ -94,7 +95,7 @@ const collectInlineLinks = (block: TwitterArticleContentBlock, apiHost?: string)
       links.push({
         fromIndex: cashtag.fromIndex,
         toIndex: cashtag.toIndex,
-        href: `https://x.com/search?q=%24${cashtag.text}`,
+        href: `${Constants.TWITTER_ROOT}/search?q=%24${cashtag.text}`,
         text: `$${cashtag.text}`
       });
     }

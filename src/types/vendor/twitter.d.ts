@@ -1032,6 +1032,14 @@ type TwitterExplorePageResponse = {
     explore_page?: {
       body?: {
         __typename?: string;
+        initialTimeline?: {
+          id?: string;
+          timeline?: {
+            timeline?: {
+              instructions?: TimelineInstruction[];
+            };
+          };
+        };
         timelines?: Array<{
           id: string;
           labelText?: string;

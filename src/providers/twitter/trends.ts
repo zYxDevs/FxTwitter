@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Context } from 'hono';
-import { ExplorePageQuery, GenericTimelineByIdQuery } from './graphql/queries';
+import { ExplorePageQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
 
 export type PublicExploreTimelineKind = 'trending';
@@ -49,6 +49,30 @@ export function timelineTrendToApiTrend(raw: TimelineTrendRaw): APITrend | null 
   return trend;
 }
 
+function processTimelineItemContent(
+  itemContent: unknown,
+  trends: APITrend[],
+  cursors: { cursorType: string; value: string }[]
+): void {
+  if (!itemContent || typeof itemContent !== 'object') {
+    return;
+  }
+  const ic = itemContent as TimelineTrendRaw & { __typename?: string };
+  if (ic.__typename === 'TimelineFrame') {
+    return;
+  }
+  if (ic.__typename === 'TimelineTrend') {
+    const parsed = timelineTrendToApiTrend(ic);
+    if (parsed) {
+      trends.push(parsed);
+    }
+    return;
+  }
+  if (isGraphQLTimelineCursorLoose(itemContent)) {
+    cursors.push(itemContent);
+  }
+}
+
 export function parseTrendsFromGenericTimelineInstructions(
   instructions: TimelineInstruction[] | undefined
 ): { trends: APITrend[]; cursors: { cursorType: string; value: string }[] } {
@@ -70,28 +94,12 @@ export function parseTrendsFromGenericTimelineInstructions(
         continue;
       }
 
-      if (content.__typename !== 'TimelineTimelineItem') {
-        continue;
-      }
-
-      const itemContent = (content as { itemContent?: TimelineTrendRaw & { __typename?: string } })
-        .itemContent;
-      if (!itemContent || typeof itemContent !== 'object') {
-        continue;
-      }
-      if (itemContent.__typename === 'TimelineFrame') {
-        continue;
-      }
-      if (itemContent.__typename !== 'TimelineTrend') {
-        if (isGraphQLTimelineCursorLoose(itemContent)) {
-          cursors.push(itemContent);
-        }
-        continue;
-      }
-
-      const parsed = timelineTrendToApiTrend(itemContent);
-      if (parsed) {
-        trends.push(parsed);
+      if (content.__typename === 'TimelineTimelineItem') {
+        processTimelineItemContent(
+          (content as { itemContent?: unknown }).itemContent,
+          trends,
+          cursors
+        );
       }
     }
   }
@@ -112,24 +120,28 @@ export function pickExploreTimelineId(
   return typeof id === 'string' && id.length > 0 ? id : null;
 }
 
+export function getExploreInitialTimelineInstructions(
+  response: TwitterExplorePageResponse
+): TimelineInstruction[] | undefined {
+  const inst =
+    response?.data?.explore_page?.body?.initialTimeline?.timeline?.timeline?.instructions;
+  return Array.isArray(inst) ? inst : undefined;
+}
+
 export const trendsAPI = async (
   c: Context,
   kind: PublicExploreTimelineKind,
   count: number
 ): Promise<APITrendsResponse> => {
-  const { exploreSectionId } = EXPLORE_TIMELINE_SECTIONS[kind];
-
-  let timelineId: string | null;
+  let exploreResponse: TwitterExplorePageResponse;
   try {
-    const exploreResponse = (await graphqlRequest(c, {
+    exploreResponse = (await graphqlRequest(c, {
       query: ExplorePageQuery,
       variables: { cursor: '' },
       validator: (r: unknown) => {
-        const body = (r as TwitterExplorePageResponse)?.data?.explore_page?.body;
-        return Boolean(body && Array.isArray(body.timelines));
+        return Boolean(getExploreInitialTimelineInstructions(r as TwitterExplorePageResponse));
       }
     })) as TwitterExplorePageResponse;
-    timelineId = pickExploreTimelineId(exploreResponse, exploreSectionId);
   } catch (e) {
     console.error('ExplorePage request failed', e);
     return {
@@ -140,52 +152,20 @@ export const trendsAPI = async (
       message: 'Failed to load explore metadata'
     };
   }
-  if (!timelineId) {
-    return {
-      code: 404,
-      timeline_type: kind,
-      trends: [],
-      cursor: { top: null, bottom: null },
-      message: 'Timeline id not found for requested type'
-    };
-  }
 
-  let instructions: TimelineInstruction[] | undefined;
-  try {
-    const timelineResponse = (await graphqlRequest(c, {
-      query: GenericTimelineByIdQuery,
-      variables: {
-        timelineId,
-        count
-      },
-      validator: (r: unknown) => {
-        const inst = (r as TwitterGenericTimelineByIdResponse)?.data?.timeline?.timeline
-          ?.instructions;
-        return Array.isArray(inst);
-      }
-    })) as TwitterGenericTimelineByIdResponse;
-    instructions = timelineResponse?.data?.timeline?.timeline?.instructions;
-  } catch (e) {
-    console.error('GenericTimelineById request failed', e);
-    return {
-      code: 500,
-      timeline_type: kind,
-      trends: [],
-      cursor: { top: null, bottom: null },
-      message: 'Failed to load timeline'
-    };
-  }
+  const instructions = getExploreInitialTimelineInstructions(exploreResponse);
   if (!instructions) {
     return {
       code: 404,
       timeline_type: kind,
       trends: [],
       cursor: { top: null, bottom: null },
-      message: 'Timeline response was empty'
+      message: 'Explore initial timeline not found'
     };
   }
 
-  const { trends, cursors } = parseTrendsFromGenericTimelineInstructions(instructions);
+  const { trends: allTrends, cursors } = parseTrendsFromGenericTimelineInstructions(instructions);
+  const trends = allTrends.slice(0, Math.max(0, count));
   const top = cursors.find(x => x.cursorType === 'Top')?.value ?? null;
   const bottom = cursors.find(x => x.cursorType === 'Bottom')?.value ?? null;
 

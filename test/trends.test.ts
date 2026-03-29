@@ -42,6 +42,33 @@ test('timelineTrendToApiTrend builds grouped_topics and urls', () => {
   });
 });
 
+test('parseTrendsFromGenericTimelineInstructions ignores TimelineTimelineModule (stories)', () => {
+  const { trends } = parseTrendsFromGenericTimelineInstructions([
+    {
+      type: 'TimelineAddEntries',
+      entries: [
+        {
+          content: {
+            __typename: 'TimelineTimelineModule',
+            items: [
+              {
+                item: {
+                  itemContent: {
+                    __typename: 'TimelineTrend',
+                    name: 'From Module',
+                    trend_metadata: { domain_context: 'News' }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]);
+  expect(trends).toHaveLength(0);
+});
+
 test('parseTrendsFromGenericTimelineInstructions skips frames and collects cursors', () => {
   const { trends, cursors } = parseTrendsFromGenericTimelineInstructions([
     {

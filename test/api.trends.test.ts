@@ -4,7 +4,7 @@ import { app } from '../src/worker';
 import { botHeaders } from './helpers/data';
 import harness from './helpers/harness';
 
-test('API trends returns parsed trends from mocked Explore + GenericTimeline', async () => {
+test('API trends returns parsed trends from mocked ExplorePage initial timeline', async () => {
   const result = await app.request(
     new Request('https://api.fxtwitter.com/2/trends', {
       method: 'GET',

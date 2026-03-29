@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
-import type { APIFacet } from '../../realms/api/schemas';
+import type { APIFacet, ProfileAboutAPIResponse } from '../../realms/api/schemas';
 import {
   UserByScreenNameQuery,
   UserResultByScreenNameQuery,
@@ -453,6 +453,53 @@ export const userAPI = async (
   /* Finally, staple the User to the response and return it */
   response.user = apiUser;
 
+  return response;
+};
+
+/**
+ * Fetches only X “About this account” metadata (`about_account` on full profile), by screen name or `id:<rest_id>`.
+ */
+export const profileAboutAPI = async (
+  handle: string,
+  c: Context
+): Promise<ProfileAboutAPIResponse> => {
+  const parsed = parseHandleOrId(handle);
+
+  const request: GraphQLOrchestratorRequest =
+    parsed.type === 'screenName'
+      ? {
+          key: 'aboutAccount',
+          query: AboutAccountQuery,
+          variables: { screenName: parsed.value },
+          validator: validateAboutAccountQuery,
+          required: true
+        }
+      : {
+          key: 'aboutProfile',
+          query: UserProfileAboutQuery,
+          variables: { rest_id: parsed.value },
+          validator: validateUserProfileAboutQuery,
+          required: true
+        };
+
+  const results = await graphQLOrchestrator(c, [request]);
+  const bucket = parsed.type === 'screenName' ? results.aboutAccount : results.aboutProfile;
+
+  if (!bucket?.success || bucket.data == null) {
+    return { code: 404, message: 'User not found' };
+  }
+
+  const stub = {} as APIUser;
+  if (parsed.type === 'screenName') {
+    mergeAboutAccountData(stub, bucket.data as AboutAccountQueryResponse);
+  } else {
+    mergeUserProfileAboutData(stub, bucket.data as UserProfileAboutResponse);
+  }
+
+  const response: ProfileAboutAPIResponse = { code: 200, message: 'OK' };
+  if (stub.about_account !== undefined) {
+    response.about_account = stub.about_account;
+  }
   return response;
 };
 

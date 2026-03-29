@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
-import { APISearchResults, APITwitterStatus, FetchResults } from '../../types/types';
+import type { APITwitterStatus } from '../../realms/api/schemas';
 
 type SearchFeed = 'latest' | 'top' | 'media';
 
@@ -27,7 +27,16 @@ function isGraphQLTimelineCursor(obj: unknown): obj is GraphQLTimelineCursor {
   );
 }
 
-const processSearchInstructions = (
+/** Normalize cursor_type (ProfileTimeline) and cursorType (UserTweets/Search) */
+const normalizeCursor = (cursor: GraphQLTimelineCursor): GraphQLTimelineCursor => {
+  if (!cursor.cursorType && cursor.cursor_type) {
+    cursor.cursorType = cursor.cursor_type;
+  }
+  return cursor;
+};
+
+/** Shared by SearchTimeline, UserTweets, ProfileTimeline, and other GraphQL timeline instruction streams */
+export const processTimelineInstructions = (
   instructions: TimelineInstruction[]
 ): { statuses: GraphQLTwitterStatus[]; cursors: GraphQLTimelineCursor[] } => {
   const statuses: GraphQLTwitterStatus[] = [];
@@ -48,21 +57,35 @@ const processSearchInstructions = (
     }
   };
 
+  /** ProfileTimeline nests tweet content as `content`, UserTweets/Search use `itemContent` */
+  const getItemContent = (
+    item: GraphQLTimelineItem
+  ): GraphQLTimelineTweet | GraphQLTimelineCursor | undefined => {
+    return item.itemContent ?? item.content;
+  };
+
   instructions?.forEach(instruction => {
+    // ProfileTimeline uses __typename, UserTweets/SearchTimeline use type
+    const kind =
+      (instruction as { type?: string }).type ??
+      (instruction as { __typename?: string }).__typename;
+
     // Paginated responses replace existing cursor entries rather than adding new ones
-    if (instruction.type === 'TimelineReplaceEntry') {
-      const content = instruction.entry?.content;
+    if (kind === 'TimelineReplaceEntry') {
+      const content = (instruction as TimelineReplaceEntryInstruction).entry?.content;
       if (content?.__typename === 'TimelineTimelineCursor') {
-        cursors.push(content);
+        cursors.push(normalizeCursor(content));
       }
       return;
     }
 
     // Media feed pagination uses TimelineAddToModule (search-grid) instead of TimelineAddEntries
-    if (instruction.type === 'TimelineAddToModule') {
-      instruction.moduleItems?.forEach(_moduleItem => {
-        const moduleItem = _moduleItem as { item?: { itemContent?: unknown } };
-        const itemContent = moduleItem?.item?.itemContent;
+    if (kind === 'TimelineAddToModule') {
+      (instruction as TimelineAddModulesInstruction).moduleItems?.forEach(_moduleItem => {
+        const moduleItem = _moduleItem as {
+          item?: { itemContent?: unknown; content?: unknown };
+        };
+        const itemContent = moduleItem?.item?.itemContent ?? moduleItem?.item?.content;
         if (itemContent) {
           extractTweetFromItemContent(itemContent as ItemContentWithTweet);
         }
@@ -70,32 +93,34 @@ const processSearchInstructions = (
       return;
     }
 
-    if (instruction.type === 'TimelineAddEntries') {
-      instruction.entries?.forEach(_entry => {
+    if (kind === 'TimelineAddEntries') {
+      (instruction as TimelineAddEntriesInstruction).entries?.forEach(_entry => {
         const entry = _entry as GraphQLTimelineTweetEntry | GraphQLConversationThread;
         const content = (entry as GraphQLTimelineTweetEntry)?.content;
 
         if (typeof content === 'undefined') return;
 
         if (content.__typename === 'TimelineTimelineItem') {
-          extractTweetFromItemContent(content.itemContent as ItemContentWithTweet);
-          const itemContentType = content.itemContent?.__typename;
-          if (itemContentType === 'TimelineTimelineCursor') {
-            cursors.push(content.itemContent as GraphQLTimelineCursor);
+          const inner = getItemContent(content as GraphQLTimelineItem);
+          if (inner) {
+            extractTweetFromItemContent(inner as ItemContentWithTweet);
+            if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
           }
         } else if (isGraphQLTimelineCursor(content)) {
-          // In search timeline, cursors appear directly as entry content rather than
-          // nested inside a TimelineTimelineItem wrapper as seen in TweetDetail
-          cursors.push(content);
+          // Cursors may appear directly as entry content (SearchTimeline, ProfileTimeline)
+          cursors.push(normalizeCursor(content));
         } else if (
           (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
         ) {
           (content as unknown as GraphQLTimelineModule).items?.forEach(item => {
-            const itemContentType = item.item.itemContent.__typename;
-            if (itemContentType === 'TimelineTweet') {
-              extractTweetFromItemContent(item.item.itemContent as ItemContentWithTweet);
-            } else if (itemContentType === 'TimelineTimelineCursor') {
-              cursors.push(item.item.itemContent as GraphQLTimelineCursor);
+            const inner = getItemContent(item.item);
+            if (!inner) return;
+            if (inner.__typename === 'TimelineTweet') {
+              extractTweetFromItemContent(inner as ItemContentWithTweet);
+            } else if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
             }
           });
         }
@@ -115,7 +140,7 @@ export const searchAPI = async (
 ): Promise<APISearchResults> => {
   const product = feedToProduct(feed);
 
-  let response: TwitterSearchTimelineResponse | null = null;
+  let response: TwitterSearchTimelineResponse | null;
 
   try {
     response = (await graphqlRequest(c, {
@@ -141,7 +166,7 @@ export const searchAPI = async (
   }
 
   const instructions = response.data.search_by_raw_query.search_timeline.timeline.instructions;
-  const { statuses, cursors } = processSearchInstructions(instructions);
+  const { statuses, cursors } = processTimelineInstructions(instructions);
 
   const topCursor = cursors.find(cursor => cursor.cursorType === 'Top')?.value ?? null;
   const bottomCursor = cursors.find(cursor => cursor.cursorType === 'Bottom')?.value ?? null;

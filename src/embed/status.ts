@@ -17,20 +17,12 @@ import { constructBlueskyThread } from '../providers/bsky/conversation';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
-import {
-  APIMedia,
-  APIPhoto,
-  APIStatus,
-  APITwitterStatus,
-  APIVideo,
-  InputFlags,
-  ResponseInstructions,
-  SocialThread
-} from '../types/types';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { InputFlags } from '../types/types';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -294,7 +286,7 @@ export const handleStatus = async (
           const domain =
             status.provider === DataProvider.Twitter
               ? getVideoTranscodeDomain(status.id)
-              : getVideoTranscodeDomainBluesky(status.author.did);
+              : getVideoTranscodeDomainBluesky(status.author.id);
           redirectUrl = `https://${domain}${new URL(redirectUrl).pathname}`;
         } else if (
           experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
@@ -329,6 +321,15 @@ export const handleStatus = async (
     siteName = i18next.t('articleIndicator', { brandingName: siteName });
   } else if (thread.thread && thread.thread.length > 1 && isTelegram && useIV) {
     siteName = i18next.t('threadIndicator', { brandingName: siteName });
+  }
+
+  if (
+    status.provider === DataProvider.Twitter &&
+    (status as APITwitterStatus).card?.domain &&
+    (status as APITwitterStatus).embed_card !== 'player'
+  ) {
+    const d = (status as APITwitterStatus).card!.domain!.replace(/^www\./, '');
+    siteName = `${originalSiteName} · ${d}`;
   }
 
   let newText = status.text;

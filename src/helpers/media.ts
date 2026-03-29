@@ -1,5 +1,4 @@
 import { Context } from 'hono';
-import { APIPhoto, APIVideo, APIVideoFormat } from '../types/types';
 import { Constants } from '../constants';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
 import { formatImageUrl, isParamTruthy } from './utils';

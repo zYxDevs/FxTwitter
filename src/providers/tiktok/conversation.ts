@@ -1,6 +1,5 @@
 import { withTimeout } from '../../helpers/utils';
 import { generateUserAgent } from '../../helpers/useragent';
-import { SocialThread } from '../../types/types';
 import { buildAPITikTokStatus } from './processor';
 
 const TIKTOK_WEB_HOST = 'https://www.tiktok.com';

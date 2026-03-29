@@ -1,0 +1,121 @@
+{
+  "data": {
+    "explore_page": {
+      "body": {
+        "__typename": "SegmentedTimelines",
+        "initialTimeline": {
+          "id": "for_you",
+          "labelText": "For You",
+          "timeline": {
+            "timeline": {
+              "instructions": [
+                {
+                  "type": "TimelineAddEntries",
+                  "entries": [
+                    {
+                      "content": {
+                        "__typename": "TimelineTimelineItem",
+                        "entryType": "TimelineTimelineItem",
+                        "itemContent": {
+                          "__typename": "TimelineFrame",
+                          "itemType": "TimelineFrame",
+                          "height": 180
+                        }
+                      }
+                    },
+                    {
+                      "content": {
+                        "__typename": "TimelineTimelineItem",
+                        "entryType": "TimelineTimelineItem",
+                        "itemContent": {
+                          "__typename": "TimelineTrend",
+                          "itemType": "TimelineTrend",
+                          "name": "#ExampleTrend",
+                          "rank": "1",
+                          "trend_metadata": {
+                            "domain_context": "Sports · Trending",
+                            "url": {
+                              "url": "twitter://search/?query=%23ExampleTrend&src=trend_click&pc=true&vertical=trends",
+                              "urlType": "DeepLink"
+                            }
+                          },
+                          "trend_url": {
+                            "url": "twitter://search/?query=%23ExampleTrend&src=trend_click&pc=true&vertical=trends",
+                            "urlType": "DeepLink"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "content": {
+                        "__typename": "TimelineTimelineItem",
+                        "entryType": "TimelineTimelineItem",
+                        "itemContent": {
+                          "__typename": "TimelineTrend",
+                          "itemType": "TimelineTrend",
+                          "name": "Grouped Headline",
+                          "rank": "2",
+                          "grouped_trends": [
+                            {
+                              "name": "Related A",
+                              "url": {
+                                "url": "twitter://search/?query=Related+A&src=trend_click&pc=true&vertical=trends"
+                              }
+                            }
+                          ],
+                          "trend_metadata": {
+                            "domain_context": "Trending in United States",
+                            "url": {
+                              "url": "twitter://search/?query=Grouped+Headline&src=trend_click&pc=true&vertical=trends",
+                              "urlType": "DeepLink"
+                            }
+                          },
+                          "trend_url": {
+                            "url": "twitter://search/?query=Grouped+Headline&src=trend_click&pc=true&vertical=trends",
+                            "urlType": "DeepLink"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "content": {
+                        "__typename": "TimelineTimelineCursor",
+                        "cursorType": "Top",
+                        "entryType": "TimelineTimelineCursor",
+                        "value": "cursor-top-mock"
+                      }
+                    },
+                    {
+                      "content": {
+                        "__typename": "TimelineTimelineCursor",
+                        "cursorType": "Bottom",
+                        "entryType": "TimelineTimelineCursor",
+                        "value": "cursor-bottom-mock"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "timelines": [
+          {
+            "id": "for_you",
+            "labelText": "For You",
+            "timeline": {
+              "id": "VGltZWxpbmU6DAC2CwABAAAAB2Zvcl95b3UAAA=="
+            }
+          },
+          {
+            "id": "trending",
+            "labelText": "Trending",
+            "timeline": {
+              "id": "mock-trending-timeline-id"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,5 +1,4 @@
 import { DataProvider } from '../../enum';
-import { APIPhoto, APIVideo, APITikTokStatus, APIVideoFormat } from '../../types/types';
 
 const TIKTOK_ROOT = 'https://www.tiktok.com';
 
@@ -285,7 +284,7 @@ const extractDuration = (video: TikTokItemInfo | TikTokAwemeDetail): number => {
 /**
  * Extract author information
  */
-const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
+const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail): APIUser => {
   if (isWebApiData(video)) {
     const author = video.author;
     return {
@@ -295,6 +294,7 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
       avatar_url: author?.avatarLarger || author?.avatarMedium || author?.avatarThumb || null,
       banner_url: null,
       description: author?.signature || '',
+      raw_description: { text: author?.signature || '', facets: [] },
       location: '',
       followers: video.authorStats?.followerCount || 0,
       following: video.authorStats?.followingCount || 0,
@@ -327,6 +327,7 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
         null,
       banner_url: null,
       description: author?.signature || '',
+      raw_description: { text: author?.signature || '', facets: [] },
       location: '',
       followers: author?.follower_count || 0,
       following: author?.following_count || 0,
@@ -347,6 +348,7 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail) => {
     avatar_url: null,
     banner_url: null,
     description: '',
+    raw_description: { text: '', facets: [] },
     location: '',
     followers: 0,
     following: 0,

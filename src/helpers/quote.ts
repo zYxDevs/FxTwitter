@@ -1,5 +1,4 @@
 import i18next from 'i18next';
-import { APIStatus } from '../types/types';
 
 /* Helper for Quote Tweets */
 export const handleQuote = (quote: APIStatus): string | null => {

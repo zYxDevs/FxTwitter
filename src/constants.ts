@@ -17,9 +17,10 @@ export const Constants = {
   API_HOST_ROOT: `https://${API_HOST_LIST.split(',')[0]}`,
   RELEASE_NAME: RELEASE_NAME,
   GIF_TRANSCODE_DOMAIN_LIST: GIF_TRANSCODE_DOMAIN_LIST.split(','),
+  VIDEO_TRANSCODE_DOMAIN_LIST: VIDEO_TRANSCODE_DOMAIN_LIST.split(','),
+  VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: VIDEO_TRANSCODE_BSKY_DOMAIN_LIST.split(','),
   API_DOCS_URL: `https://github.com/FxEmbed/FxEmbed/wiki/API-Home`,
-  TWITTER_ROOT: 'https://x.com',
-  TWITTER_GLOBAL_NAME_ROOT: 'x.com',
+  TWITTER_ROOT: TWITTER_ROOT || 'https://x.com',
   TWITTER_API_ROOT: 'https://api.x.com',
   TWITTER_VIDEO_BASE: 'https://video.twimg.com',
   BSKY_ROOT: 'https://bsky.app',
@@ -29,7 +30,7 @@ export const Constants = {
   TIKTOK_API_HOST: 'https://api16-normal-c-useast1a.tiktokv.com',
   NATIVE_MULTI_IMAGE_UA_REGEX: /discordbot\/|matrixpreviewbot/gi,
   BOT_UA_REGEX:
-    /bot|facebook|embed|got|firefox\/92|firefox\/38|curl|wget|go-http|yahoo|generator|whatsapp|revoltchat|preview|link|proxy|vkshare|images|analyzer|index|crawl|spider|python|node|deno|mastodon|http\.rb|ruby|bun\/|fiddler|iframely|steamchaturllookup|bluesky|matrix-media-repo|cardyb|resolver|util/gi,
+    /bot|facebook|embed|got|firefox\/92|firefox\/38|chrome\/96\.0\.4664\.110|curl|wget|go-http|yahoo|generator|whatsapp|revoltchat|preview|link|proxy|vkshare|images|analyzer|index|crawl|spider|python|node|deno|mastodon|http\.rb|ruby|bun\/|fiddler|iframely|steamchaturllookup|bluesky|matrix-media-repo|cardyb|resolver|util/gi,
   /* 3 hours */
   GUEST_TOKEN_MAX_AGE: 3 * 60 * 60,
   GUEST_BEARER_TOKEN: `Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA`,

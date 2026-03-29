@@ -1,14 +1,15 @@
 import { Env, Hono } from 'hono';
 import { timing } from 'hono/timing';
 import { logger } from 'hono/logger';
-import { RewriteFrames } from '@sentry/integrations';
 import { sentry } from '@hono/sentry';
+import { ContentfulStatusCode } from 'hono/utils/http-status';
+import { rewriteFramesIntegration } from 'toucan-js';
+
 import { Strings } from './strings';
 import { Constants } from './constants';
 import { api } from './realms/api/router';
 import { twitter } from './realms/twitter/router';
 import { cacheMiddleware } from './caches';
-import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { bsky } from './realms/bluesky/router';
 import { getBranding } from './helpers/branding';
 import { tiktok } from './realms/tiktok/router';
@@ -87,8 +88,7 @@ if (SENTRY_DSN) {
         allowedSearchParams: /(.*)/
       },
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      integrations: [new RewriteFrames({ root: '/' }) as any],
+      integrations: [rewriteFramesIntegration({ root: '/' })],
       release: RELEASE_NAME
     })
   );

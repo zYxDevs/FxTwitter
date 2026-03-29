@@ -6,15 +6,9 @@ import { sanitizeText, wrapForeignLinks as wrapForeignLinksUtil } from '../helpe
 import { DataProvider } from '../enum';
 import { getBranding } from '../helpers/branding';
 import { renderArticleToHtml } from '../helpers/article';
-import {
-  APIPhoto,
-  APIPoll,
-  APIStatus,
-  APITwitterStatus,
-  APIUser,
-  RenderProperties,
-  ResponseInstructions
-} from '../types/types';
+import type { APITwitterStatus } from '../realms/api/schemas';
+import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
+import { experimentCheck, Experiment } from '../experiments';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -77,20 +71,29 @@ const generateStatusMedia = (status: APIStatus): string => {
   let media = '';
   if (status.media?.all?.length) {
     status.media.all.forEach(mediaItem => {
+      let url = mediaItem.url;
+
+      if (experimentCheck(Experiment.KITCHENSINK_VIDEO, !!Constants.VIDEO_TRANSCODE_DOMAIN_LIST)) {
+        const domain =
+          status.provider === DataProvider.Twitter
+            ? getVideoTranscodeDomain(status.id)
+            : getVideoTranscodeDomainBluesky(status.id);
+        url = `https://${domain}${new URL(url).pathname}`;
+      }
       switch (mediaItem.type) {
         case 'photo':
           // eslint-disable-next-line no-case-declarations
           const { altText } = mediaItem as APIPhoto;
           media += `<img src="{url}" {altText}/>`.format({
             altText: altText ? `alt="${altText}"` : '',
-            url: mediaItem.url
+            url: url
           });
           break;
         case 'video':
-          media += `<video src="${mediaItem.url}" alt="${i18next.t('videoAltTextUnavailable').format({ author: status.author.name })}"/>`;
+          media += `<video src="${url}" alt="${i18next.t('videoAltTextUnavailable').format({ author: status.author.name })}"/>`;
           break;
         case 'gif':
-          media += `<video src="${mediaItem.url}" alt="${i18next.t('gifAltTextUnavailable').format({ author: status.author.name })}"/>`;
+          media += `<video src="${url}" alt="${i18next.t('gifAltTextUnavailable').format({ author: status.author.name })}"/>`;
           break;
       }
     });
@@ -111,7 +114,9 @@ const formatDate = (date: Date, language: string): string => {
   if (language.startsWith('en')) {
     language = 'en-CA'; // Use ISO dates for English to avoid problems with mm/dd vs. dd/mm
   }
-  console.log('language?', language);
+  if (language) {
+    console.log('language override:', language);
+  }
   const formatter = new Intl.DateTimeFormat(language ?? 'en-CA', {
     year: 'numeric',
     month: '2-digit',
@@ -152,10 +157,10 @@ function getTranslatedText(status: APITwitterStatus, isQuote = false): string | 
   }
   let text = paragraphify(sanitizeText(status.translation?.text), isQuote);
   text = htmlifyLinks(text);
-  text = htmlifyHashtags(text, status);
+  text = htmlifyHashtags(text, status as APIStatus);
 
   if (status.provider === DataProvider.Twitter) {
-    text = populateUserLinks(text, status);
+    text = populateUserLinks(text, status as APIStatus);
   }
 
   const formatText = `📑 {translation}`.format({
@@ -281,34 +286,32 @@ const generatePoll = (poll: APIPoll, language: string): string => {
 };
 
 const generateCommunityNote = (status: APITwitterStatus): string => {
-  if (status.community_note) {
-    console.log('community_note', status.community_note);
-    const note = status.community_note;
-    const entities = note.entities;
-    entities.sort((a, b) => a.fromIndex - b.fromIndex); // sort entities by fromIndex
+  const note = status.community_note;
+  if (!note) {
+    return '';
+  }
 
-    let lastToIndex = 0;
-    let result = '';
+  let lastToIndex = 0;
+  let result = '';
 
-    entities.forEach(entity => {
-      if (entity?.ref?.type !== 'TimelineUrl') {
-        return;
+  if ('facets' in note) {
+    const sorted = [...note.facets].sort((a, b) => a.indices[0] - b.indices[0]);
+    for (const facet of sorted) {
+      if (facet.type !== 'url') {
+        continue;
       }
-      const fromIndex = entity.fromIndex;
-      const toIndex = entity.toIndex;
-      const url = entity.ref.url;
-
-      // Add the text before the link
+      const [fromIndex, toIndex] = facet.indices;
+      const href = facet.replacement ?? '';
+      const label = facet.display ?? note.text.substring(fromIndex, toIndex);
       result += note.text.substring(lastToIndex, fromIndex);
-
-      // Add the link
-      result += `<a href="${url}">${note.text.substring(fromIndex, toIndex)}</a>`;
-
+      result += `<a href="${href}">${label}</a>`;
       lastToIndex = toIndex;
-    });
+    }
+  }
 
-    // Add the remaining text after the last link
-    result = `<table>
+  result += note.text.substring(lastToIndex);
+
+  return `<table>
       <thead>
         <th><b>${i18next.t('ivCommunityNoteHeader')}</b></th>
       </thead>
@@ -316,10 +319,6 @@ const generateCommunityNote = (status: APITwitterStatus): string => {
         <th>${result.replace(/\n/g, '\n<br>')}</th>
       </tbody>
     </table>`;
-
-    return result;
-  }
-  return '';
 };
 
 const generateStatus = (
@@ -497,7 +496,7 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
         previousThreadPieceAuthor = status.author?.id;
 
         return generateStatus(
-          status,
+          status as APIStatus,
           status.author ?? thread?.author,
           properties?.targetLanguage ?? 'en',
           false,

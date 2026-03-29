@@ -50,7 +50,7 @@ export async function withTimeout<T>(
         // Try again, reducing the retries count
         return withTimeout(asyncTask, timeout, retries - 1);
       }
-      throw new Error('Request has timed out too many times');
+      throw new Error('Request has timed out too many times', { cause: error });
     } else {
       throw error as Error;
     }
@@ -117,4 +117,4 @@ export const isParamTruthy = (param: string | undefined) => {
   }
   const value = param.trim().toLowerCase();
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
-}
+};

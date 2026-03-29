@@ -53,7 +53,10 @@ let envVariables = [
   'API_HOST_LIST',
   'SENTRY_DSN',
   'GIF_TRANSCODE_DOMAIN_LIST',
-  'OLD_EMBED_DOMAINS'
+  'VIDEO_TRANSCODE_DOMAIN_LIST',
+  'VIDEO_TRANSCODE_BSKY_DOMAIN_LIST',
+  'OLD_EMBED_DOMAINS',
+  'TWITTER_ROOT'
 ];
 
 // Create defines for all environment variables
@@ -66,7 +69,7 @@ defines['RELEASE_NAME'] = `"${releaseName}"`;
 
 const plugins = [];
 
-if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev) {
+if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev && !workerName.includes('canary')) {
   plugins.push(
     sentryEsbuildPlugin({
       org: process.env.SENTRY_ORG,

@@ -1,6 +1,5 @@
 import { Constants } from '../constants';
 import { DataProvider } from '../enum';
-import { APIPhoto, APIMosaicPhoto } from '../types/types';
 
 const getDomain = (twitterId: string, provider: DataProvider): string | null => {
   let mosaicDomains: string[] = [];

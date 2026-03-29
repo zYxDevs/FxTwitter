@@ -17,20 +17,12 @@ import { constructBlueskyThread } from '../providers/bsky/conversation';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
-import {
-  APIMedia,
-  APIPhoto,
-  APIStatus,
-  APITwitterStatus,
-  APIVideo,
-  InputFlags,
-  ResponseInstructions,
-  SocialThread
-} from '../types/types';
+import type { APITwitterStatus } from '../realms/api/schemas';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
+import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
-import { TwitterApiImage } from '../types/vendor/twitter';
+import { InputFlags } from '../types/types';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -286,14 +278,22 @@ export const handleStatus = async (
       if (selectedMedia?.type === 'gif' && shouldTranscodeGif(c)) {
         redirectUrl = (selectedMedia as APIPhoto).transcode_url ?? redirectUrl;
       }
-
-      // Apply video redirect workaround, but NOT for TikTok (needs its own proxy)
-      if (
-        selectedMedia?.type === 'video' &&
-        experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
-        status.provider !== DataProvider.TikTok
-      ) {
-        redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
+      if (selectedMedia?.type === 'video') {
+        if (
+          experimentCheck(Experiment.KITCHENSINK_VIDEO, isTelegram) &&
+          status.provider !== DataProvider.TikTok
+        ) {
+          const domain =
+            status.provider === DataProvider.Twitter
+              ? getVideoTranscodeDomain(status.id)
+              : getVideoTranscodeDomainBluesky(status.author.id);
+          redirectUrl = `https://${domain}${new URL(redirectUrl).pathname}`;
+        } else if (
+          experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
+          status.provider !== DataProvider.TikTok
+        ) {
+          redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
+        }
       }
       // Only append name if it's an image
       if (/\.(png|jpe?g|gif)(\?|$)/.test(redirectUrl) && flags.name) {
@@ -321,6 +321,15 @@ export const handleStatus = async (
     siteName = i18next.t('articleIndicator', { brandingName: siteName });
   } else if (thread.thread && thread.thread.length > 1 && isTelegram && useIV) {
     siteName = i18next.t('threadIndicator', { brandingName: siteName });
+  }
+
+  if (
+    status.provider === DataProvider.Twitter &&
+    (status as APITwitterStatus).card?.domain &&
+    (status as APITwitterStatus).embed_card !== 'player'
+  ) {
+    const d = (status as APITwitterStatus).card!.domain!.replace(/^www\./, '');
+    siteName = `${originalSiteName} · ${d}`;
   }
 
   let newText = status.text;

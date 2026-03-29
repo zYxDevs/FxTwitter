@@ -7,7 +7,9 @@ export enum Experiment {
   VIDEO_REDIRECT_WORKAROUND = 'VIDEO_REDIRECT_WORKAROUND',
   ACTIVITY_EMBED = 'ACTIVITY_EMBED',
   USE_TRAFFIC_CONTROL = 'USE_TRAFFIC_CONTROL',
-  BROADCAST_STREAM_API = 'BROADCAST_STREAM_API'
+  BROADCAST_STREAM_API = 'BROADCAST_STREAM_API',
+  KITCHENSINK_VIDEO = 'KITCHENSINK_VIDEO',
+  KITCHENSINK_GIF = 'KITCHENSINK_GIF'
 }
 
 type ExperimentConfig = {
@@ -61,12 +63,23 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
     name: 'Broadcast Stream',
     description: 'Use FxTwitter Stream to load X/Twitter broadcasts',
     percentage: 0
+  },
+  [Experiment.KITCHENSINK_VIDEO]: {
+    name: 'KitchenSink video transcoder',
+    description: 'Use KitchenSink video transcoder server',
+    percentage: 0
+  },
+  [Experiment.KITCHENSINK_GIF]: {
+    name: 'KitchenSink GIF transcoder',
+    description: 'Use KitchenSink GIF transcoder server',
+    percentage: 1
   }
 };
 
 export const experimentCheck = (experiment: Experiment, condition = true) => {
-  console.log(`Checking experiment ${experiment}`);
   const experimentEnabled = Experiments[experiment].percentage > Math.random() && condition;
-  console.log(`Experiment ${experiment} enabled: ${experimentEnabled}`);
+  // console.log(
+  //   `Experiment check: ${experiment} (resolved to ${experimentEnabled ? 'true' : 'false'})`
+  // );
   return experimentEnabled;
 };

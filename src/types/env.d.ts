@@ -1,5 +1,6 @@
 declare const STANDARD_DOMAIN_LIST: string;
 declare const STANDARD_BSKY_DOMAIN_LIST: string;
+declare const STANDARD_TIKTOK_DOMAIN_LIST: string;
 declare const DIRECT_MEDIA_DOMAINS: string;
 declare const TEXT_ONLY_DOMAINS: string;
 declare const INSTANT_VIEW_DOMAINS: string;
@@ -12,6 +13,9 @@ declare const POLYGLOT_DOMAIN_LIST: string;
 declare const POLYGLOT_ACCESS_TOKEN: string;
 declare const API_HOST_LIST: string;
 declare const GIF_TRANSCODE_DOMAIN_LIST: string;
+declare const VIDEO_TRANSCODE_DOMAIN_LIST: string;
+declare const VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: string;
+declare const TWITTER_ROOT: string;
 
 declare const SENTRY_DSN: string;
 declare const RELEASE_NAME: string;

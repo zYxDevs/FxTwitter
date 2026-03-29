@@ -3,46 +3,27 @@ import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
 import { handleMosaic } from '../../helpers/mosaic';
 import { unescapeText } from '../../helpers/utils';
-import { processMedia } from '../../helpers/media';
+import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import { APIUser, APITwitterStatus, FetchResults, APIVideo, APIPhoto } from '../../types/types';
+import type { APIFacet, APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
+import { tcoResolver } from './tcoResolver';
 
-export const buildAPITwitterStatus = async (
-  c: Context,
-  status: GraphQLTwitterStatus,
-  language: string | undefined,
-  threadAuthor: null | APIUser,
-  legacyAPI = false
-): Promise<APITwitterStatus | FetchResults | null> => {
-  const apiStatus = {} as APITwitterStatus;
-
-  /* Sometimes, Twitter returns a different kind of type called 'TweetWithVisibilityResults'.
-     It has slightly different attributes from the regular 'Tweet' type. We fix that up here. */
-
-  if (typeof status.core === 'undefined' && typeof status.result !== 'undefined') {
-    status = status.result;
-  }
-  /* This status is actually a retweet, so let's use the original status we are retweeting instead */
-  if (typeof status.legacy?.retweeted_status_result?.result !== 'undefined') {
-    status = status.legacy.retweeted_status_result.result;
-  }
-
+/** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
+function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
   if (typeof status.core === 'undefined' && typeof status.tweet?.core !== 'undefined') {
     status.core = status.tweet.core;
   }
-
   if (typeof status.legacy === 'undefined' && typeof status.tweet?.legacy !== 'undefined') {
-    status.legacy = status.tweet?.legacy;
+    status.legacy = status.tweet.legacy;
   }
-
   if (typeof status.views === 'undefined' && typeof status?.tweet?.views !== 'undefined') {
     status.views = status?.tweet?.views;
   }
@@ -54,6 +35,139 @@ export const buildAPITwitterStatus = async (
   }
   if (typeof status.views === 'undefined' && typeof status?.view_count_info !== 'undefined') {
     status.views = status?.view_count_info;
+  }
+  const nested = status.tweet as Partial<GraphQLTwitterStatus> | undefined;
+  if (typeof status.card === 'undefined' && nested?.card) {
+    status.card = nested.card;
+  }
+  if (typeof status.tweet_card === 'undefined' && nested && 'tweet_card' in nested) {
+    const nc = (nested as { tweet_card?: GraphQLTwitterStatus['tweet_card'] }).tweet_card;
+    if (nc) status.tweet_card = nc;
+  }
+}
+
+function retweeterUserFromStatus(status: GraphQLTwitterStatus): GraphQLUser | undefined {
+  return (status.core?.user_results?.result ?? status.core?.user_result?.result) as
+    | GraphQLUser
+    | undefined;
+}
+
+/** Card `card_url` is usually a t.co short link; tweet URL entities carry the expanded destination. */
+function expandedCardUrl(
+  cardUrl: string,
+  urlEntities: GraphQLTwitterStatus['legacy']['entities']['urls'] | undefined
+): string {
+  if (!urlEntities?.length) return cardUrl;
+  const match = urlEntities.find(e => e.url === cardUrl);
+  const expanded = match?.expanded_url;
+  return typeof expanded === 'string' && expanded.length > 0 ? expanded : cardUrl;
+}
+
+function birdwatchEntitiesToFacets(entities: BirdwatchEntity[], noteText: string): APIFacet[] {
+  const facets: APIFacet[] = [];
+  for (const entity of entities) {
+    if (entity?.ref?.type !== 'TimelineUrl') {
+      continue;
+    }
+    const { fromIndex, toIndex } = entity;
+    facets.push({
+      type: 'url',
+      indices: [fromIndex, toIndex],
+      display: noteText.substring(fromIndex, toIndex),
+      replacement: entity.ref.url
+    });
+  }
+  facets.sort((a, b) => a.indices[0] - b.indices[0]);
+  return facets;
+}
+
+function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
+  if (!user || typeof user.rest_id !== 'string' || user.rest_id.length === 0) {
+    return null;
+  }
+  const screenName = user.core?.screen_name ?? user.legacy?.screen_name ?? '';
+  return {
+    id: user.rest_id,
+    name: user.core?.name ?? user.legacy?.name ?? '',
+    screen_name: screenName,
+    avatar_url:
+      user.avatar?.image_url?.replace?.('_normal', '_200x200') ??
+      user.legacy?.profile_image_url_https?.replace?.('_normal', '_200x200') ??
+      null,
+    url: screenName ? `${Constants.TWITTER_ROOT}/${screenName}` : undefined
+  };
+}
+
+/** Unwrap `TweetWithVisibilityResults` to the embedded `tweet` when present. */
+function asGraphQLTweetNode(
+  node: GraphQLTwitterStatus | undefined
+): GraphQLTwitterStatus | undefined {
+  if (!node) return undefined;
+  if (node.__typename === 'TweetWithVisibilityResults') {
+    const inner = (node as { tweet?: GraphQLTwitterStatus }).tweet;
+    if (inner) return inner;
+  }
+  return node;
+}
+
+/**
+ * Original post embedded in a retweet. GraphQL uses either `retweeted_status_result` (older)
+ * or `retweeted_status_results` (ProfileTimeline / newer — mirrors `tweet_results` naming).
+ */
+function getRetweetedOriginalFromLegacy(
+  legacy: GraphQLTwitterStatus['legacy'] | undefined
+): GraphQLTwitterStatus | undefined {
+  if (!legacy) return undefined;
+  const singular = legacy.retweeted_status_result?.result;
+  if (singular) return asGraphQLTweetNode(singular as GraphQLTwitterStatus);
+  const plural = legacy.retweeted_status_results?.result;
+  if (plural) return asGraphQLTweetNode(plural as GraphQLTwitterStatus);
+  return undefined;
+}
+
+/** Retweet card with no embed we can unwrap (rare); infer from text / legacy id. */
+function isRetweetWithoutNestedOriginal(
+  legacy: GraphQLTwitterStatus['legacy'] | undefined
+): boolean {
+  if (!legacy) return false;
+  if (getRetweetedOriginalFromLegacy(legacy)) return false;
+  if (
+    typeof legacy.retweeted_status_id_str === 'string' &&
+    legacy.retweeted_status_id_str.length > 0
+  ) {
+    return true;
+  }
+  const text = legacy.full_text || '';
+  return /^\s*RT @\S+/u.test(text);
+}
+
+export const buildAPITwitterStatus = async (
+  c: Context,
+  status: GraphQLTwitterStatus,
+  language: string | undefined,
+  threadAuthor: null | APIUser,
+  legacyAPI = false
+): Promise<APITwitterStatus | FetchResults | null> => {
+  const apiStatus = {} as APITwitterStatus;
+  let repostedBy: APIRepostedBy | null = null;
+
+  /* Sometimes, Twitter returns a different kind of type called 'TweetWithVisibilityResults'.
+     It has slightly different attributes from the regular 'Tweet' type. We fix that up here. */
+
+  if (typeof status.core === 'undefined' && typeof status.result !== 'undefined') {
+    status = status.result;
+  }
+
+  mergeTweetShellIntoStatus(status);
+
+  /* Retweet: use embedded original when present (`retweeted_status_result` or `retweeted_status_results`). */
+  const retweetOriginal = getRetweetedOriginalFromLegacy(status.legacy);
+  if (typeof retweetOriginal !== 'undefined') {
+    repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
+    status = retweetOriginal;
+    mergeTweetShellIntoStatus(status);
+  } else if (isRetweetWithoutNestedOriginal(status.legacy)) {
+    repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
   }
 
   if (typeof status.core === 'undefined') {
@@ -67,12 +181,25 @@ export const buildAPITwitterStatus = async (
 
   // console.log('status', JSON.stringify(status));
 
-  const graphQLUser = (status.core.user_results?.result ??
-    status.core.user_result?.result) as GraphQLUser;
+  const graphQLUser = (status.core.user_results?.result ?? status.core.user_result?.result) as
+    | GraphQLUser
+    | undefined;
+  if (!graphQLUser) {
+    console.log('Tweet missing author on core', status.rest_id ?? status.legacy?.id_str);
+    return null;
+  }
   const apiUser = convertToApiUser(graphQLUser);
 
   /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FxEmbed/FxEmbed/issues/416 */
   const id = status.rest_id ?? status.legacy.id_str ?? status.legacy?.conversation_id_str;
+
+  if (status.legacy.entities?.urls) {
+    status.legacy.entities.urls = status.legacy.entities.urls.filter(
+      /* Yes this uses http:// not https://. Don't know why. Hesitant to also include https
+         because we just want to get rid of the extraneous article url at the end, not eliminate all article urls */
+      url => url.expanded_url.match(/^http:\/\/x\.com\/i\/article\/\w+/g) === null
+    );
+  }
 
   /* Populating a lot of the basics */
   apiStatus.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}/status/${id}`;
@@ -80,6 +207,10 @@ export const buildAPITwitterStatus = async (
   apiStatus.text = unescapeText(
     linkFixer(status.legacy.entities?.urls, status.legacy.full_text || '')
   );
+  // If article linked and that's the only thing in the status, use the article preview instead
+  // if (status.article && status.legacy.full_text.length < 25) {
+  //   apiStatus.text = status.article.article_results?.result?.preview_text ?? '';
+  // }
   apiStatus.raw_text = {
     text: status.legacy.full_text,
     facets: []
@@ -92,6 +223,7 @@ export const buildAPITwitterStatus = async (
     avatar_url: apiUser.avatar_url?.replace?.('_normal', '_200x200') ?? null,
     banner_url: apiUser.banner_url,
     description: apiUser.description,
+    raw_description: apiUser.raw_description,
     location: apiUser.location,
     url: apiUser.url,
     followers: apiUser.followers,
@@ -123,6 +255,7 @@ export const buildAPITwitterStatus = async (
   }
   apiStatus.likes = status.legacy.favorite_count;
   apiStatus.bookmarks = status.legacy.bookmark_count;
+  apiStatus.quotes = status.legacy.quote_count;
   apiStatus.embed_card = 'tweet';
   apiStatus.created_at = status.legacy.created_at;
   apiStatus.created_timestamp = new Date(status.legacy.created_at).getTime() / 1000;
@@ -134,7 +267,9 @@ export const buildAPITwitterStatus = async (
   } else {
     apiStatus.views = null;
   }
-  console.log('note_tweet', JSON.stringify(status.note_tweet));
+  if (status.note_tweet) {
+    console.log('Note tweet found', JSON.stringify(status.note_tweet));
+  }
   const noteTweetText = status.note_tweet?.note_tweet_results?.result?.text;
 
   if (noteTweetText) {
@@ -144,8 +279,9 @@ export const buildAPITwitterStatus = async (
       status.note_tweet?.note_tweet_results?.result?.entity_set.hashtags;
     status.legacy.entities.symbols =
       status.note_tweet?.note_tweet_results?.result?.entity_set.symbols;
+    status.legacy.entities.user_mentions =
+      status.note_tweet?.note_tweet_results?.result?.entity_set.user_mentions;
 
-    console.log('We meet the conditions to use new note tweets');
     apiStatus.text = unescapeText(linkFixer(status.legacy.entities.urls, noteTweetText));
     apiStatus.is_note_tweet = true;
   } else {
@@ -188,22 +324,22 @@ export const buildAPITwitterStatus = async (
       });
     });
   }
-  if (status.legacy.entities) {
-    status.legacy.entities.hashtags.forEach(hashtag => {
+  if (status.legacy?.entities) {
+    status.legacy.entities.hashtags?.forEach(hashtag => {
       apiStatus.raw_text.facets.push({
         type: 'hashtag',
         indices: hashtag.indices,
         original: hashtag.text
       });
     });
-    status.legacy.entities.symbols.forEach(symbol => {
+    status.legacy.entities.symbols?.forEach(symbol => {
       apiStatus.raw_text.facets.push({
         type: 'symbol',
         indices: symbol.indices,
         original: symbol.text
       });
     });
-    status.legacy.entities.urls.forEach(url => {
+    status.legacy.entities.urls?.forEach(url => {
       apiStatus.raw_text.facets.push({
         type: 'url',
         indices: url.indices,
@@ -212,7 +348,7 @@ export const buildAPITwitterStatus = async (
         display: url.display_url
       });
     });
-    status.legacy.entities.user_mentions.forEach(mention => {
+    status.legacy.entities.user_mentions?.forEach(mention => {
       apiStatus.raw_text.facets.push({
         type: 'mention',
         indices: mention.indices,
@@ -223,16 +359,48 @@ export const buildAPITwitterStatus = async (
   }
 
   if (status.birdwatch_pivot?.subtitle?.text) {
-    /* We can't automatically replace links because API doesn't give full URLs, only t.co versions :( */
-    apiStatus.community_note = {
-      text: unescapeText(status.birdwatch_pivot?.subtitle?.text ?? ''),
-      entities: status.birdwatch_pivot.subtitle?.entities ?? []
-    };
+    const noteText = unescapeText(status.birdwatch_pivot.subtitle.text ?? '');
+    const rawEntities = status.birdwatch_pivot.subtitle.entities ?? [];
+
+    if (legacyAPI) {
+      apiStatus.community_note = {
+        text: noteText,
+        entities: rawEntities
+      };
+    } else {
+      const facets = birdwatchEntitiesToFacets(rawEntities, noteText);
+      const tcoList = [
+        ...new Set(
+          facets.flatMap(f =>
+            f.type === 'url' && typeof f.replacement === 'string' ? [f.replacement] : []
+          )
+        )
+      ];
+      if (tcoList.length > 0) {
+        const resolved = await tcoResolver(tcoList);
+        for (const f of facets) {
+          if (f.type === 'url' && typeof f.replacement === 'string') {
+            const expanded = resolved[f.replacement];
+            if (typeof expanded === 'string') {
+              f.replacement = expanded;
+            }
+          }
+        }
+      }
+      apiStatus.community_note = {
+        text: noteText,
+        facets
+      };
+    }
   } else {
     apiStatus.community_note = null;
   }
 
-  if (status.legacy.lang !== 'unk') {
+  if (
+    status.legacy.lang !== 'unk' &&
+    status.legacy.lang !== 'und' &&
+    status.legacy.lang !== 'zxx'
+  ) {
     apiStatus.lang = status.legacy.lang;
   } else {
     apiStatus.lang = null;
@@ -286,8 +454,12 @@ export const buildAPITwitterStatus = async (
 
   apiStatus.media = {};
 
-  /* We found a quote, let's process that too */
-  const quote = status.quoted_status_result ?? status.tweet?.quoted_status_result;
+  /* ConversationTimeline uses quoted_tweet_results; TweetDetail uses quoted_status_result (both unwrap via status.result). */
+  const quote =
+    status.quoted_status_result ??
+    status.tweet?.quoted_status_result ??
+    status.quoted_tweet_results ??
+    status.tweet?.quoted_tweet_results;
   if (quote) {
     const buildQuote = await buildAPITwitterStatus(c, quote, language, threadAuthor, legacyAPI);
     if ((buildQuote as FetchResults).status) {
@@ -367,10 +539,8 @@ export const buildAPITwitterStatus = async (
 
   /* Populate a Twitter card */
 
-  console.log('status.card', JSON.stringify(status.card));
-  console.log('status.tweet_card', JSON.stringify(status.tweet_card));
-
   if (status.card ?? status.tweet_card) {
+    console.log('Rendering card', JSON.stringify(status.card ?? status.tweet_card));
     const card = await renderCard(c, status.card ?? status.tweet_card);
     if (card.external_media) {
       apiStatus.embed_card = 'player';
@@ -399,7 +569,7 @@ export const buildAPITwitterStatus = async (
         width: card.broadcast.width,
         height: card.broadcast.height,
         duration: 0,
-        variants: []
+        formats: []
       });
       apiStatus.media.all = apiStatus.media?.all ?? [];
       apiStatus.media.all?.push({
@@ -407,12 +577,13 @@ export const buildAPITwitterStatus = async (
         url: `https://stream-test.fxembed.com/download.mp4?url=${encodeURIComponent(
           card.broadcast.stream?.url ?? ''
         )}`,
+        thumbnail_url: card.broadcast.thumbnail.original.url,
         format: 'video/mp4',
         width: card.broadcast.width,
         height: card.broadcast.height,
         duration: 0,
-        variants: []
-      });
+        formats: []
+      } as APIVideo);
     }
     if (card.poll) {
       apiStatus.poll = card.poll;
@@ -442,6 +613,22 @@ export const buildAPITwitterStatus = async (
         });
       }
     }
+    if (card.website_card) {
+      const wc = card.website_card;
+      apiStatus.card = {
+        url: expandedCardUrl(wc.url, status.legacy.entities?.urls),
+        title: wc.title,
+        description: wc.description,
+        domain: wc.domain,
+        card_name: wc.card_name,
+        image: {
+          width: wc.image?.width,
+          height: wc.image?.height,
+          url: wc.image?.url,
+          alt: wc.image?.alt
+        }
+      };
+    }
   } else {
     /* Determine if the status contains a YouTube link (either youtube.com or youtu.be) so we can include it */
     const youtubeIdRegex = /(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/;
@@ -470,13 +657,37 @@ export const buildAPITwitterStatus = async (
     apiStatus.embed_card = 'player';
   }
 
-  console.log('language?', language);
+  if (language) {
+    console.log('language override:', language);
+  }
+
+  if (status.article) {
+    apiStatus.article = {
+      created_at: new Date(
+        (status.article.article_results?.result?.metadata?.first_published_at_secs ?? 0) * 1000
+      ).toISOString(),
+      modified_at: new Date(
+        (status.article.article_results?.result?.lifecycle_state?.modified_at_secs ?? 0) * 1000
+      ).toISOString(),
+      id: status.article.article_results?.result?.rest_id ?? '',
+      title: status.article.article_results?.result?.title ?? '',
+      preview_text: status.article.article_results?.result?.preview_text ?? '',
+      cover_media: status.article.article_results?.result?.cover_media ?? ({} as TwitterApiMedia),
+      content: status.article.article_results?.result?.content_state ?? {
+        blocks: [],
+        entityMap: []
+      },
+      media_entities:
+        status.article.article_results?.result?.media_entities ?? ([] as TwitterApiMedia[])
+    };
+  }
 
   /* If a language is specified in API or by user, let's try translating it! */
   if (
     typeof language === 'string' &&
-    (language.length === 2 || language.length === 5) &&
-    language !== status.legacy.lang
+    (language.length === 2 || language.length === 5) && // Only translate if the language is a valid ISO 639-1 or ISO 639-5 code
+    language !== status.legacy.lang && // Don't translate if the status language is the same as the target language
+    apiStatus.text.length > 1 // Don't translate if the status text is too short
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;
@@ -548,6 +759,42 @@ export const buildAPITwitterStatus = async (
       // @ts-expect-error media is not required in legacy API if empty
       delete apiStatus.media;
     }
+
+    // Populate variants from formats for legacy API compatibility
+    if (apiStatus.media?.videos) {
+      apiStatus.media.videos.forEach(video => {
+        if (video.formats && video.formats.length > 0) {
+          video.variants = video.formats.map(convertFormatToVariant);
+        }
+      });
+    }
+    if (apiStatus.media?.all) {
+      apiStatus.media.all.forEach(media => {
+        if (media.type === 'video' || media.type === 'gif') {
+          const video = media as APIVideo;
+          if (video.formats && video.formats.length > 0) {
+            video.variants = video.formats.map(convertFormatToVariant);
+          }
+        }
+      });
+    }
+    if (apiStatus.quote?.media?.videos) {
+      apiStatus.quote.media.videos.forEach(video => {
+        if (video.formats && video.formats.length > 0) {
+          video.variants = video.formats.map(convertFormatToVariant);
+        }
+      });
+    }
+    if (apiStatus.quote?.media?.all) {
+      apiStatus.quote.media.all.forEach(media => {
+        if (media.type === 'video' || media.type === 'gif') {
+          const video = media as APIVideo;
+          if (video.formats && video.formats.length > 0) {
+            video.variants = video.formats.map(convertFormatToVariant);
+          }
+        }
+      });
+    }
   }
 
   if (apiStatus.raw_text.facets) {
@@ -556,6 +803,7 @@ export const buildAPITwitterStatus = async (
   }
 
   apiStatus.provider = DataProvider.Twitter;
+  apiStatus.reposted_by = repostedBy;
 
   return apiStatus;
 };

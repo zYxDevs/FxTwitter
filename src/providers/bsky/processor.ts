@@ -3,7 +3,6 @@ import { Constants } from '../../constants';
 import { DataProvider } from '../../enum';
 import { handleMosaic } from '../../helpers/mosaic';
 import { linkFixerBsky } from '../../helpers/linkFixer';
-import { APIStatus, APIMedia } from '../../types/types';
 import i18next from 'i18next';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
@@ -20,31 +19,35 @@ export const buildAPIBskyPost = async (
     status.record?.facets ?? [],
     status.record?.text ?? status.value?.text
   );
-  apiStatus.author = {
-    id: status.author.handle,
-    name: status.author.displayName,
-    screen_name: status.author.handle,
-    avatar_url: status.author.avatar,
-    banner_url: '', // TODO: Pull this from the actual author endpoint
-    description: '',
-    location: '',
-    followers: 0,
-    following: 0,
-    likes: 0,
-    url: `${Constants.BSKY_ROOT}/profile/${status.author.handle}`,
-    protected: false,
-    statuses: 0,
-    joined: status.author.createdAt,
-    birthday: {
-      day: 0,
-      month: 0,
-      year: 0
-    },
-    website: {
-      url: '',
-      display_url: ''
-    }
-  };
+  if (status.author) {
+    apiStatus.author = {
+      id: status.author.handle,
+      name: status.author.displayName,
+      screen_name: status.author.handle,
+      avatar_url: status.author.avatar,
+      banner_url: '', // TODO: Pull this from the actual author endpoint
+      description: '',
+      raw_description: { text: '', facets: [] },
+      location: '',
+      followers: 0,
+      following: 0,
+      media_count: 0,
+      likes: 0,
+      url: `${Constants.BSKY_ROOT}/profile/${status.author.handle}`,
+      protected: false,
+      statuses: 0,
+      joined: status.author.createdAt,
+      birthday: {
+        day: 0,
+        month: 0,
+        year: 0
+      },
+      website: {
+        url: '',
+        display_url: ''
+      }
+    };
+  }
   apiStatus.created_at = status.record?.createdAt ?? status.value?.createdAt;
   apiStatus.media = {};
 
@@ -74,7 +77,12 @@ export const buildAPIBskyPost = async (
         url: status.embeds[0].playlist ?? '',
         format: video.mimeType ?? 'video/mp4',
         thumbnail_url: status.embeds[0].thumbnail ?? '',
-        variants: [],
+        formats: [
+          {
+            url: status.embeds[0].playlist ?? '',
+            container: 'm3u8' as const // This is awful we should do something better
+          }
+        ],
         width: status.embeds[0].aspectRatio?.width ?? status.embed.aspectRatio?.width,
         height: status.embeds[0].aspectRatio?.height ?? status.embed.aspectRatio?.height,
         duration: 0
@@ -90,10 +98,8 @@ export const buildAPIBskyPost = async (
         {
           type: 'gif',
           url: external?.uri,
-          duration: 0,
-          variants: [],
           format: 'image/gif',
-          thumbnail_url: external?.thumb?.ref?.$link ?? '',
+          // thumbnail_url: external?.thumb?.ref?.$link ?? '',
           width: 0,
           height: 0
         }
@@ -157,7 +163,13 @@ export const buildAPIBskyPost = async (
         url: videoUrl,
         format: video?.mimeType ?? 'video/mp4',
         thumbnail_url: status.embed?.thumbnail ?? status.embed?.media?.thumbnail ?? '',
-        variants: [],
+        formats: [
+          {
+            url: videoUrl,
+            container: 'mp4' as const, // TODO: Also include original m3u8, even if we can't use them in embeds
+            codec: 'h264' as const
+          }
+        ],
         width: aspectRatio?.width,
         height: aspectRatio?.height,
         duration: 0
@@ -166,14 +178,14 @@ export const buildAPIBskyPost = async (
   }
   if (status.embed?.record) {
     const record = status.embed?.record?.record ?? status.embed?.record;
-    apiStatus.quote = await buildAPIBskyPost(c, record, language);
-    if (apiStatus.quote.embed_card) {
-      apiStatus.embed_card = apiStatus.quote.embed_card;
+    if (record.author) {
+      apiStatus.quote = await buildAPIBskyPost(c, record, language);
+      if (apiStatus.quote.embed_card) {
+        apiStatus.embed_card = apiStatus.quote.embed_card;
+      }
     }
   }
-  apiStatus.media.all = ((apiStatus.media.photos as APIMedia[]) || []).concat(
-    apiStatus.media.videos ?? []
-  );
+  apiStatus.media.all = [...(apiStatus.media.photos ?? []), ...(apiStatus.media.videos ?? [])];
 
   /* Handle photos and mosaic if available */
   if ((apiStatus?.media.photos?.length || 0) > 1 && Constants.MOSAIC_BSKY_DOMAIN_LIST.length > 0) {

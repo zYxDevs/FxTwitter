@@ -27,7 +27,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
   let newTokenGenerated = false;
 
   const [userAgent, secChUa] = generateUserAgent();
-  console.log(`Outgoing useragent for this request:`, userAgent);
+  // console.log(`Outgoing useragent for this request:`, userAgent);
 
   const tokenHeaders: { [header: string]: string } = {
     'Authorization': Constants.GUEST_BEARER_TOKEN,
@@ -123,7 +123,9 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     /* Elongator doesn't need guestToken, so we just make up a snowflake */
     const guestToken = activateJson?.guest_token || generateSnowflake();
 
-    console.log(newTokenGenerated ? 'Activated guest:' : 'Using guest:', activateJson);
+    if (activateJson) {
+      console.log(newTokenGenerated ? 'Activated guest:' : 'Using guest:', activateJson);
+    }
 
     /* Just some cookies to mimick what the Twitter Web App would send */
     headers['Cookie'] = [
@@ -137,11 +139,10 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     headers['x-twitter-active-user'] = 'yes';
     headers['x-guest-token'] = guestToken;
     let response: unknown;
-    let apiRequest: Response | null = null;
+    let apiRequest: Response | null;
 
     try {
       if (useElongator && typeof c.env?.TwitterProxy !== 'undefined') {
-        console.log('Fetching using elongator');
         const performanceStart = performance.now();
         const headers2 = headers;
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
@@ -154,7 +155,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
           })
         );
         const performanceEnd = performance.now();
-        console.log(`Elongator request successful after ${performanceEnd - performanceStart}ms`);
+        console.log(`Elongator request finished after ${performanceEnd - performanceStart}ms`);
       } else {
         const performanceStart = performance.now();
         apiRequest = await withTimeout((signal: AbortSignal) =>
@@ -176,7 +177,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         if (_response.split('\n').length > 1) {
           response = detokenize(_response);
         } else {
-          throw new Error('Failed to parse response as JSON');
+          throw new Error(`Failed to parse response as JSON ${_e}`, { cause: _e });
         }
       }
     } catch (e: unknown) {
@@ -268,6 +269,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
+    console.log('response', JSON.stringify(response));
     return response;
   }
 

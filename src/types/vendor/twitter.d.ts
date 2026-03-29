@@ -15,15 +15,6 @@ type TimelineContent = {
   };
 };
 
-type TimelineInstruction = {
-  addEntries?: {
-    entries: {
-      content: TimelineContent;
-      entryId: string;
-    }[];
-  };
-};
-
 type TwitterAPIError = {
   code: number;
   message: string;
@@ -51,7 +42,7 @@ type TweetMediaSize = {
   resize: 'crop' | 'fit';
 };
 
-type TweetMediaFormat = {
+type TweetMediaVariant = {
   bitrate: number;
   content_type: string;
   url: string;
@@ -62,6 +53,19 @@ type TcoExpansion = {
   expanded_url: string;
   indices: [number, number];
   url: string;
+};
+
+/** Bio / profile description entity map (REST `entities.description` and GraphQL `profile_bio.entities.description`). */
+type UserProfileBioDescriptionEntities = {
+  urls?: TcoExpansion[];
+  hashtags?: { indices: [number, number]; text: string }[];
+  symbols?: { indices: [number, number]; text: string }[];
+  user_mentions?: {
+    indices: [number, number];
+    name: string;
+    screen_name: string;
+    id_str: string;
+  }[];
 };
 
 type TweetMedia = {
@@ -89,7 +93,7 @@ type TweetMedia = {
   video_info?: {
     aspect_ratio: [number, number];
     duration_millis: number;
-    variants: TweetMediaFormat[];
+    variants: TweetMediaVariant[];
   };
 };
 
@@ -264,9 +268,7 @@ type GraphQLUser = {
     default_profile_image: boolean; // false,
     description: string; // "What's happening?!",
     entities: {
-      description?: {
-        urls?: TcoExpansion[];
-      };
+      description?: UserProfileBioDescriptionEntities;
       url?: {
         urls?: {
           display_url: string; // "about.twitter.com",
@@ -342,6 +344,7 @@ type GraphQLUser = {
   profile_bio: {
     description: string; // "what's happening?!",
     entities: {
+      description?: UserProfileBioDescriptionEntities;
       url?: {
         urls: TcoExpansion[];
       };
@@ -378,8 +381,8 @@ type GraphQLUser = {
         }[];
         text?: string; // "This account is verified because it's an official organization on X. Learn more"
       };
-      verified_since_msec: string; // "1744528442487"
     };
+    verified_since_msec: string; // "1744528442487"
   };
   user_seed_tweet_count: number; // 0
 };
@@ -405,7 +408,14 @@ type GraphQLTwitterStatusLegacy = {
   };
   reply_count: number; // 1
   retweet_count: number; // 4
+  /** Present on retweet surfaces even when `retweeted_status_result` is omitted (e.g. some timelines). */
+  retweeted_status_id_str?: string;
   retweeted_status_result?: {
+    result: GraphQLTwitterStatus;
+  };
+  /** Same idea as `tweet_results`: newer timelines use plural `…_results` + `rest_id`. */
+  retweeted_status_results?: {
+    rest_id?: string;
     result: GraphQLTwitterStatus;
   };
   lang: string; // "en"
@@ -484,6 +494,7 @@ type GraphQLTwitterStatus = {
   };
   tweet?: {
     quoted_status_result?: GraphQLTwitterStatus;
+    quoted_tweet_results?: GraphQLTwitterStatus;
     legacy: GraphQLTwitterStatusLegacy;
     views?: {
       count: string; // "562"
@@ -520,6 +531,7 @@ type GraphQLTwitterStatus = {
   };
   source: string; // "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>"
   quoted_status_result?: GraphQLTwitterStatus;
+  quoted_tweet_results?: GraphQLTwitterStatus;
   legacy: GraphQLTwitterStatusLegacy;
   note_tweet: {
     is_expandable: boolean;
@@ -588,10 +600,18 @@ type GraphQLTwitterStatus = {
       };
     };
   };
+  article?: {
+    article_results?: {
+      result?: TwitterArticleEntity;
+    };
+  };
 };
 
 type GraphQLTwitterCard = {
-  rest_id: string; // "card://1674824189176590336",
+  rest_id?: string; // "card://1674824189176590336",
+  /** Present on TweetDetail / TweetResultByRestId for link preview cards (e.g. `summary_large_image`). */
+  name?: string;
+  url?: string;
   legacy: {
     binding_values: {
       key:
@@ -657,8 +677,9 @@ type GraphQLTimelineTweet = {
 };
 
 type GraphQLTimelineCursor = {
-  cursorType: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
-  itemType: 'TimelineTimelineCursor';
+  cursorType?: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
+  cursor_type?: 'Top' | 'Bottom' | 'ShowMoreThreadsPrompt' | 'ShowMore';
+  itemType?: 'TimelineTimelineCursor';
   value: string;
   __typename: 'TimelineTimelineCursor';
 };
@@ -669,9 +690,10 @@ interface GraphQLBaseTimeline {
 }
 
 type GraphQLTimelineItem = GraphQLBaseTimeline & {
-  entryType: 'TimelineTimelineItem';
+  entryType?: 'TimelineTimelineItem';
   __typename: 'TimelineTimelineItem';
-  itemContent: GraphQLTimelineTweet | GraphQLTimelineCursor;
+  itemContent?: GraphQLTimelineTweet | GraphQLTimelineCursor;
+  content?: GraphQLTimelineTweet | GraphQLTimelineCursor;
 };
 
 type GraphQLTimelineModule = GraphQLBaseTimeline & {
@@ -704,23 +726,35 @@ type GraphQLConversationThread = {
 
 type GraphQLTimelineEntry = GraphQLTimelineTweetEntry | GraphQLConversationThread | unknown;
 
-type ThreadInstruction =
+type TimelineInstruction =
   | TimelineAddEntriesInstruction
   | TimelineTerminateTimelineInstruction
-  | TimelineAddModulesInstruction;
+  | TimelineAddModulesInstruction
+  | TimelineReplaceEntryInstruction;
+
+type TimelineReplaceEntryInstruction = {
+  type?: 'TimelineReplaceEntry';
+  __typename?: 'TimelineReplaceEntry';
+  entry?: {
+    content?: GraphQLTimelineCursor;
+  };
+};
 
 type TimelineAddEntriesInstruction = {
-  type: 'TimelineAddEntries';
+  type?: 'TimelineAddEntries';
+  __typename?: 'TimelineAddEntries';
   entries: GraphQLTimelineEntry[];
 };
 
 type TimelineAddModulesInstruction = {
-  type: 'TimelineAddToModule';
+  type?: 'TimelineAddToModule';
+  __typename?: 'TimelineAddToModule';
   moduleItems: GraphQLTimelineEntry[];
 };
 
 type TimelineTerminateTimelineInstruction = {
-  type: 'TimelineTerminateTimeline';
+  type?: 'TimelineTerminateTimeline';
+  __typename?: 'TimelineTerminateTimeline';
   direction: 'Top';
 };
 type GraphQLTwitterStatusNotFoundResponse = {
@@ -753,7 +787,7 @@ type TweetDetailResponse = {
   errors?: unknown[];
   data: {
     threaded_conversation_with_injections_v2: {
-      instructions: ThreadInstruction[];
+      instructions: TimelineInstruction[];
     };
   };
 };
@@ -804,3 +838,303 @@ interface GraphQLProcessBucket {
   allStatuses: GraphQLTwitterStatus[];
   cursors: GraphQLTimelineCursor[];
 }
+
+interface AboutAccountQueryResponse {
+  data?: {
+    user_result_by_screen_name?: {
+      result?: {
+        about_profile?: {
+          created_country_accurate?: boolean;
+          account_based_in?: string;
+          location_accurate?: boolean;
+          source?: string;
+          username_changes?: {
+            count?: string; // returned as string for some reason
+            last_changed_at_msec?: string;
+          };
+        };
+      };
+    };
+  };
+}
+
+/** UserProfileAbout GraphQL (rest_id input); same about_profile shape as AboutAccountQuery */
+interface UserProfileAboutResponse {
+  data?: {
+    user_rest_result_by_rest_id?: {
+      rest_id?: string;
+      result?: {
+        about_profile?: {
+          created_country_accurate?: boolean;
+          account_based_in?: string;
+          location_accurate?: boolean;
+          source?: string;
+          username_changes?: {
+            count?: string;
+            last_changed_at_msec?: string;
+          };
+        };
+      };
+    };
+  };
+}
+
+type TwitterArticleEntity = {
+  rest_id: string;
+  id: string;
+  title: string;
+  preview_text: string;
+  cover_media?: TwitterApiMedia; // Twitter API be consistent challenge (impossible)
+  cover_media_results?: TwitterApiMedia;
+  content_state?: TwitterArticleContentState;
+  media_entities: TwitterApiMedia[];
+  lifecycle_state?: {
+    modified_at_secs: number;
+  };
+  metadata?: {
+    first_published_at_secs: number;
+  };
+};
+
+type TwitterApiMedia = {
+  id: string;
+  media_key: string;
+  media_id: string;
+  media_info: TwitterApiImage | TwitterApiVideo;
+};
+
+type TwitterApiImage = {
+  __typename: 'ApiImage';
+  original_img_height: number;
+  original_img_width: number;
+  original_img_url: string;
+  color_info: {
+    palette: Array<{
+      percentage: number;
+      rgb: { red: number; green: number; blue: number };
+    }>;
+  };
+};
+
+type TwitterApiVideo = {
+  __typename: 'ApiVideo' | 'ApiGif';
+  type: 'video' | 'animated_gif';
+  id: string;
+  id_str: string;
+  ext_alt_text: string | null;
+  ext_media_color: {
+    palette: Array<{
+      percentage: number;
+      rgb: { red: number; green: number; blue: number };
+    }>;
+  };
+  media_url: string;
+  media_url_https: string;
+  url: string;
+  display_url: string;
+  expanded_url: string;
+  original_info: {
+    height: number;
+    width: number;
+  };
+  sizes: {
+    original: {
+      h: number;
+      resize: 'fit';
+      w: number;
+    };
+  };
+  video_info: {
+    aspect_ratio: [number, number];
+    duration_millis: number;
+    variants: {
+      bitrate: number;
+      content_type: string;
+      url: string;
+    }[];
+  };
+};
+
+type TwitterArticleContentState = {
+  blocks: TwitterArticleContentBlock[];
+  entityMap: TwitterArticleEntityMapEntry[];
+};
+
+type TwitterArticleContentBlock = {
+  key: string;
+  data: Record<string, unknown>;
+  entityRanges: Array<{
+    key: number;
+    length: number;
+    offset: number;
+  }>;
+  inlineStyleRanges: Array<{
+    length: number;
+    offset: number;
+    style: string; // e.g. "Bold", "Italic"
+  }>;
+  text: string;
+  type: string; // e.g. "header-one", "unstyled", "ordered-list-item", "atomic"
+};
+
+type TwitterArticleEntityMapEntry =
+  | {
+      key: string;
+      value: {
+        type: 'MARKDOWN';
+        mutability: 'Mutable';
+        data: {
+          entityKey: string;
+          markdown: string;
+        };
+      };
+    }
+  | {
+      key: string;
+      value: {
+        type: 'MEDIA';
+        mutability: 'Immutable';
+        data: {
+          entityKey: string;
+          mediaItems: Array<{
+            localMediaId: string;
+            mediaCategory: string;
+            mediaId: string;
+          }>;
+        };
+      };
+    }
+  | {
+      key: string;
+      value: {
+        type: 'TWEET';
+        mutability: 'Immutable';
+        data: {
+          tweetId: string;
+        };
+      };
+    };
+
+type TwitterSearchTimelineResponse = {
+  data: {
+    search_by_raw_query: {
+      search_timeline: {
+        timeline: {
+          instructions: TimelineInstruction[];
+        };
+      };
+    };
+  };
+};
+
+type TwitterExplorePageResponse = {
+  data?: {
+    explore_page?: {
+      body?: {
+        __typename?: string;
+        initialTimeline?: {
+          id?: string;
+          timeline?: {
+            timeline?: {
+              instructions?: TimelineInstruction[];
+            };
+          };
+        };
+        timelines?: Array<{
+          id: string;
+          labelText?: string;
+          timeline?: {
+            id?: string;
+          };
+        }>;
+      };
+    };
+  };
+};
+
+type TwitterGenericTimelineByIdResponse = {
+  data?: {
+    timeline?: {
+      timeline?: {
+        instructions?: TimelineInstruction[];
+      };
+    };
+  };
+};
+
+type TwitterUserTweetsResponse = {
+  data?: {
+    user?: {
+      result?: {
+        __typename?: string;
+        timeline?: {
+          timeline?: {
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+      };
+    };
+  };
+};
+
+/** ProfileTimeline (higher per-period rate limit than UserTweets) */
+type TwitterProfileTimelineResponse = {
+  data?: {
+    user_result_by_rest_id?: {
+      rest_id?: string;
+      result?: {
+        __typename?: string;
+        profile_timeline_v2?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_with_replies_timeline_v2?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_photo_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_video_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_media_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+      };
+    };
+  };
+};
+
+type TimelineTrendRaw = {
+  __typename?: string;
+  name?: string;
+  rank?: string;
+  trend_metadata?: { domain_context?: string; url?: { url?: string } };
+  trend_url?: { url?: string };
+  grouped_trends?: Array<{ name?: string; url?: { url?: string } }>;
+};

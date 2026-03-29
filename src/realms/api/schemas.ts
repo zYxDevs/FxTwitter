@@ -180,6 +180,22 @@ export const APIMediaContainerSchema = z.object({
   broadcast: APIBroadcastSchema.optional()
 });
 
+/** Same shape as `APIUser.about_account` (X “About this account” metadata). */
+export const APIAboutAccountSchema = z
+  .object({
+    based_in: z.string().nullable().optional(),
+    location_accurate: z.boolean().optional(),
+    created_country_accurate: z.boolean().nullable().optional(),
+    source: z.string().nullable().optional(),
+    username_changes: z
+      .object({
+        count: z.number(),
+        last_changed_at: z.string().nullable()
+      })
+      .optional()
+  })
+  .openapi('APIAboutAccount');
+
 export const APIUserSchema = z
   .object({
     id: z.string(),
@@ -223,20 +239,7 @@ export const APIUserSchema = z
         identity_verified: z.boolean().optional()
       })
       .optional(),
-    about_account: z
-      .object({
-        based_in: z.string().nullable().optional(),
-        location_accurate: z.boolean().optional(),
-        created_country_accurate: z.boolean().nullable().optional(),
-        source: z.string().nullable().optional(),
-        username_changes: z
-          .object({
-            count: z.number(),
-            last_changed_at: z.string().nullable()
-          })
-          .optional()
-      })
-      .optional()
+    about_account: APIAboutAccountSchema.optional()
   })
   .openapi('APIUser');
 
@@ -543,6 +546,14 @@ export const UserAPIResponseSchema = z
   })
   .openapi('UserAPIResponse');
 
+export const ProfileAboutAPIResponseSchema = z
+  .object({
+    code: z.number(),
+    message: z.string(),
+    about_account: APIAboutAccountSchema.optional()
+  })
+  .openapi('ProfileAboutAPIResponse');
+
 export const SearchCursorSchema = z.object({
   top: z.string().nullable(),
   bottom: z.string().nullable()
@@ -643,6 +654,7 @@ export type APIRepostedBy = z.infer<typeof APIRepostedBySchema>;
 export type APITwitterCommunityNote = z.infer<typeof APITwitterCommunityNoteSchema>;
 export type APITwitterCommunity = z.infer<typeof APITwitterCommunitySchema>;
 export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;
+export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSchema>;
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;

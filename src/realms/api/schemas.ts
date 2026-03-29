@@ -491,6 +491,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       created_timestamp: z.number(),
       likes: z.number(),
       reposts: z.number(),
+      quotes: z.number(),
       replies: z.number(),
       quote: APITwitterStatusSchema.optional(),
       poll: APIPollSchema.optional(),

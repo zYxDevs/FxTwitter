@@ -148,6 +148,7 @@ export default {
             );
           }
         case 'UserTweets':
+        case 'UserMedia':
           const tweetsUserId = variables.userId;
           try {
             const tweetsModule = await import(`../mocks/UserTweets/${tweetsUserId}.json`);

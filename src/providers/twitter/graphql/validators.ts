@@ -15,11 +15,51 @@ export const validateUserTweetsTimeline = (response: unknown): boolean => {
   return Array.isArray(r?.data?.user?.result?.timeline?.timeline?.instructions);
 };
 
+/** UserMedia can return UserTweets-shaped or profile_user_media_timeline-shaped payloads */
+export const validateUserMediaTimelineResponse = (response: unknown): boolean => {
+  if (validateUserTweetsTimeline(response)) return true;
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_media_timeline?.timeline?.instructions
+  );
+};
+
 export const validateProfileTimelineResponse = (response: unknown): boolean => {
   const r = response as TwitterProfileTimelineResponse;
   return Array.isArray(
     r?.data?.user_result_by_rest_id?.result?.profile_timeline_v2?.timeline?.instructions
   );
+};
+
+export const validateProfileWithRepliesTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_with_replies_timeline_v2?.timeline
+      ?.instructions
+  );
+};
+
+export const validateProfileUserPhotoTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_photo_timeline?.timeline?.instructions
+  );
+};
+
+export const validateProfileUserVideoTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_user_video_timeline?.timeline?.instructions
+  );
+};
+
+export const getProfilePhotoTimelineInstructions = (
+  response: unknown
+): TimelineInstruction[] | undefined => {
+  const r = response as TwitterProfileTimelineResponse;
+  const instructions =
+    r?.data?.user_result_by_rest_id?.result?.profile_user_photo_timeline?.timeline?.instructions;
+  return Array.isArray(instructions) ? instructions : undefined;
 };
 
 /** Normalize UserTweets vs ProfileTimeline GraphQL shapes for shared processing */
@@ -36,6 +76,24 @@ export const getProfileStatusesTimelineInstructions = (
     asProfile?.data?.user_result_by_rest_id?.result?.profile_timeline_v2?.timeline?.instructions;
   if (Array.isArray(profilePath)) {
     return profilePath;
+  }
+  const profileRepliesPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_with_replies_timeline_v2?.timeline
+      ?.instructions;
+  if (Array.isArray(profileRepliesPath)) {
+    return profileRepliesPath;
+  }
+  const profileVideoPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_user_video_timeline?.timeline
+      ?.instructions;
+  if (Array.isArray(profileVideoPath)) {
+    return profileVideoPath;
+  }
+  const profileMediaPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_user_media_timeline?.timeline
+      ?.instructions;
+  if (Array.isArray(profileMediaPath)) {
+    return profileMediaPath;
   }
   return undefined;
 };

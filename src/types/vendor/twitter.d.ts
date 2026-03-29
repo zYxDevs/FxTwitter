@@ -1093,6 +1093,38 @@ type TwitterProfileTimelineResponse = {
             metadata?: unknown;
           };
         };
+        profile_with_replies_timeline_v2?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_photo_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_video_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
+        profile_user_media_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
       };
     };
   };

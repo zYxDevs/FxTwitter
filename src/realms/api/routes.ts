@@ -235,12 +235,58 @@ export const profileStatusesV2Route = createRoute({
       cursor: z
         .string()
         .optional()
-        .openapi({ description: 'Pagination cursor from prior response' })
+        .openapi({ description: 'Pagination cursor from prior response' }),
+      with_replies: z.string().optional().openapi({
+        description:
+          'If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines'
+      })
     })
   },
   responses: {
     200: {
       description: 'Timeline page',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters (e.g. `count` out of range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'User not found or empty timeline',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    }
+  }
+});
+
+export const profileMediaV2Route = createRoute({
+  method: 'get',
+  path: '/2/profile/{handle}/media',
+  summary: 'List posts with media (photos and videos) for a user',
+  request: {
+    params: z.object({
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.'
+      })
+    }),
+    query: z.object({
+      count: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: 'Page size (default 20)',
+        default: 20
+      }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({ description: 'Pagination cursor from prior response' })
+    })
+  },
+  responses: {
+    200: {
+      description: 'Media timeline page',
       content: { 'application/json': { schema: APISearchResultsSchema } }
     },
     400: {

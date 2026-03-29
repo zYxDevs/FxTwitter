@@ -269,9 +269,16 @@ export const APITwitterCommunitySchema = z.object({
   is_pinned: z.boolean()
 });
 
-export const APITwitterCommunityNoteSchema = z.object({
+/** Legacy Twitter API / embed (`legacyAPI`): Birdwatch subtitle entities (`TimelineUrl`, indices, etc.). */
+export const APITwitterCommunityNoteLegacySchema = z.object({
   text: z.string(),
   entities: z.array(z.record(z.string(), z.unknown()))
+});
+
+/** FxTwitter API v2: community note rich text as `APIFacet` (same model as `raw_text.facets`). */
+export const APITwitterCommunityNoteSchema = z.object({
+  text: z.string(),
+  facets: z.array(APIFacetSchema)
 });
 
 /** Twitter GraphQL media entity — shape varies; kept loose for OpenAPI. */
@@ -465,7 +472,10 @@ export type APITwitterStatus = {
   community?: z.infer<typeof APITwitterCommunitySchema>;
   article?: z.infer<typeof TwitterArticleSchema>;
   is_note_tweet: boolean;
-  community_note: z.infer<typeof APITwitterCommunityNoteSchema> | null;
+  community_note:
+    | z.infer<typeof APITwitterCommunityNoteSchema>
+    | z.infer<typeof APITwitterCommunityNoteLegacySchema>
+    | null;
   reposted_by: z.infer<typeof APIRepostedBySchema> | null;
   card?: z.infer<typeof APICardSchema>;
 };
@@ -651,6 +661,7 @@ export type APIMosaicPhoto = z.infer<typeof APIMosaicPhotoSchema>;
 export type APIBroadcast = z.infer<typeof APIBroadcastSchema>;
 export type APIUser = z.infer<typeof APIUserSchema>;
 export type APIRepostedBy = z.infer<typeof APIRepostedBySchema>;
+export type APITwitterCommunityNoteLegacy = z.infer<typeof APITwitterCommunityNoteLegacySchema>;
 export type APITwitterCommunityNote = z.infer<typeof APITwitterCommunityNoteSchema>;
 export type APITwitterCommunity = z.infer<typeof APITwitterCommunitySchema>;
 export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;

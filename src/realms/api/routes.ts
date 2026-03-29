@@ -10,7 +10,8 @@ import {
   ApiQueryErrorSchema,
   SocialConversationSchema,
   SocialThreadSchema,
-  UserAPIResponseSchema
+  UserAPIResponseSchema,
+  ProfileAboutAPIResponseSchema
 } from './schemas';
 
 /** X search treats underscores as non-content for empty-query behavior; require another character after stripping `_` and whitespace. */
@@ -180,6 +181,37 @@ export const profileV2Route = createRoute({
     404: {
       description: 'User not found',
       content: { 'application/json': { schema: UserAPIResponseSchema } }
+    }
+  }
+});
+
+export const profileAboutV2Route = createRoute({
+  method: 'get',
+  path: '/2/profile/{handle}/about',
+  summary: 'Get profile “about this account” metadata',
+  description:
+    'Returns the same `about_account` object as `/2/profile/{handle}` with `about_account` / `aboutAccount` enabled, without fetching the full profile.',
+  request: {
+    params: z.object({
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.',
+        example: 'X'
+      })
+    })
+  },
+  responses: {
+    200: {
+      description: 'About metadata (check `code`); `about_account` omitted when upstream has none',
+      content: { 'application/json': { schema: ProfileAboutAPIResponseSchema } }
+    },
+    400: {
+      description: 'Invalid path parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'User not found',
+      content: { 'application/json': { schema: ProfileAboutAPIResponseSchema } }
     }
   }
 });

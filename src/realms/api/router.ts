@@ -6,6 +6,7 @@ import { Strings } from '../../strings';
 import { Constants } from '../../constants';
 import {
   conversationAPIRequest,
+  profileAboutAPIRequest,
   profileAPIRequest,
   profileStatusesAPIRequest,
   searchAPIRequest,
@@ -19,6 +20,7 @@ import { linkHitRequest, linkGoRequest } from './hit';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import {
   conversationV2Route,
+  profileAboutV2Route,
   profileStatusesV2Route,
   profileV2Route,
   searchV2Route,
@@ -53,6 +55,7 @@ api.openapi(statusV2Route, statusAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
+api.openapi(profileAboutV2Route, profileAboutAPIRequest);
 api.openapi(profileV2Route, profileAPIRequest);
 api.openapi(searchV2Route, searchAPIRequest);
 api.openapi(typeaheadV2Route, typeaheadAPIRequest);

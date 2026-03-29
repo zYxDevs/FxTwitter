@@ -4,7 +4,12 @@ import {
   type TweetDetailRankingMode
 } from '../../../providers/twitter/conversation';
 import { Constants } from '../../../constants';
-import { userAPI, userAPIById, parseHandleOrId } from '../../../providers/twitter/profile';
+import {
+  userAPI,
+  userAPIById,
+  parseHandleOrId,
+  profileAboutAPI
+} from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
 import { profileStatusesAPI } from '../../../providers/twitter/userStatuses';
@@ -16,6 +21,7 @@ import { isParamTruthy } from '../../../helpers/utils';
 import type { RouteHandler } from '@hono/zod-openapi';
 import {
   conversationV2Route,
+  profileAboutV2Route,
   profileStatusesV2Route,
   profileV2Route,
   searchV2Route,
@@ -95,6 +101,17 @@ export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c =>
     c.header(header, value);
   }
   return c.json(profileResponse, profileResponse.code as 200 | 404);
+};
+
+export const profileAboutAPIRequest: RouteHandler<typeof profileAboutV2Route> = async c => {
+  const { handle } = c.req.valid('param');
+  const aboutResponse = await profileAboutAPI(handle, c);
+
+  c.status(aboutResponse.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(aboutResponse, aboutResponse.code as 200 | 404);
 };
 
 export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Route> = async c => {

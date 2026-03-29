@@ -4,6 +4,12 @@ export const validateAboutAccountQuery = (response: unknown): boolean => {
   return Boolean(result && typeof result === 'object');
 };
 
+export const validateUserProfileAboutQuery = (response: unknown): boolean => {
+  const r = response as UserProfileAboutResponse;
+  const result = r?.data?.user_rest_result_by_rest_id?.result;
+  return Boolean(result && typeof result === 'object');
+};
+
 export const validateUserTweetsTimeline = (response: unknown): boolean => {
   const r = response as TwitterUserTweetsResponse;
   return Array.isArray(r?.data?.user?.result?.timeline?.timeline?.instructions);

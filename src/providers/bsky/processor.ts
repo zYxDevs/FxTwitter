@@ -27,6 +27,7 @@ export const buildAPIBskyPost = async (
       avatar_url: status.author.avatar,
       banner_url: '', // TODO: Pull this from the actual author endpoint
       description: '',
+      raw_description: { text: '', facets: [] },
       location: '',
       followers: 0,
       following: 0,

@@ -107,6 +107,7 @@ export const typeaheadUserToApiUser = (u: TwitterTypeaheadUser): APIUser | null 
     avatar_url: avatar,
     banner_url: null,
     description: '',
+    raw_description: { text: '', facets: [] },
     location: typeof u.location === 'string' ? u.location : '',
     url: `${Constants.TWITTER_ROOT}/${screen_name}`,
     protected: u.is_protected === true,

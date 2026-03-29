@@ -4,7 +4,7 @@ import {
   type TweetDetailRankingMode
 } from '../../../providers/twitter/conversation';
 import { Constants } from '../../../constants';
-import { userAPI } from '../../../providers/twitter/profile';
+import { userAPI, userAPIById, parseHandleOrId } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
 import { profileStatusesAPI } from '../../../providers/twitter/userStatuses';
@@ -83,8 +83,12 @@ export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = 
 
 export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c => {
   const { handle } = c.req.valid('param');
+  const parsed = parseHandleOrId(handle);
 
-  const profileResponse = await userAPI(handle, c, false, shouldIncludeAboutAccount(c));
+  const profileResponse =
+    parsed.type === 'userId'
+      ? await userAPIById(parsed.value, c, false, shouldIncludeAboutAccount(c))
+      : await userAPI(parsed.value, c, false, shouldIncludeAboutAccount(c));
 
   c.status(profileResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -100,7 +104,7 @@ export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Rou
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const statusesResponse = await profileStatusesAPI(handle, count, cursor, c);
+  const statusesResponse = await profileStatusesAPI(parseHandleOrId(handle), count, cursor, c);
 
   c.status(statusesResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

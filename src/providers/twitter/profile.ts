@@ -1,16 +1,59 @@
 import { Context } from 'hono';
 import { Constants } from '../../constants';
 import { linkFixer } from '../../helpers/linkFixer';
+import type { APIFacet } from '../../realms/api/schemas';
 import {
   UserByScreenNameQuery,
   UserResultByScreenNameQuery,
-  AboutAccountQuery
+  AboutAccountQuery,
+  UserByRestIdQuery,
+  UserResultByRestIdQuery,
+  UserProfileAboutQuery
 } from './graphql/queries';
-import { validateAboutAccountQuery } from './graphql/validators';
-import {
-  graphQLOrchestrator,
-  type GraphQLOrchestratorRequest
-} from './graphql/orchestrator';
+import { validateAboutAccountQuery, validateUserProfileAboutQuery } from './graphql/validators';
+import { graphQLOrchestrator, type GraphQLOrchestratorRequest } from './graphql/orchestrator';
+
+function descriptionEntitiesToFacets(
+  entities: UserProfileBioDescriptionEntities | undefined
+): APIFacet[] {
+  if (!entities) {
+    return [];
+  }
+  const facets: APIFacet[] = [];
+  entities.hashtags?.forEach(hashtag => {
+    facets.push({
+      type: 'hashtag',
+      indices: hashtag.indices,
+      original: hashtag.text
+    });
+  });
+  entities.symbols?.forEach(symbol => {
+    facets.push({
+      type: 'symbol',
+      indices: symbol.indices,
+      original: symbol.text
+    });
+  });
+  entities.urls?.forEach(url => {
+    facets.push({
+      type: 'url',
+      indices: url.indices,
+      original: url.url,
+      replacement: url.expanded_url,
+      display: url.display_url
+    });
+  });
+  entities.user_mentions?.forEach(mention => {
+    facets.push({
+      type: 'mention',
+      indices: mention.indices,
+      original: mention.screen_name,
+      id: mention.id_str
+    });
+  });
+  facets.sort((a, b) => a.indices[0] - b.indices[0]);
+  return facets;
+}
 
 export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser => {
   const apiUser = {} as APIUser;
@@ -29,10 +72,18 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
     apiUser.statuses = user.tweet_counts?.tweets ?? user.legacy?.statuses_count;
   }
   apiUser.name = user.core?.name ?? user.legacy?.name ?? '';
-  const description = user.profile_bio?.description ?? user.legacy?.description;
-  apiUser.description = description
-    ? linkFixer(user.profile_bio?.entities?.url?.urls, description)
+  const rawDescriptionText = user.profile_bio?.description ?? user.legacy?.description ?? '';
+  const descriptionUrlEntities =
+    user.legacy?.entities?.description?.urls ?? user.profile_bio?.entities?.description?.urls;
+  apiUser.description = rawDescriptionText
+    ? linkFixer(descriptionUrlEntities, rawDescriptionText)
     : '';
+  const descriptionEntities =
+    user.legacy?.entities?.description ?? user.profile_bio?.entities?.description;
+  apiUser.raw_description = {
+    text: rawDescriptionText,
+    facets: descriptionEntitiesToFacets(descriptionEntities)
+  };
   apiUser.location = user.location?.location ?? user.legacy?.location ?? '';
   apiUser.banner_url = user.banner?.image_url ?? user.legacy?.profile_banner_url ?? null;
   apiUser.avatar_url = user.avatar?.image_url ?? user.legacy?.profile_image_url_https ?? null;
@@ -137,6 +188,68 @@ export const mergeAboutAccountData = (
   return user;
 };
 
+export type ProfileHandleOrId =
+  | { type: 'screenName'; value: string }
+  | { type: 'userId'; value: string };
+
+/**
+ * Parses API v2 profile `{handle}`: plain screen name or `id:<numeric rest id>`.
+ */
+export const parseHandleOrId = (handle: string): ProfileHandleOrId => {
+  const trimmed = handle.trim();
+  const m = /^id:([0-9]+)$/i.exec(trimmed);
+  if (m) {
+    return { type: 'userId', value: m[1] };
+  }
+  return { type: 'screenName', value: trimmed };
+};
+
+/**
+ * Merges UserProfileAbout (by rest_id) into an APIUser object
+ */
+export const mergeUserProfileAboutData = (
+  user: APIUser,
+  aboutResponse: UserProfileAboutResponse
+): APIUser => {
+  const result = aboutResponse?.data?.user_rest_result_by_rest_id?.result;
+
+  if (!result) {
+    return user;
+  }
+
+  if (result.about_profile) {
+    user.about_account = user.about_account ?? ({} as APIUser['about_account']);
+
+    if (result.about_profile?.account_based_in) {
+      user.about_account!.based_in = result.about_profile.account_based_in;
+    }
+
+    if (result.about_profile?.location_accurate) {
+      user.about_account!.location_accurate = result.about_profile.location_accurate;
+    }
+
+    if (result.about_profile?.created_country_accurate) {
+      user.about_account!.created_country_accurate = result.about_profile.created_country_accurate;
+    }
+
+    if (result.about_profile?.source) {
+      user.about_account!.source = result.about_profile.source;
+    }
+
+    if (result.about_profile?.username_changes) {
+      const usernameChanges = result.about_profile.username_changes;
+      user.about_account!.username_changes = {
+        count: parseInt(usernameChanges.count || '0', 10),
+        last_changed_at: usernameChanges.last_changed_at_msec
+          ? new Date(Number(usernameChanges.last_changed_at_msec)).toISOString()
+          : null
+      };
+    }
+  }
+
+  return user;
+};
+
 /* This function does the heavy lifting of processing data from Twitter API
    and using it to create FxTwitter's streamlined API responses */
 const populateUserProperties = async (
@@ -175,9 +288,7 @@ const fetchUserWithAboutAccount = async (
         validator: (response: unknown) => {
           const userResponse = response as GraphQLUserResponse;
           const result = userResponse?.data?.user?.result;
-          return Boolean(
-            result && (result.__typename === 'User' || result.rest_id || result.core)
-          );
+          return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
         }
       },
       {
@@ -223,6 +334,71 @@ const fetchUserWithAboutAccount = async (
   return {
     userResponse: userData,
     aboutAccountResponse: aboutAccountData
+  };
+};
+
+const fetchUserByIdWithAboutAccount = async (
+  c: Context,
+  userId: string,
+  includeAboutAccount = false
+): Promise<{
+  userResponse: GraphQLUserResponse | UserResultByScreenNameResponse | null;
+  aboutProfileResponse: UserProfileAboutResponse | null;
+}> => {
+  const userRequest: GraphQLOrchestratorRequest = {
+    key: 'user',
+    methods: [
+      {
+        name: 'UserByRestId',
+        query: UserByRestIdQuery,
+        weight: 500,
+        validator: (response: unknown) => {
+          const userResponse = response as GraphQLUserResponse;
+          const result = userResponse?.data?.user?.result;
+          return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
+        }
+      },
+      {
+        name: 'UserResultByRestId',
+        query: UserResultByRestIdQuery,
+        weight: 50,
+        validator: (response: unknown) => {
+          const userResponse = response as UserResultByScreenNameResponse;
+          const result = userResponse?.data?.user_results?.result;
+          return Boolean(
+            result && result.__typename === 'User' && (result.legacy || result.rest_id)
+          );
+        }
+      }
+    ],
+    variables: { userId, rest_id: userId },
+    required: true
+  };
+
+  const aboutProfileRequest: GraphQLOrchestratorRequest = {
+    key: 'aboutProfile',
+    query: UserProfileAboutQuery,
+    variables: { rest_id: userId },
+    validator: validateUserProfileAboutQuery,
+    required: false
+  };
+
+  const results = await graphQLOrchestrator(
+    c,
+    includeAboutAccount ? [userRequest, aboutProfileRequest] : [userRequest]
+  );
+
+  const userData = results.user?.success
+    ? (results.user.data as GraphQLUserResponse | UserResultByScreenNameResponse)
+    : null;
+
+  const aboutProfileData = results.aboutProfile?.success
+    ? (results.aboutProfile.data as UserProfileAboutResponse)
+    : null;
+
+  return {
+    userResponse: userData,
+    aboutProfileResponse: aboutProfileData
   };
 };
 
@@ -275,6 +451,40 @@ export const userAPI = async (
   }
 
   /* Finally, staple the User to the response and return it */
+  response.user = apiUser;
+
+  return response;
+};
+
+export const userAPIById = async (
+  userId: string,
+  c: Context,
+  legacyApiUserCounts = false,
+  includeAboutAccount = false
+): Promise<UserAPIResponse> => {
+  const { userResponse, aboutProfileResponse } = await fetchUserByIdWithAboutAccount(
+    c,
+    userId,
+    includeAboutAccount
+  );
+
+  if (!userResponse || !Object.keys(userResponse).length) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+
+  const response: UserAPIResponse = { code: 200, message: 'OK' } as UserAPIResponse;
+  let apiUser: APIUser = (await populateUserProperties(
+    userResponse,
+    legacyApiUserCounts
+  )) as APIUser;
+
+  if (aboutProfileResponse) {
+    apiUser = mergeUserProfileAboutData(apiUser, aboutProfileResponse);
+  }
+
   response.user = apiUser;
 
   return response;

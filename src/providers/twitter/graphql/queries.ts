@@ -403,6 +403,73 @@ export const AboutAccountQuery: GraphQLQuery = {
   }
 };
 
+export const UserByRestIdQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'VQfQ9wwYdk6j_u2O4vt64Q',
+  queryName: 'UserByRestId',
+  requiresAccount: true,
+  variables: {
+    withGrokTranslatedBio: true
+  },
+  features: {
+    hidden_profile_subscriptions_enabled: true,
+    profile_label_improvements_pcf_label_in_post_enabled: true,
+    responsive_web_profile_redirect_enabled: false,
+    rweb_tipjar_consumption_enabled: false,
+    verified_phone_label_enabled: false,
+    highlights_tweets_tab_ui_enabled: true,
+    responsive_web_twitter_article_notes_tab_enabled: true,
+    subscriptions_feature_can_gift_premium: true,
+    creator_subscriptions_tweet_preview_api_enabled: true,
+    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+    responsive_web_graphql_timeline_navigation_enabled: true
+  },
+  fieldToggles: {
+    withPayments: false,
+    withAuxiliaryUserLabels: true
+  }
+};
+
+export const UserResultByRestIdQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'Xe7WXUEMI2F7kK-kZSZoWA',
+  queryName: 'UserResultByRestId',
+  requiresAccount: true,
+  variables: {
+    creator_subscriptions_email_share_enabled: false,
+    include_grok_translated_bio: false,
+    include_can_pay: false,
+    include_highlights_info: false,
+    include_professional: true,
+    include_is_profile_translatable: false,
+    include_business_account: false,
+    include_creator_subscriptions_count: false,
+    include_reply_device_follow: true,
+    include_tipjar: true,
+    include_dm_muting: false,
+    include_hidden_profile_likes: false
+  },
+  features: {
+    rito_safety_mode_features_enabled: false,
+    profile_foundations_has_spaces_graphql_enabled: false,
+    hidden_profile_subscriptions_enabled: true,
+    subscriptions_feature_can_gift_premium: true,
+    ios_notifications_replies_mentions_device_follow_enabled: true,
+    profile_label_improvements_pcf_settings_enabled: true,
+    articles_timeline_profile_tab_enabled: true,
+    profile_label_improvements_pcf_edit_profile_enabled: true,
+    immersive_video_status_linkable_timestamps: true
+  }
+};
+
+export const UserProfileAboutQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'xT7-nTEDL_VgiUQXZDtuAA',
+  queryName: 'UserProfileAbout',
+  requiresAccount: true,
+  variables: {}
+};
+
 /** Shared with SearchTimeline, ExplorePage, and GenericTimelineById */
 const exploreAndGenericTimelineFeatures = {
   rweb_video_screen_enabled: false,

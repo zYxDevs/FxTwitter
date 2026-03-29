@@ -188,6 +188,10 @@ export const APIUserSchema = z
     avatar_url: z.string().nullable(),
     banner_url: z.string().nullable(),
     description: z.string(),
+    raw_description: z.object({
+      text: z.string(),
+      facets: z.array(APIFacetSchema)
+    }),
     location: z.string(),
     url: z.string(),
     protected: z.boolean(),

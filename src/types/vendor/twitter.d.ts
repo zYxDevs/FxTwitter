@@ -55,6 +55,19 @@ type TcoExpansion = {
   url: string;
 };
 
+/** Bio / profile description entity map (REST `entities.description` and GraphQL `profile_bio.entities.description`). */
+type UserProfileBioDescriptionEntities = {
+  urls?: TcoExpansion[];
+  hashtags?: { indices: [number, number]; text: string }[];
+  symbols?: { indices: [number, number]; text: string }[];
+  user_mentions?: {
+    indices: [number, number];
+    name: string;
+    screen_name: string;
+    id_str: string;
+  }[];
+};
+
 type TweetMedia = {
   additional_media_info: { monetizable: boolean };
   display_url: string;
@@ -255,9 +268,7 @@ type GraphQLUser = {
     default_profile_image: boolean; // false,
     description: string; // "What's happening?!",
     entities: {
-      description?: {
-        urls?: TcoExpansion[];
-      };
+      description?: UserProfileBioDescriptionEntities;
       url?: {
         urls?: {
           display_url: string; // "about.twitter.com",
@@ -333,6 +344,7 @@ type GraphQLUser = {
   profile_bio: {
     description: string; // "what's happening?!",
     entities: {
+      description?: UserProfileBioDescriptionEntities;
       url?: {
         urls: TcoExpansion[];
       };
@@ -838,6 +850,27 @@ interface AboutAccountQueryResponse {
           source?: string;
           username_changes?: {
             count?: string; // returned as string for some reason
+            last_changed_at_msec?: string;
+          };
+        };
+      };
+    };
+  };
+}
+
+/** UserProfileAbout GraphQL (rest_id input); same about_profile shape as AboutAccountQuery */
+interface UserProfileAboutResponse {
+  data?: {
+    user_rest_result_by_rest_id?: {
+      rest_id?: string;
+      result?: {
+        about_profile?: {
+          created_country_accurate?: boolean;
+          account_based_in?: string;
+          location_accurate?: boolean;
+          source?: string;
+          username_changes?: {
+            count?: string;
             last_changed_at_msec?: string;
           };
         };

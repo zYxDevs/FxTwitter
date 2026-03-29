@@ -162,8 +162,13 @@ export const buildAPITwitterStatus = async (
 
   // console.log('status', JSON.stringify(status));
 
-  const graphQLUser = (status.core.user_results?.result ??
-    status.core.user_result?.result) as GraphQLUser;
+  const graphQLUser = (status.core.user_results?.result ?? status.core.user_result?.result) as
+    | GraphQLUser
+    | undefined;
+  if (!graphQLUser) {
+    console.log('Tweet missing author on core', status.rest_id ?? status.legacy?.id_str);
+    return null;
+  }
   const apiUser = convertToApiUser(graphQLUser);
 
   /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FxEmbed/FxEmbed/issues/416 */
@@ -199,6 +204,7 @@ export const buildAPITwitterStatus = async (
     avatar_url: apiUser.avatar_url?.replace?.('_normal', '_200x200') ?? null,
     banner_url: apiUser.banner_url,
     description: apiUser.description,
+    raw_description: apiUser.raw_description,
     location: apiUser.location,
     url: apiUser.url,
     followers: apiUser.followers,

@@ -160,7 +160,11 @@ export const profileV2Route = createRoute({
     'Returns profile fields for a user. Optional `about_account` / `aboutAccount` (truthy) adds `about_account` on the user when available.',
   request: {
     params: z.object({
-      handle: z.string().openapi({ description: 'Username without @', example: 'X' })
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.',
+        example: 'X'
+      })
     }),
     query: aboutAccountQuery
   },
@@ -186,7 +190,10 @@ export const profileStatusesV2Route = createRoute({
   summary: 'List posts for a user',
   request: {
     params: z.object({
-      handle: z.string().openapi({ description: 'Username without @' })
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.'
+      })
     }),
     query: z.object({
       count: z.coerce.number().int().min(1).max(100).optional().openapi({

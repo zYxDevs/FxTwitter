@@ -7,17 +7,20 @@ import {
   validateProfileTimelineResponse,
   validateUserTweetsTimeline
 } from './graphql/validators';
-import { getTwitterUserRestIdByScreenName } from './profile';
+import { getTwitterUserRestIdByScreenName, type ProfileHandleOrId } from './profile';
 import { processTimelineInstructions } from './search';
 import type { APITwitterStatus } from '../../realms/api/schemas';
 
 export const profileStatusesAPI = async (
-  screenName: string,
+  handleOrId: ProfileHandleOrId,
   count: number,
   cursor: string | null,
   c: Context
 ): Promise<APISearchResults> => {
-  const userId = await getTwitterUserRestIdByScreenName(c, screenName);
+  const userId =
+    handleOrId.type === 'userId'
+      ? handleOrId.value
+      : await getTwitterUserRestIdByScreenName(c, handleOrId.value);
   if (!userId) {
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
   }

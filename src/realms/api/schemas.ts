@@ -448,6 +448,7 @@ export type APITwitterStatus = {
   created_timestamp: number;
   likes: number;
   reposts: number;
+  quotes: number;
   replies: number;
   quote?: APITwitterStatus;
   poll?: z.infer<typeof APIPollSchema>;

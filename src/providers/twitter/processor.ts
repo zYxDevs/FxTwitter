@@ -7,13 +7,14 @@ import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import type { APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
+import type { APIFacet, APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
+import { tcoResolver } from './tcoResolver';
 
 /** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
 function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
@@ -60,6 +61,24 @@ function expandedCardUrl(
   const match = urlEntities.find(e => e.url === cardUrl);
   const expanded = match?.expanded_url;
   return typeof expanded === 'string' && expanded.length > 0 ? expanded : cardUrl;
+}
+
+function birdwatchEntitiesToFacets(entities: BirdwatchEntity[], noteText: string): APIFacet[] {
+  const facets: APIFacet[] = [];
+  for (const entity of entities) {
+    if (entity?.ref?.type !== 'TimelineUrl') {
+      continue;
+    }
+    const { fromIndex, toIndex } = entity;
+    facets.push({
+      type: 'url',
+      indices: [fromIndex, toIndex],
+      display: noteText.substring(fromIndex, toIndex),
+      replacement: entity.ref.url
+    });
+  }
+  facets.sort((a, b) => a.indices[0] - b.indices[0]);
+  return facets;
 }
 
 function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
@@ -339,11 +358,39 @@ export const buildAPITwitterStatus = async (
   }
 
   if (status.birdwatch_pivot?.subtitle?.text) {
-    /* We can't automatically replace links because API doesn't give full URLs, only t.co versions :( */
-    apiStatus.community_note = {
-      text: unescapeText(status.birdwatch_pivot?.subtitle?.text ?? ''),
-      entities: status.birdwatch_pivot.subtitle?.entities ?? []
-    };
+    const noteText = unescapeText(status.birdwatch_pivot.subtitle.text ?? '');
+    const rawEntities = status.birdwatch_pivot.subtitle.entities ?? [];
+
+    if (legacyAPI) {
+      apiStatus.community_note = {
+        text: noteText,
+        entities: rawEntities
+      };
+    } else {
+      const facets = birdwatchEntitiesToFacets(rawEntities, noteText);
+      const tcoList = [
+        ...new Set(
+          facets.flatMap(f =>
+            f.type === 'url' && typeof f.replacement === 'string' ? [f.replacement] : []
+          )
+        )
+      ];
+      if (tcoList.length > 0) {
+        const resolved = await tcoResolver(tcoList);
+        for (const f of facets) {
+          if (f.type === 'url' && typeof f.replacement === 'string') {
+            const expanded = resolved[f.replacement];
+            if (typeof expanded === 'string') {
+              f.replacement = expanded;
+            }
+          }
+        }
+      }
+      apiStatus.community_note = {
+        text: noteText,
+        facets
+      };
+    }
   } else {
     apiStatus.community_note = null;
   }

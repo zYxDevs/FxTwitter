@@ -61,7 +61,8 @@ test('API search returns results for query "neo"', async () => {
 
   const firstTweet = response.results[0] as APITwitterStatus;
   expect(firstTweet).toBeTruthy();
-  expect(firstTweet.id).toBeTruthy();
+  expect(firstTweet.id).toEqual('2029450917993652659');
+  expect(firstTweet.quotes).toEqual(2727);
   expect(firstTweet.text).toBeTruthy();
   expect(firstTweet.url).toContain(twitterBaseUrl);
   expect(firstTweet.url).toContain('/status/');

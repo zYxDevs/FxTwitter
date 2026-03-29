@@ -448,6 +448,7 @@ export type APITwitterStatus = {
   created_timestamp: number;
   likes: number;
   reposts: number;
+  quotes: number;
   replies: number;
   quote?: APITwitterStatus;
   poll?: z.infer<typeof APIPollSchema>;
@@ -491,6 +492,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       created_timestamp: z.number(),
       likes: z.number(),
       reposts: z.number(),
+      quotes: z.number(),
       replies: z.number(),
       quote: APITwitterStatusSchema.optional(),
       poll: APIPollSchema.optional(),

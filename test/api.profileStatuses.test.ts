@@ -27,7 +27,8 @@ test('API profile statuses returns tweets and cursors for known user', async () 
   expect(typeof response.cursor.bottom).toBe('string');
 
   const first = response.results[0] as APITwitterStatus;
-  expect(first.id).toBeTruthy();
+  expect(first.id).toEqual('2036082537949434164');
+  expect(first.quotes).toEqual(383);
   expect(first.text).toBeTruthy();
   expect(first.url).toContain(twitterBaseUrl);
   expect(first.url).toContain('/status/');

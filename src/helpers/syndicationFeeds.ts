@@ -7,6 +7,8 @@ export type SyndicationFeedMeta = {
   profileWebUrl: string;
   selfUrlRss: string;
   selfUrlAtom: string;
+  /** Feed-level Atom author (RFC 4287); not duplicated on entries. */
+  authorName?: string;
 };
 
 export type SyndicationFeedItem = {
@@ -34,7 +36,10 @@ const toRfc822 = (d: Date): string => d.toUTCString();
 
 const toIso8601 = (d: Date): string => d.toISOString();
 
-function buildItemHtml(status: APITwitterStatus): string {
+function buildItemHtml(
+  status: APITwitterStatus,
+  options: { omitSensitive?: boolean } = {}
+): string {
   const body = escapeXml(status.text).replace(/\n/g, '<br />\n');
   const parts: string[] = [`<p>${body}</p>`];
 
@@ -55,11 +60,10 @@ function buildItemHtml(status: APITwitterStatus): string {
     }
   }
 
-  if (status.quote) {
-    const qtext = escapeXml(
-      truncateWithEllipsis(status.quote.text.replace(/\s+/g, ' ').trim(), 280)
-    );
-    parts.push(`<blockquote><a href="${escapeXml(status.quote.url)}">${qtext}</a></blockquote>`);
+  const q = status.quote;
+  if (q && !(options.omitSensitive && q.possibly_sensitive)) {
+    const qtext = escapeXml(truncateWithEllipsis(q.text.replace(/\s+/g, ' ').trim(), 280));
+    parts.push(`<blockquote><a href="${escapeXml(q.url)}">${qtext}</a></blockquote>`);
   }
 
   return parts.join('\n');
@@ -79,7 +83,7 @@ export function statusesToFeedItems(
       url: s.url,
       title,
       updated: new Date(s.created_timestamp * 1000),
-      htmlContent: buildItemHtml(s)
+      htmlContent: buildItemHtml(s, options)
     });
   }
   return out;
@@ -126,6 +130,11 @@ export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedI
   const updated = feedUpdated(items);
   const feedId = meta.selfUrlAtom;
 
+  const authorBlock =
+    meta.authorName !== undefined && meta.authorName !== ''
+      ? `<author><name>${escapeXml(meta.authorName)}</name></author>`
+      : '';
+
   const head =
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<feed xmlns="http://www.w3.org/2005/Atom">` +
@@ -134,7 +143,8 @@ export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedI
     `<link href="${escapeXml(meta.selfUrlAtom)}" rel="self" type="application/atom+xml"/>` +
     `<id>${escapeXml(feedId)}</id>` +
     `<updated>${toIso8601(updated)}</updated>` +
-    `<subtitle>${escapeXml(meta.channelDescription)}</subtitle>`;
+    `<subtitle>${escapeXml(meta.channelDescription)}</subtitle>` +
+    authorBlock;
 
   const entries = items.map(item => {
     const eid = escapeXml(item.id);

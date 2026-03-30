@@ -83,6 +83,31 @@ test('statusesToFeedItems omits sensitive posts when safe mode', () => {
   expect(items[0].id).toBe('https://x.com/example/status/2');
 });
 
+test('safe mode omits sensitive quoted post body and link from item HTML', () => {
+  const sensitiveQuote = baseStatus({
+    id: 'q1',
+    url: 'https://x.com/example/status/q1',
+    text: 'Sensitive quote body',
+    possibly_sensitive: true
+  });
+  const parent = baseStatus({
+    id: '3',
+    url: 'https://x.com/example/status/3',
+    text: 'Commentary on a quote',
+    possibly_sensitive: false,
+    quote: sensitiveQuote
+  });
+  const safeItems = statusesToFeedItems([parent], { omitSensitive: true });
+  expect(safeItems).toHaveLength(1);
+  expect(safeItems[0].htmlContent).toContain('Commentary on a quote');
+  expect(safeItems[0].htmlContent).not.toContain('Sensitive quote body');
+  expect(safeItems[0].htmlContent).not.toContain('status/q1');
+
+  const unsafeItems = statusesToFeedItems([parent], { omitSensitive: false });
+  expect(unsafeItems[0].htmlContent).toContain('Sensitive quote body');
+  expect(unsafeItems[0].htmlContent).toContain('status/q1');
+});
+
 test('toRss20Xml is well-formed and includes atom self link', () => {
   const xml = toRss20Xml(mockMeta, statusesToFeedItems([baseStatus()], {}));
   expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
@@ -99,6 +124,23 @@ test('toAtomFeedXml includes self link and entry content', () => {
   expect(xml).toContain('<link href="https://fxtwitter.com/example/feed.atom.xml" rel="self" type="application/atom+xml"/>');
   expect(xml).toContain('<content type="html">');
   expect(xml).toContain('https://x.com/example/status/1');
+});
+
+test('toAtomFeedXml emits feed-level author when authorName is set', () => {
+  const xml = toAtomFeedXml(
+    { ...mockMeta, authorName: 'Example User' },
+    statusesToFeedItems([baseStatus()], {})
+  );
+  expect(xml).toContain('<author><name>Example User</name></author>');
+  expect(xml).not.toMatch(/<entry>[\s\S]*<author>/);
+});
+
+test('toAtomFeedXml omits author block when authorName is empty', () => {
+  const xml = toAtomFeedXml(
+    { ...mockMeta, authorName: '' },
+    statusesToFeedItems([baseStatus()], {})
+  );
+  expect(xml).not.toContain('<author>');
 });
 
 test('tweet text with angle brackets is escaped inside CDATA-wrapped HTML', () => {

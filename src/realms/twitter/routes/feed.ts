@@ -6,6 +6,7 @@ import {
 } from '../../../providers/twitter/userStatuses';
 import { parseHandleOrId } from '../../../providers/twitter/profile';
 import { isParamTruthy } from '../../../helpers/utils';
+import type { APITwitterStatus } from '../../../realms/api/schemas';
 import {
   statusesToFeedItems,
   toAtomFeedXml,
@@ -42,11 +43,23 @@ function parseMediaFeedQuery(c: Context): { count: number; safe: boolean } {
   };
 }
 
-function buildMeta(c: Context, handle: string, kind: SyndicationFeedKind): SyndicationFeedMeta {
+function feedAuthorName(handle: string, results: APITwitterStatus[]): string {
+  const screen = handle.replace(/^@/, '');
+  const fromPost = results.find(s => s.author?.name?.trim())?.author?.name?.trim();
+  return fromPost ?? `@${screen}`;
+}
+
+function buildMeta(
+  c: Context,
+  handle: string,
+  kind: SyndicationFeedKind,
+  results: APITwitterStatus[]
+): SyndicationFeedMeta {
   const origin = new URL(c.req.url).origin;
   const branding = getBranding(c);
   const enc = encodeURIComponent(handle);
   const profileWebUrl = `${origin}/${enc}`;
+  const authorName = feedAuthorName(handle, results);
 
   if (kind === 'media') {
     const selfUrlRss = `${origin}/${enc}/media.xml`;
@@ -56,7 +69,8 @@ function buildMeta(c: Context, handle: string, kind: SyndicationFeedKind): Syndi
       channelDescription: `Media from @${handle}.`,
       profileWebUrl,
       selfUrlRss,
-      selfUrlAtom
+      selfUrlAtom,
+      authorName
     };
   }
 
@@ -68,7 +82,8 @@ function buildMeta(c: Context, handle: string, kind: SyndicationFeedKind): Syndi
     channelDescription: `Posts by @${handle}`,
     profileWebUrl,
     selfUrlRss,
-    selfUrlAtom
+    selfUrlAtom,
+    authorName
   };
 }
 
@@ -97,7 +112,7 @@ async function serveFeed(
     apiResult = await profileMediaAPIPaginated(parsed, q.count, c);
   }
 
-  const meta = buildMeta(c, handle, kind);
+  const meta = buildMeta(c, handle, kind, apiResult.results);
   const items = statusesToFeedItems(apiResult.results, { omitSensitive });
 
   c.header('Access-Control-Allow-Origin', '*');

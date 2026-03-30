@@ -36,7 +36,7 @@ test('Status redirect human', async () => {
     harness
   );
   expect(result.status).toEqual(302);
-  expect(result.headers.get('location')).toEqual('https://x.com/jack/status/20');
+  expect(result.headers.get('location')).toEqual(`${twitterBaseUrl}/jack/status/20`);
 });
 
 test('Status redirect human trailing slash', async () => {
@@ -49,7 +49,7 @@ test('Status redirect human trailing slash', async () => {
     harness
   );
   expect(result.status).toEqual(302);
-  expect(result.headers.get('location')).toEqual('https://x.com/jack/status/20');
+  expect(result.headers.get('location')).toEqual(`${twitterBaseUrl}/jack/status/20`);
 });
 
 test('Status redirect human custom base redirect', async () => {

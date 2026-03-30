@@ -1,14 +1,12 @@
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { Strings } from '../../../strings';
-import { OEmbed } from '../../../types/types';
+import type { OEmbed } from '../../../types/types';
 import { getBranding } from '../../../helpers/branding';
 
 export const oembed = async (c: Context) => {
-  console.log('oembed hit!');
   const { searchParams } = new URL(c.req.url);
 
-  /* Fallbacks */
   const text = searchParams.get('text') ?? 'Twitter';
   const author = searchParams.get('author') ?? 'jack';
   const status = searchParams.get('status') ?? '20';
@@ -26,7 +24,8 @@ export const oembed = async (c: Context) => {
     version: '1.0'
   };
 
-  c.header('content-type', 'application/json');
-  /* Stringify and send it on its way! */
-  return c.text(JSON.stringify(data), 200);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(data, 200);
 };

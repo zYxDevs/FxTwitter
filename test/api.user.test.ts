@@ -1,5 +1,6 @@
 import { test, expect } from 'vitest';
 import { UserAPIResponse, APIUser } from '../src/types/types';
+import type { ProfileAboutAPIResponse } from '../src/realms/api/schemas';
 import { app } from '../src/worker';
 import { botHeaders, twitterBaseUrl } from './helpers/data';
 import harness from './helpers/harness';
@@ -55,7 +56,7 @@ test('API fetch user that does not exist', async () => {
 
 test('API fetch user about_account info', async () => {
   const result = await app.request(
-    new Request('https://api.fxtwitter.com/x', {
+    new Request('https://api.fxtwitter.com/2/profile/x?about_account=true', {
       method: 'GET',
       headers: botHeaders
     }),
@@ -80,4 +81,35 @@ test('API fetch user about_account info', async () => {
   expect(user.about_account?.username_changes).toBeTruthy();
   expect(user.about_account?.username_changes?.count).toEqual(3);
   expect(typeof user.about_account?.username_changes?.last_changed_at).toBe('string');
+});
+
+test('API profile about endpoint matches profile about_account', async () => {
+  const [profileRes, aboutRes] = await Promise.all([
+    app.request(
+      new Request('https://api.fxtwitter.com/2/profile/x?about_account=true', {
+        method: 'GET',
+        headers: botHeaders
+      }),
+      undefined,
+      harness
+    ),
+    app.request(
+      new Request('https://api.fxtwitter.com/2/profile/x/about', {
+        method: 'GET',
+        headers: botHeaders
+      }),
+      undefined,
+      harness
+    )
+  ]);
+
+  expect(profileRes.status).toEqual(200);
+  expect(aboutRes.status).toEqual(200);
+
+  const profile = (await profileRes.json()) as UserAPIResponse;
+  const about = (await aboutRes.json()) as ProfileAboutAPIResponse;
+
+  expect(about.code).toEqual(200);
+  expect(about.message).toEqual('OK');
+  expect(about.about_account).toEqual(profile.user?.about_account);
 });

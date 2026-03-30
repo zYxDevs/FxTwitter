@@ -144,8 +144,8 @@ const extractUserFromItemContent = (itemContent: unknown, users: GraphQLUser[]):
   users.push(result as GraphQLUser);
 };
 
-/** Reposters / retweeters timeline: TimelineUser rows plus pagination cursors */
-export const processRetweetersUserTimelineInstructions = (
+/** Followers/following and reposters timelines: TimelineUser rows plus pagination cursors */
+const processUserRelationshipTimelineInstructionsImpl = (
   instructions: TimelineInstruction[]
 ): { users: GraphQLUser[]; cursors: GraphQLTimelineCursor[] } => {
   const users: GraphQLUser[] = [];
@@ -224,6 +224,11 @@ export const processRetweetersUserTimelineInstructions = (
 
   return { users, cursors };
 };
+
+export const processUserRelationshipTimelineInstructions =
+  processUserRelationshipTimelineInstructionsImpl;
+export const processRetweetersUserTimelineInstructions =
+  processUserRelationshipTimelineInstructionsImpl;
 
 export const searchAPI = async (
   query: string,

@@ -12,7 +12,12 @@ import {
 } from '../../../providers/twitter/profile';
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
-import { profileMediaAPI, profileStatusesAPI } from '../../../providers/twitter/userStatuses';
+import {
+  profileFollowersAPI,
+  profileFollowingAPI,
+  profileMediaAPI,
+  profileStatusesAPI
+} from '../../../providers/twitter/userStatuses';
 import { statusRepostsAPI } from '../../../providers/twitter/statusReposts';
 import { trendsAPI } from '../../../providers/twitter/trends';
 import { typeaheadAPI } from '../../../providers/twitter/typeahead';
@@ -23,6 +28,8 @@ import type { RouteHandler } from '@hono/zod-openapi';
 import {
   conversationV2Route,
   profileMediaV2Route,
+  profileFollowersV2Route,
+  profileFollowingV2Route,
   profileAboutV2Route,
   profileStatusesV2Route,
   profileV2Route,
@@ -170,6 +177,38 @@ export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = 
     c.header(header, value);
   }
   return c.json(mediaResponse, mediaResponse.code as 200 | 404 | 500);
+};
+
+export const profileFollowersAPIRequest: RouteHandler<typeof profileFollowersV2Route> = async c => {
+  const { handle } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
+
+  const response = await profileFollowersAPI(parseHandleOrId(handle), count, cursor, c);
+
+  c.status(response.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(response, response.code as 200 | 404 | 500);
+};
+
+export const profileFollowingAPIRequest: RouteHandler<typeof profileFollowingV2Route> = async c => {
+  const { handle } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
+
+  const response = await profileFollowingAPI(parseHandleOrId(handle), count, cursor, c);
+
+  c.status(response.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(response, response.code as 200 | 404 | 500);
 };
 
 export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {

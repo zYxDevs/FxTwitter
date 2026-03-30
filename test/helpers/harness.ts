@@ -217,6 +217,116 @@ export default {
             );
           }
         }
+        case 'Followers':
+        case 'Following': {
+          const userId = variables.userId as string;
+          try {
+            const mod = await import(`../mocks/FollowGraph/${userId}.json`);
+            const payload =
+              'default' in mod && mod.default ? (mod.default as Record<string, unknown>) : mod;
+            return new Response(JSON.stringify(payload));
+          } catch (error) {
+            console.error('Error loading FollowGraph mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user: {
+                    result: {
+                      __typename: 'User',
+                      timeline: { timeline: { instructions: [] } }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+        case 'FollowersByUserIDTimeline': {
+          const restId = variables.rest_id as string;
+          try {
+            const mod = await import(`../mocks/FollowGraph/${restId}.json`);
+            const payload = (
+              'default' in mod && mod.default ? mod.default : mod
+            ) as {
+              data?: {
+                user?: { result?: { timeline?: { timeline?: { instructions?: unknown[] } } } };
+              };
+            };
+            const instructions =
+              payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    result: {
+                      __typename: 'User',
+                      followers_timeline: {
+                        timeline: { instructions }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          } catch (error) {
+            console.error('Error loading FollowersByUserIDTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    result: {
+                      __typename: 'User',
+                      followers_timeline: { timeline: { instructions: [] } }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+        case 'FollowingByUserIDTimeline': {
+          const restId = variables.rest_id as string;
+          try {
+            const mod = await import(`../mocks/FollowGraph/${restId}.json`);
+            const payload = (
+              'default' in mod && mod.default ? mod.default : mod
+            ) as {
+              data?: {
+                user?: { result?: { timeline?: { timeline?: { instructions?: unknown[] } } } };
+              };
+            };
+            const instructions =
+              payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    result: {
+                      __typename: 'User',
+                      following_timeline: {
+                        timeline: { instructions }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          } catch (error) {
+            console.error('Error loading FollowingByUserIDTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    result: {
+                      __typename: 'User',
+                      following_timeline: { timeline: { instructions: [] } }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
         default:
           throw new Error('Invalid request');
       }

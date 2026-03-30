@@ -110,3 +110,55 @@ export const getProfileStatusesTimelineInstructions = (
   }
   return undefined;
 };
+
+export const validateFollowersByUserIDTimelineResponse = (response: unknown): boolean => {
+  const r = response as {
+    data?: {
+      user_result_by_rest_id?: {
+        result?: { followers_timeline?: { timeline?: { instructions?: unknown } } };
+      };
+    };
+  };
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.followers_timeline?.timeline?.instructions
+  );
+};
+
+export const validateFollowingByUserIDTimelineResponse = (response: unknown): boolean => {
+  const r = response as {
+    data?: {
+      user_result_by_rest_id?: {
+        result?: { following_timeline?: { timeline?: { instructions?: unknown } } };
+      };
+    };
+  };
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.following_timeline?.timeline?.instructions
+  );
+};
+
+/** Followers/Following: userId queries share UserTweets timeline path; ByUserID uses *_timeline under user_result_by_rest_id */
+export const getFollowersFollowingInstructions = (
+  response: unknown,
+  kind: 'followers' | 'following'
+): TimelineInstruction[] | undefined => {
+  if (validateUserTweetsTimeline(response)) {
+    return (response as TwitterUserTweetsResponse).data.user.result.timeline.timeline
+      .instructions as TimelineInstruction[];
+  }
+  const r = response as {
+    data?: {
+      user_result_by_rest_id?: {
+        result?: {
+          followers_timeline?: { timeline?: { instructions?: TimelineInstruction[] } };
+          following_timeline?: { timeline?: { instructions?: TimelineInstruction[] } };
+        };
+      };
+    };
+  };
+  const instructions =
+    kind === 'followers'
+      ? r?.data?.user_result_by_rest_id?.result?.followers_timeline?.timeline?.instructions
+      : r?.data?.user_result_by_rest_id?.result?.following_timeline?.timeline?.instructions;
+  return Array.isArray(instructions) ? instructions : undefined;
+};

@@ -587,6 +587,14 @@ export const APIUserListResultsSchema = z
   })
   .openapi('APIUserListResults');
 
+export const APIProfileRelationshipListSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIUserSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APIProfileRelationshipList');
+
 export const APITrendGroupedTopicSchema = z.object({
   name: z.string()
 });
@@ -678,6 +686,7 @@ export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;
 export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSchema>;
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
+export type APIProfileRelationshipList = z.infer<typeof APIProfileRelationshipListSchema>;
 export type APIUserListResults = z.infer<typeof APIUserListResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;
 export type APITrend = z.infer<typeof APITrendSchema>;

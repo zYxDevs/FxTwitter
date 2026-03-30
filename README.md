@@ -109,17 +109,6 @@ Basically the opposite of gallery view, use `t.fxtwitter.com` / `t.fixupx.com` t
 
 <img src="https://raw.githubusercontent.com/FxEmbed/FxEmbed/main/assets/readme/textonly.png">
 
-## Profile RSS and Atom feeds (X/Twitter)
-
-You can follow a public X profile in a feed reader:
-
-- **Embed domains** (e.g. FxTwitter / FixupX): `https://fxtwitter.com/HANDLE/feed.xml` (RSS 2.0) and `https://fxtwitter.com/HANDLE/feed.atom.xml` (Atom).
-- **API host**: `https://api.fxtwitter.com/2/profile/HANDLE/feed.xml` and `https://api.fxtwitter.com/2/profile/HANDLE/feed.atom.xml`. Feed URLs work **without** a `User-Agent` header (unlike JSON API routes).
-
-Optional query parameters: `count` (1–100, default 100), `with_replies` / `withReplies`, and `safe` (when truthy, drops posts marked possibly sensitive). Building the feed may issue **several** timeline GraphQL requests (following the bottom cursor) until up to `count` unique posts are collected or the timeline ends. Bot-facing profile HTML includes `<link rel="alternate" …>` for both formats so browsers and tools can discover the feeds.
-
-**Media-only feeds** (same shape as above, but sourced from the profile **Media** tab): `…/media.xml` (RSS) and `…/media.atom.xml` (Atom) — e.g. `https://fxtwitter.com/HANDLE/media.xml` or `https://api.fxtwitter.com/2/profile/HANDLE/media.atom.xml`. Same `count` / `safe` behavior; `with_replies` does not apply. These are **not** advertised via `<link rel="alternate">`; add the URL manually in your reader if you want them.
-
 ## Telegram Instant View
 
 View entire threads without leaving Telegram or opening a browser! You can unroll threads by just linking any part of the original thread. It will also keep track of any posts being replied to, up until the start of a conversation.

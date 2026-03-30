@@ -44,6 +44,12 @@ function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
     const nc = (nested as { tweet_card?: GraphQLTwitterStatus['tweet_card'] }).tweet_card;
     if (nc) status.tweet_card = nc;
   }
+  if (
+    typeof status.reply_to_user_results === 'undefined' &&
+    typeof nested?.reply_to_user_results !== 'undefined'
+  ) {
+    status.reply_to_user_results = nested.reply_to_user_results;
+  }
 }
 
 function retweeterUserFromStatus(status: GraphQLTwitterStatus): GraphQLUser | undefined {
@@ -79,6 +85,22 @@ function birdwatchEntitiesToFacets(entities: BirdwatchEntity[], noteText: string
   }
   facets.sort((a, b) => a.indices[0] - b.indices[0]);
   return facets;
+}
+
+/** TweetDetail includes `legacy.in_reply_to_screen_name`; ConversationTimeline uses `reply_to_user_results` only. */
+function replyTargetScreenNameFromGraphQL(status: GraphQLTwitterStatus): string | undefined {
+  const fromLegacy = status.legacy?.in_reply_to_screen_name;
+  if (typeof fromLegacy === 'string' && fromLegacy.length > 0) {
+    return fromLegacy;
+  }
+  const user = status.reply_to_user_results?.result;
+  if (user?.__typename === 'User') {
+    const sn = user.core?.screen_name ?? user.legacy?.screen_name;
+    if (typeof sn === 'string' && sn.length > 0) {
+      return sn;
+    }
+  }
+  return undefined;
 }
 
 function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
@@ -438,15 +460,18 @@ export const buildAPITwitterStatus = async (
     }
   }
 
+  const replyScreenName = replyTargetScreenNameFromGraphQL(status);
+  const replyStatusId = status.legacy?.in_reply_to_status_id_str;
+
   if (legacyAPI) {
     // @ts-expect-error Use replying_to string for legacy API
-    apiStatus.replying_to = status.legacy?.in_reply_to_screen_name || null;
+    apiStatus.replying_to = replyScreenName || null;
     // @ts-expect-error Use replying_to_status string for legacy API
-    apiStatus.replying_to_status = status.legacy?.in_reply_to_status_id_str || null;
-  } else if (status.legacy.in_reply_to_screen_name) {
+    apiStatus.replying_to_status = replyStatusId || null;
+  } else if (replyScreenName && replyStatusId) {
     apiStatus.replying_to = {
-      screen_name: status.legacy.in_reply_to_screen_name,
-      post: status.legacy.in_reply_to_status_id_str
+      screen_name: replyScreenName,
+      post: replyStatusId
     };
   } else {
     apiStatus.replying_to = null;

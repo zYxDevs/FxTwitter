@@ -112,14 +112,12 @@ export const profileStatusesAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          return buildAPITwitterStatus(c, status, undefined, null, false);
-        } catch (err) {
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
           console.error('Error building status', err);
-          return Promise.resolve(null);
-        }
-      })
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 
@@ -190,14 +188,12 @@ export const profileArticlesAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          return buildAPITwitterStatus(c, status, undefined, null, false);
-        } catch (err) {
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
           console.error('Error building status', err);
-          return Promise.resolve(null);
-        }
-      })
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 
@@ -255,14 +251,12 @@ export const profileMediaAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          return buildAPITwitterStatus(c, status, undefined, null, false);
-        } catch (err) {
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
           console.error('Error building status', err);
-          return Promise.resolve(null);
-        }
-      })
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 

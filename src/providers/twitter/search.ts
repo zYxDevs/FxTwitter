@@ -272,15 +272,12 @@ export const searchAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          const result = buildAPITwitterStatus(c, status, undefined, null, false);
-          return result;
-        } catch (e) {
-          console.error('Error building status', e);
-          return Promise.resolve(null);
-        }
-      })
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+          console.error('Error building status', err);
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 

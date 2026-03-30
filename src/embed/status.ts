@@ -712,7 +712,10 @@ export const handleStatus = async (
       provider = providerEngagementText;
     }
 
-    const icons = getBranding(c).activityIcons;
+    const iconSet = getBranding(c).activityIcons;
+    const icons = Array.isArray(iconSet)
+      ? iconSet[Math.floor(Math.random() * iconSet.length)]
+      : iconSet;
     const iconSizes = ['svg', '64', '48', '32', '24', '16'];
 
     for (const size of iconSizes) {

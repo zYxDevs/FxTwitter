@@ -9,6 +9,7 @@ import {
   profileAboutAPIRequest,
   profileAPIRequest,
   profileMediaAPIRequest,
+  profileArticlesAPIRequest,
   profileFollowersAPIRequest,
   profileFollowingAPIRequest,
   profileStatusesAPIRequest,
@@ -26,6 +27,7 @@ import {
   conversationV2Route,
   profileAboutV2Route,
   profileMediaV2Route,
+  profileArticlesV2Route,
   profileFollowersV2Route,
   profileFollowingV2Route,
   profileStatusesV2Route,
@@ -64,6 +66,7 @@ api.openapi(statusRepostsV2Route, statusRepostsAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
+api.openapi(profileArticlesV2Route, profileArticlesAPIRequest);
 api.openapi(profileAboutV2Route, profileAboutAPIRequest);
 api.openapi(profileMediaV2Route, profileMediaAPIRequest);
 api.openapi(profileFollowersV2Route, profileFollowersAPIRequest);

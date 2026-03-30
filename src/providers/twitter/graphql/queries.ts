@@ -599,7 +599,7 @@ export const UserTweetsQuery: GraphQLQuery = {
   variables: {
     // userId: '',
     // count: 20,
-    includePromotedContent: true,
+    includePromotedContent: false,
     withQuickPromoteEligibilityTweetFields: true,
     withVoice: true,
     cursor: null
@@ -724,7 +724,49 @@ export const ProfileTimelineQuery: GraphQLQuery = {
   features: profileTimelineFeatures
 };
 
-/** Captured from x.com — ProfileWithRepliesTimeline (same flags/features as ProfileTimeline) */
+export const ProfileArticlesTimelineQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'drYvmzuyAPDHcUp4PsKWUA',
+  queryName: 'ProfileArticlesTimeline',
+  requiresAccount: true,
+  variables: {
+    include_community_tweet_relationship: false,
+    include_is_translatable: false,
+    include_grok_analysis_button: false,
+    include_cta: false,
+    include_grok_translated_bio: false,
+    include_tweet_quick_promote_eligibility: false,
+    include_professional: false,
+    include_is_member: false,
+    skip_author_community_relationship: false,
+    include_conversation_context: false,
+    include_pill_groups_in_modules: false,
+    include_reply_device_follow: false,
+    include_unmention_info_override: false,
+    include_dm_muting: false,
+    is_member_target_user_id: '0',
+    cursor: null
+  },
+  features: profileTimelineFeatures
+};
+
+export const UserArticlesTweetsQuery: GraphQLQuery = {
+  httpMethod: 'GET',
+  queryId: 'mgo2LHt5kJBnE73Lb0NgUA',
+  queryName: 'UserArticlesTweets',
+  requiresAccount: true,
+  variables: {
+    includePromotedContent: false,
+    withQuickPromoteEligibilityTweetFields: true,
+    withVoice: true,
+    cursor: null
+  },
+  features: userTweetsTimelineFeatures,
+  fieldToggles: {
+    withArticlePlainText: false
+  }
+};
+
 export const ProfileWithRepliesTimelineQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: 'vG_Yd3BEZTwSVlhdImQJSQ',
@@ -758,7 +800,7 @@ export const UserTweetsAndRepliesQuery: GraphQLQuery = {
   queryName: 'UserTweetsAndReplies',
   requiresAccount: true,
   variables: {
-    includePromotedContent: true,
+    includePromotedContent: false,
     withCommunity: true,
     withVoice: true,
     cursor: null
@@ -766,7 +808,6 @@ export const UserTweetsAndRepliesQuery: GraphQLQuery = {
   features: userTweetsTimelineFeatures
 };
 
-/** Captured from x.com — FollowersByUserIDTimeline / FollowingByUserIDTimeline */
 const followersFollowingByUserIdTimelineFeatures = {
   ios_button_layout_fix_use_grok_annotations: false,
   conversational_replies_ios_downvote_api_enabled: true,
@@ -800,7 +841,6 @@ const followersFollowingByUserIdTimelineFeatures = {
   c9s_tweet_anatomy_moderator_badge_enabled: true
 };
 
-/** Captured from x.com — Followers (same feature map as UserMedia) */
 export const FollowersQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: '-FpGYzBsUxUOecYYfso0yA',
@@ -816,7 +856,6 @@ export const FollowersQuery: GraphQLQuery = {
   features: userMediaFeatures
 };
 
-/** Captured from x.com — Following (same feature map as Followers) */
 export const FollowingQuery: GraphQLQuery = {
   httpMethod: 'GET',
   queryId: 'UCFedrkjMz7PeEAWCWhqFw',
@@ -936,7 +975,7 @@ export const RetweetersQuery: GraphQLQuery = {
     tweetId: '',
     count: 20,
     enableRanking: true,
-    includePromotedContent: true,
+    includePromotedContent: false,
     cursor: null
   },
   features: retweetersWebFeatures

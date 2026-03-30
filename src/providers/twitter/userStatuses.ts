@@ -5,8 +5,10 @@ import {
   FollowersQuery,
   FollowingByUserIDTimelineQuery,
   FollowingQuery,
+  ProfileArticlesTimelineQuery,
   ProfileTimelineQuery,
   ProfileWithRepliesTimelineQuery,
+  UserArticlesTweetsQuery,
   UserMediaQuery,
   UserTweetsAndRepliesQuery,
   UserTweetsQuery
@@ -14,11 +16,14 @@ import {
 import { graphQLOrchestrator } from './graphql/orchestrator';
 import {
   getFollowersFollowingInstructions,
+  getProfileArticlesTimelineInstructions,
   getProfileStatusesTimelineInstructions,
   validateFollowersByUserIDTimelineResponse,
   validateFollowingByUserIDTimelineResponse,
+  validateProfileArticlesTimelineResponse,
   validateProfileTimelineResponse,
   validateProfileWithRepliesTimelineResponse,
+  validateUserArticlesTweetsResponse,
   validateUserMediaTimelineResponse,
   validateUserTweetsTimeline
 } from './graphql/validators';
@@ -107,14 +112,88 @@ export const profileStatusesAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          return buildAPITwitterStatus(c, status, undefined, null, false);
-        } catch (err) {
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
           console.error('Error building status', err);
-          return Promise.resolve(null);
+          return null;
+        })
+      )
+    )
+  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+
+  return {
+    code: 200,
+    results: builtStatuses,
+    cursor: {
+      top: topCursor,
+      bottom: bottomCursor
+    }
+  };
+};
+
+export const profileArticlesAPI = async (
+  handleOrId: ProfileHandleOrId,
+  count: number,
+  cursor: string | null,
+  c: Context
+): Promise<APISearchResults> => {
+  const userId =
+    handleOrId.type === 'userId'
+      ? handleOrId.value
+      : await getTwitterUserRestIdByScreenName(c, handleOrId.value);
+  if (!userId) {
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  const results = await graphQLOrchestrator(c, [
+    {
+      key: 'articles',
+      required: true,
+      methods: [
+        {
+          name: 'ProfileArticlesTimeline',
+          query: ProfileArticlesTimelineQuery,
+          weight: 500,
+          validator: validateProfileArticlesTimelineResponse
+        },
+        {
+          name: 'UserArticlesTweets',
+          query: UserArticlesTweetsQuery,
+          weight: 500,
+          validator: validateUserArticlesTweetsResponse
         }
-      })
+      ],
+      variables: {
+        userId,
+        rest_id: userId,
+        count,
+        cursor: cursor ?? null
+      }
+    }
+  ]);
+
+  if (!results.articles?.success) {
+    console.error('Profile articles timeline request failed', results.articles?.error);
+    return { code: 500, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  const instructions = getProfileArticlesTimelineInstructions(results.articles.data);
+  if (!instructions) {
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  const { statuses, cursors } = processTimelineInstructions(instructions);
+  const topCursor = cursors.find(cur => cur.cursorType === 'Top')?.value ?? null;
+  const bottomCursor = cursors.find(cur => cur.cursorType === 'Bottom')?.value ?? null;
+
+  const builtStatuses = (
+    await Promise.all(
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+          console.error('Error building status', err);
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 
@@ -172,14 +251,12 @@ export const profileMediaAPI = async (
 
   const builtStatuses = (
     await Promise.all(
-      statuses.map(status => {
-        try {
-          return buildAPITwitterStatus(c, status, undefined, null, false);
-        } catch (err) {
+      statuses.map(status =>
+        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
           console.error('Error building status', err);
-          return Promise.resolve(null);
-        }
-      })
+          return null;
+        })
+      )
     )
   ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
 

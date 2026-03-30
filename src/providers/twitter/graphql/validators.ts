@@ -44,6 +44,15 @@ export const validateProfileTimelineResponse = (response: unknown): boolean => {
   );
 };
 
+export const validateProfileArticlesTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterProfileTimelineResponse;
+  return Array.isArray(
+    r?.data?.user_result_by_rest_id?.result?.profile_articles_timeline?.timeline?.instructions
+  );
+};
+
+export const validateUserArticlesTweetsResponse = validateUserTweetsTimeline;
+
 export const validateProfileWithRepliesTimelineResponse = (response: unknown): boolean => {
   const r = response as TwitterProfileTimelineResponse;
   return Array.isArray(
@@ -107,6 +116,25 @@ export const getProfileStatusesTimelineInstructions = (
       ?.instructions;
   if (Array.isArray(profileMediaPath)) {
     return profileMediaPath;
+  }
+  return undefined;
+};
+
+/** UserArticlesTweets (web) vs ProfileArticlesTimeline (iOS-style by rest_id) */
+export const getProfileArticlesTimelineInstructions = (
+  response: unknown
+): TimelineInstruction[] | undefined => {
+  const asUserTweets = response as TwitterUserTweetsResponse;
+  const userArticlesPath = asUserTweets?.data?.user?.result?.timeline?.timeline?.instructions;
+  if (Array.isArray(userArticlesPath)) {
+    return userArticlesPath;
+  }
+  const asProfile = response as TwitterProfileTimelineResponse;
+  const articlesPath =
+    asProfile?.data?.user_result_by_rest_id?.result?.profile_articles_timeline?.timeline
+      ?.instructions;
+  if (Array.isArray(articlesPath)) {
+    return articlesPath;
   }
   return undefined;
 };

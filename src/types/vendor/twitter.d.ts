@@ -1138,6 +1138,14 @@ type TwitterProfileTimelineResponse = {
             metadata?: unknown;
           };
         };
+        profile_articles_timeline?: {
+          id?: string;
+          timeline?: {
+            id?: string;
+            instructions?: TimelineInstruction[];
+            metadata?: unknown;
+          };
+        };
       };
     };
   };

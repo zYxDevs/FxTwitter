@@ -13,6 +13,7 @@ import {
 import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
 import { searchAPI } from '../../../providers/twitter/search';
 import {
+  profileArticlesAPI,
   profileFollowersAPI,
   profileFollowingAPI,
   profileMediaAPI,
@@ -28,6 +29,7 @@ import type { RouteHandler } from '@hono/zod-openapi';
 import {
   conversationV2Route,
   profileMediaV2Route,
+  profileArticlesV2Route,
   profileFollowersV2Route,
   profileFollowingV2Route,
   profileAboutV2Route,
@@ -161,6 +163,22 @@ export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Rou
     c.header(header, value);
   }
   return c.json(statusesResponse, statusesResponse.code as 200 | 404 | 500);
+};
+
+export const profileArticlesAPIRequest: RouteHandler<typeof profileArticlesV2Route> = async c => {
+  const { handle } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
+
+  const articlesResponse = await profileArticlesAPI(parseHandleOrId(handle), count, cursor, c);
+
+  c.status(articlesResponse.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(articlesResponse, articlesResponse.code as 200 | 404 | 500);
 };
 
 export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = async c => {

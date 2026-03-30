@@ -4,6 +4,7 @@ import {
   type PublicExploreTimelineKind
 } from '../../providers/twitter/trends';
 import {
+  APIProfileRelationshipListSchema,
   APISearchResultsSchema,
   APITypeaheadResponseSchema,
   APITrendsResponseSchema,
@@ -300,6 +301,90 @@ export const profileMediaV2Route = createRoute({
     500: {
       description: 'Upstream or processing error',
       content: { 'application/json': { schema: APISearchResultsSchema } }
+    }
+  }
+});
+
+export const profileFollowersV2Route = createRoute({
+  method: 'get',
+  path: '/2/profile/{handle}/followers',
+  summary: 'List followers of a user',
+  request: {
+    params: z.object({
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.'
+      })
+    }),
+    query: z.object({
+      count: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: 'Page size (default 20)',
+        default: 20
+      }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({ description: 'Pagination cursor from prior response' })
+    })
+  },
+  responses: {
+    200: {
+      description: 'Followers page',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters (e.g. `count` out of range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'User not found or list unavailable',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
+    }
+  }
+});
+
+export const profileFollowingV2Route = createRoute({
+  method: 'get',
+  path: '/2/profile/{handle}/following',
+  summary: 'List accounts a user follows',
+  request: {
+    params: z.object({
+      handle: z.string().openapi({
+        description:
+          'Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.'
+      })
+    }),
+    query: z.object({
+      count: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: 'Page size (default 20)',
+        default: 20
+      }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({ description: 'Pagination cursor from prior response' })
+    })
+  },
+  responses: {
+    200: {
+      description: 'Following page',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters (e.g. `count` out of range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'User not found or list unavailable',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APIProfileRelationshipListSchema } }
     }
   }
 });

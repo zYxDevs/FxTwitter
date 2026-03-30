@@ -131,6 +131,96 @@ export const processTimelineInstructions = (
   return { statuses, cursors };
 };
 
+type ItemContentWithUser = {
+  __typename?: string;
+  user_results?: { result?: { __typename?: string } };
+};
+
+/** Followers / following lists: TimelineUser entries plus standard cursor handling */
+export const processUserRelationshipTimelineInstructions = (
+  instructions: TimelineInstruction[]
+): { users: GraphQLUser[]; cursors: GraphQLTimelineCursor[] } => {
+  const users: GraphQLUser[] = [];
+  const cursors: GraphQLTimelineCursor[] = [];
+
+  const extractUserFromItemContent = (itemContent: ItemContentWithUser) => {
+    if (itemContent?.__typename !== 'TimelineUser') return;
+    const result = itemContent.user_results?.result;
+    if (result?.__typename === 'User') {
+      users.push(result as GraphQLUser);
+    }
+  };
+
+  const getItemContent = (
+    item: GraphQLTimelineItem
+  ): GraphQLTimelineTweet | GraphQLTimelineCursor | undefined => {
+    return item.itemContent ?? item.content;
+  };
+
+  instructions?.forEach(instruction => {
+    const kind =
+      (instruction as { type?: string }).type ??
+      (instruction as { __typename?: string }).__typename;
+
+    if (kind === 'TimelineReplaceEntry') {
+      const content = (instruction as TimelineReplaceEntryInstruction).entry?.content;
+      if (content?.__typename === 'TimelineTimelineCursor') {
+        cursors.push(normalizeCursor(content));
+      }
+      return;
+    }
+
+    if (kind === 'TimelineAddToModule') {
+      (instruction as TimelineAddModulesInstruction).moduleItems?.forEach(_moduleItem => {
+        const moduleItem = _moduleItem as {
+          item?: { itemContent?: unknown; content?: unknown };
+        };
+        const itemContent = moduleItem?.item?.itemContent ?? moduleItem?.item?.content;
+        if (itemContent) {
+          extractUserFromItemContent(itemContent as ItemContentWithUser);
+        }
+      });
+      return;
+    }
+
+    if (kind === 'TimelineAddEntries') {
+      (instruction as TimelineAddEntriesInstruction).entries?.forEach(_entry => {
+        const entry = _entry as GraphQLTimelineTweetEntry | GraphQLConversationThread;
+        const content = (entry as GraphQLTimelineTweetEntry)?.content;
+
+        if (typeof content === 'undefined') return;
+
+        if (content.__typename === 'TimelineTimelineItem') {
+          const inner = getItemContent(content as GraphQLTimelineItem);
+          if (inner) {
+            extractUserFromItemContent(inner as ItemContentWithUser);
+            if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
+          }
+        } else if (isGraphQLTimelineCursor(content)) {
+          cursors.push(normalizeCursor(content));
+        } else if (
+          (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
+        ) {
+          (content as unknown as GraphQLTimelineModule).items?.forEach(item => {
+            const inner = getItemContent(item.item);
+            if (!inner) return;
+            const innerTypename = (inner as { __typename?: string }).__typename;
+            if (innerTypename === 'TimelineUser') {
+              extractUserFromItemContent(inner as ItemContentWithUser);
+            } else if (innerTypename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return { users, cursors };
+};
+
 export const searchAPI = async (
   query: string,
   feed: SearchFeed,

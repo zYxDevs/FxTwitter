@@ -1,6 +1,11 @@
 import { Context } from 'hono';
 import branding from '../../branding.json';
 
+type ActivityIcon = {
+  default: string;
+  [key: string]: string;
+};
+
 type Branding = {
   name: string;
   domains: string[];
@@ -9,9 +14,7 @@ type Branding = {
   redirect: string;
   default?: boolean;
   color?: string;
-  activityIcons?: {
-    [key: string]: string;
-  };
+  activityIcons?: ActivityIcon | ActivityIcon[];
 };
 
 export const getBranding = (c: Context | Request): Branding => {
@@ -22,21 +25,25 @@ export const getBranding = (c: Context | Request): Branding => {
     // get domain name, without subdomains
     const domain = url.hostname.split('.').slice(-2).join('.');
     const branding = zones.find(zone => zone.domains.includes(domain)) ?? defaultBranding;
+    const fallbackIcon =
+      (branding.activityIcons as ActivityIcon)?.default ??
+      (branding.activityIcons as ActivityIcon[])?.[0]?.default ??
+      '';
+
     if (url.searchParams.get('brandingName')) {
       branding.name = url.searchParams.get('brandingName') ?? branding.name;
     }
     if (url.searchParams.get('brandingIcon')) {
       branding.activityIcons = {
-        default: decodeURIComponent(
-          url.searchParams.get('brandingIcon') ?? branding.activityIcons?.default ?? ''
-        )
+        default: decodeURIComponent(url.searchParams.get('brandingIcon') ?? fallbackIcon)
       };
     }
     if (url.searchParams.get('brandingRedirectUrl')) {
       branding.redirect = decodeURIComponent(
-        url.searchParams.get('brandingRedirectUrl') ?? branding.activityIcons?.default ?? ''
+        url.searchParams.get('brandingRedirectUrl') ?? branding.redirect
       );
     }
+
     return branding;
   } catch (_e) {
     return defaultBranding;

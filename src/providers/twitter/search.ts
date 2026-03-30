@@ -136,10 +136,7 @@ type ItemContentWithUser = {
   user_results?: { result?: { __typename?: string } };
 };
 
-const extractUserFromItemContent = (
-  itemContent: unknown,
-  users: GraphQLUser[]
-): void => {
+const extractUserFromItemContent = (itemContent: unknown, users: GraphQLUser[]): void => {
   const ic = itemContent as ItemContentWithUser;
   if (ic?.__typename !== 'TimelineUser') return;
   const result = ic.user_results?.result;

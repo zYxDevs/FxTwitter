@@ -136,20 +136,20 @@ type ItemContentWithUser = {
   user_results?: { result?: { __typename?: string } };
 };
 
-/** Followers / following lists: TimelineUser entries plus standard cursor handling */
-export const processUserRelationshipTimelineInstructions = (
+const extractUserFromItemContent = (itemContent: unknown, users: GraphQLUser[]): void => {
+  const ic = itemContent as ItemContentWithUser;
+  if (ic?.__typename !== 'TimelineUser') return;
+  const result = ic.user_results?.result;
+  if (!result || typeof result !== 'object' || result.__typename !== 'User') return;
+  users.push(result as GraphQLUser);
+};
+
+/** Followers/following and reposters timelines: TimelineUser rows plus pagination cursors */
+const processUserRelationshipTimelineInstructionsImpl = (
   instructions: TimelineInstruction[]
 ): { users: GraphQLUser[]; cursors: GraphQLTimelineCursor[] } => {
   const users: GraphQLUser[] = [];
   const cursors: GraphQLTimelineCursor[] = [];
-
-  const extractUserFromItemContent = (itemContent: ItemContentWithUser) => {
-    if (itemContent?.__typename !== 'TimelineUser') return;
-    const result = itemContent.user_results?.result;
-    if (result?.__typename === 'User') {
-      users.push(result as GraphQLUser);
-    }
-  };
 
   const getItemContent = (
     item: GraphQLTimelineItem
@@ -176,8 +176,14 @@ export const processUserRelationshipTimelineInstructions = (
           item?: { itemContent?: unknown; content?: unknown };
         };
         const itemContent = moduleItem?.item?.itemContent ?? moduleItem?.item?.content;
-        if (itemContent) {
-          extractUserFromItemContent(itemContent as ItemContentWithUser);
+        if (!itemContent) return;
+        extractUserFromItemContent(itemContent, users);
+        if (
+          typeof itemContent === 'object' &&
+          itemContent !== null &&
+          (itemContent as { __typename?: string }).__typename === 'TimelineTimelineCursor'
+        ) {
+          cursors.push(normalizeCursor(itemContent as GraphQLTimelineCursor));
         }
       });
       return;
@@ -193,7 +199,7 @@ export const processUserRelationshipTimelineInstructions = (
         if (content.__typename === 'TimelineTimelineItem') {
           const inner = getItemContent(content as GraphQLTimelineItem);
           if (inner) {
-            extractUserFromItemContent(inner as ItemContentWithUser);
+            extractUserFromItemContent(inner, users);
             if (inner.__typename === 'TimelineTimelineCursor') {
               cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
             }
@@ -206,10 +212,8 @@ export const processUserRelationshipTimelineInstructions = (
           (content as unknown as GraphQLTimelineModule).items?.forEach(item => {
             const inner = getItemContent(item.item);
             if (!inner) return;
-            const innerTypename = (inner as { __typename?: string }).__typename;
-            if (innerTypename === 'TimelineUser') {
-              extractUserFromItemContent(inner as ItemContentWithUser);
-            } else if (innerTypename === 'TimelineTimelineCursor') {
+            extractUserFromItemContent(inner, users);
+            if (inner.__typename === 'TimelineTimelineCursor') {
               cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
             }
           });
@@ -220,6 +224,11 @@ export const processUserRelationshipTimelineInstructions = (
 
   return { users, cursors };
 };
+
+export const processUserRelationshipTimelineInstructions =
+  processUserRelationshipTimelineInstructionsImpl;
+export const processRetweetersUserTimelineInstructions =
+  processUserRelationshipTimelineInstructionsImpl;
 
 export const searchAPI = async (
   query: string,

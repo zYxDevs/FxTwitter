@@ -1018,6 +1018,16 @@ type TwitterArticleEntityMapEntry =
       };
     };
 
+type TwitterRetweetersTimelineResponse = {
+  data?: {
+    retweeters_timeline?: {
+      timeline?: {
+        instructions?: TimelineInstruction[];
+      };
+    };
+  };
+};
+
 type TwitterSearchTimelineResponse = {
   data: {
     search_by_raw_query: {

@@ -5,6 +5,7 @@ import {
 } from '../../providers/twitter/trends';
 import {
   APIProfileRelationshipListSchema,
+  APIUserListResultsSchema,
   APISearchResultsSchema,
   APITypeaheadResponseSchema,
   APITrendsResponseSchema,
@@ -69,6 +70,47 @@ export const statusV2Route = createRoute({
     500: {
       description: 'Server or upstream failure',
       content: { 'application/json': { schema: SocialThreadSchema } }
+    }
+  }
+});
+
+export const statusRepostsV2Route = createRoute({
+  method: 'get',
+  path: '/2/status/{id}/reposts',
+  summary: 'List accounts that reposted a post',
+  description:
+    'Returns users who reposted the given post. Use `cursor.bottom` from the prior response to fetch the next page.',
+  request: {
+    params: z.object({
+      id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
+    }),
+    query: z.object({
+      count: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: 'Page size (default 20)',
+        default: 20
+      }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({ description: 'Pagination cursor from prior response' })
+    })
+  },
+  responses: {
+    200: {
+      description: 'User list page',
+      content: { 'application/json': { schema: APIUserListResultsSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'Timeline unavailable or empty',
+      content: { 'application/json': { schema: APIUserListResultsSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APIUserListResultsSchema } }
     }
   }
 });

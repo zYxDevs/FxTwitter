@@ -18,6 +18,7 @@ import {
   profileMediaAPI,
   profileStatusesAPI
 } from '../../../providers/twitter/userStatuses';
+import { statusRepostsAPI } from '../../../providers/twitter/statusReposts';
 import { trendsAPI } from '../../../providers/twitter/trends';
 import { typeaheadAPI } from '../../../providers/twitter/typeahead';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -34,6 +35,7 @@ import {
   profileV2Route,
   searchV2Route,
   statusV2Route,
+  statusRepostsV2Route,
   threadV2Route,
   trendsV2Route,
   typeaheadV2Route
@@ -56,6 +58,22 @@ export const statusAPIRequest: RouteHandler<typeof statusV2Route> = async c => {
     c.header(header, value);
   }
   return c.json(processedResponse, processedResponse.code as 200 | 401 | 404 | 500);
+};
+
+export const statusRepostsAPIRequest: RouteHandler<typeof statusRepostsV2Route> = async c => {
+  const { id } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
+
+  const response = await statusRepostsAPI(id, count, cursor, c);
+
+  c.status(response.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(response, response.code as 200 | 404 | 500);
 };
 
 export const threadAPIRequest: RouteHandler<typeof threadV2Route> = async c => {

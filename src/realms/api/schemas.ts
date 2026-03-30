@@ -579,7 +579,14 @@ export const APISearchResultsSchema = z
   })
   .openapi('APISearchResults');
 
-/** Paginated followers or following (same cursor envelope as search / profile timelines) */
+export const APIUserListResultsSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIUserSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APIUserListResults');
+
 export const APIProfileRelationshipListSchema = z
   .object({
     code: z.number(),
@@ -680,6 +687,7 @@ export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSche
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APIProfileRelationshipList = z.infer<typeof APIProfileRelationshipListSchema>;
+export type APIUserListResults = z.infer<typeof APIUserListResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;
 export type APITrend = z.infer<typeof APITrendSchema>;
 export type APITrendsResponse = z.infer<typeof APITrendsResponseSchema>;

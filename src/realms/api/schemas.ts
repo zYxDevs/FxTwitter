@@ -150,7 +150,7 @@ export const APIVideoSchema = z.object({
   duration: z.number(),
   filesize: z.number().optional(),
   formats: z.array(APIVideoFormatSchema),
-  publisher: APIUserSchema.optional()
+  publisher: APIUserSchema.optional().nullable()
 });
 
 export const APIExternalMediaSchema = z.object({

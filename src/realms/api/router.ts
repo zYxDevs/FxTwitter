@@ -102,5 +102,7 @@ api.get('/robots.txt', async c => c.text(Strings.ROBOTS_TXT_API));
 
 api.get('/:handle', profileRequest);
 
-/* TODO: Figure out why / won't resolve but * does */
-api.get('*', async c => c.redirect(Constants.API_DOCS_URL, 302));
+// api.get('/', async c => c.redirect(Constants.API_DOCS_URL, 302));
+api.get('*', async c => {
+  return c.json({ code: 404, message: 'Not found' }, 404);
+});

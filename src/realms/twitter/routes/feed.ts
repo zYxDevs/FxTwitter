@@ -65,8 +65,8 @@ function buildMeta(
     const selfUrlRss = `${origin}/${enc}/media.xml`;
     const selfUrlAtom = `${origin}/${enc}/media.atom.xml`;
     return {
-      channelTitle: `@${handle} (media) — ${branding.name}`,
-      channelDescription: `Media from @${handle}.`,
+      channelTitle: `@${handle}`,
+      channelDescription: `Media from @${handle} via ${branding.name}.`,
       profileWebUrl,
       selfUrlRss,
       selfUrlAtom,

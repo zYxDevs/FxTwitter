@@ -1,4 +1,4 @@
-import type { APITwitterStatus } from '../realms/api/schemas';
+import type { APITwitterStatus, APIVideo } from '../realms/api/schemas';
 import { truncateWithEllipsis } from './utils';
 
 export type SyndicationFeedMeta = {
@@ -11,12 +11,23 @@ export type SyndicationFeedMeta = {
   authorName?: string;
 };
 
+/** RSS 2.0 `<enclosure>` / Atom `<link rel="enclosure">`; optional Media RSS thumbnail for video. */
+export type SyndicationEnclosure = {
+  url: string;
+  type: string;
+  /** Byte length when known; otherwise 0 (common when size is unavailable). */
+  length: number;
+  /** Poster image for video enclosures (RSS `<media:thumbnail>`). */
+  thumbnailUrl?: string;
+};
+
 export type SyndicationFeedItem = {
   id: string;
   url: string;
   title: string;
   updated: Date;
   htmlContent: string;
+  enclosure?: SyndicationEnclosure;
 };
 
 /** Escape text for XML text nodes and attribute values. */
@@ -36,6 +47,116 @@ const toRfc822 = (d: Date): string => d.toUTCString();
 
 const toIso8601 = (d: Date): string => d.toISOString();
 
+/** Unified media ordering (matches HTML body). */
+export function statusMediaList(status: APITwitterStatus) {
+  const m = status.media;
+  if (m?.all?.length) return m.all;
+  return [...(m?.photos ?? []), ...(m?.videos ?? [])];
+}
+
+function mimeForImageUrl(url: string): string {
+  const u = url.toLowerCase();
+  if (u.includes('.png')) return 'image/png';
+  if (u.includes('.webp')) return 'image/webp';
+  if (u.includes('.gif')) return 'image/gif';
+  return 'image/jpeg';
+}
+
+function isApiVideo(m: { type: string } & object): m is APIVideo {
+  if (m.type === 'video') return true;
+  return m.type === 'gif' && 'duration' in m;
+}
+
+/** Prefer progressive video (not HLS) for RSS/Atom enclosures. */
+function pickProgressiveVideoUrl(v: APIVideo): { url: string; mime: string } | null {
+  const out: { url: string; mime: string; bitrate: number }[] = [];
+  const push = (url: string, mime: string, bitrate: number) => {
+    if (!url || url.includes('.m3u8')) return;
+    out.push({ url, mime, bitrate });
+  };
+
+  if (v.transcode_url) {
+    const url = v.transcode_url;
+    let mime = 'video/mp4';
+    if (url.includes('.webm')) mime = 'video/webm';
+    else if (url.includes('.gif')) mime = 'image/gif';
+    else if (url.includes('.webp')) mime = 'image/webp';
+    push(url, mime, v.filesize ?? 0);
+  }
+  for (const f of v.formats ?? []) {
+    if (f.container === 'm3u8' || f.url.includes('.m3u8')) continue;
+    let mime = 'video/mp4';
+    if (f.container === 'webm' || f.url.includes('.webm')) mime = 'video/webm';
+    else if (f.url.includes('.gif')) mime = 'image/gif';
+    else if (f.url.includes('.webp')) mime = 'image/webp';
+    push(f.url, mime, f.bitrate ?? f.size ?? 0);
+  }
+  if (out.length === 0) return null;
+  const mp4s = out.filter(x => x.mime === 'video/mp4');
+  const pool = mp4s.length ? mp4s : out;
+  pool.sort((a, b) => b.bitrate - a.bitrate);
+  return { url: pool[0].url, mime: pool[0].mime };
+}
+
+/**
+ * One enclosure per item: first attached photo or progressive video (else video poster),
+ * else external embed thumbnail, else link-card image.
+ */
+export function syndicationEnclosureFromStatus(
+  status: APITwitterStatus
+): SyndicationEnclosure | undefined {
+  const first = statusMediaList(status)[0];
+  if (first) {
+    if (isApiVideo(first)) {
+      const picked = pickProgressiveVideoUrl(first);
+      if (picked) {
+        return {
+          url: picked.url,
+          type: picked.mime,
+          length: typeof first.filesize === 'number' ? first.filesize : 0,
+          thumbnailUrl: first.thumbnail_url ?? undefined
+        };
+      }
+      if (first.thumbnail_url) {
+        return {
+          url: first.thumbnail_url,
+          type: mimeForImageUrl(first.thumbnail_url),
+          length: 0
+        };
+      }
+      return undefined;
+    }
+    if (first.url) {
+      return {
+        url: first.url,
+        type: mimeForImageUrl(first.url),
+        length: 0
+      };
+    }
+    return undefined;
+  }
+
+  const extThumb = status.media?.external?.thumbnail_url;
+  if (extThumb) {
+    return {
+      url: extThumb,
+      type: mimeForImageUrl(extThumb),
+      length: 0
+    };
+  }
+
+  const cardImg = status.card?.image?.url;
+  if (cardImg) {
+    return {
+      url: cardImg,
+      type: mimeForImageUrl(cardImg),
+      length: 0
+    };
+  }
+
+  return undefined;
+}
+
 function buildItemHtml(
   status: APITwitterStatus,
   options: { omitSensitive?: boolean } = {}
@@ -43,9 +164,7 @@ function buildItemHtml(
   const body = escapeXml(status.text).replace(/\n/g, '<br />\n');
   const parts: string[] = [`<p>${body}</p>`];
 
-  const mediaList = status.media?.all?.length
-    ? status.media.all
-    : [...(status.media?.photos ?? []), ...(status.media?.videos ?? [])];
+  const mediaList = statusMediaList(status);
 
   for (const m of mediaList) {
     const url = m.url;
@@ -78,12 +197,14 @@ export function statusesToFeedItems(
     if (options.omitSensitive && s.possibly_sensitive) continue;
     const flat = s.text.replace(/\s+/g, ' ').trim();
     const title = truncateWithEllipsis(flat || s.url, 140);
+    const enclosure = syndicationEnclosureFromStatus(s);
     out.push({
       id: s.url,
       url: s.url,
       title,
       updated: new Date(s.created_timestamp * 1000),
-      htmlContent: buildItemHtml(s, options)
+      htmlContent: buildItemHtml(s, options),
+      ...(enclosure ? { enclosure } : {})
     });
   }
   return out;
@@ -105,20 +226,29 @@ export function toRss20Xml(meta: SyndicationFeedMeta, items: SyndicationFeedItem
     `<atom:link href="${escapeXml(meta.selfUrlRss)}" rel="self" type="application/rss+xml" />`
   ];
 
-  const itemBits = items.map(
-    item =>
+  const itemBits = items.map(item => {
+    const enc = item.enclosure;
+    const enclosureBits = enc
+      ? `<enclosure url="${escapeXml(enc.url)}" length="${enc.length}" type="${escapeXml(enc.type)}"/>` +
+        (enc.thumbnailUrl && enc.type.startsWith('video/')
+          ? `<media:thumbnail url="${escapeXml(enc.thumbnailUrl)}"/>`
+          : '')
+      : '';
+    return (
       `<item>` +
       `<title>${escapeXml(item.title)}</title>` +
       `<link>${escapeXml(item.url)}</link>` +
       `<guid isPermaLink="true">${escapeXml(item.url)}</guid>` +
       `<pubDate>${toRfc822(item.updated)}</pubDate>` +
+      enclosureBits +
       `<description>${cdataWrap(item.htmlContent)}</description>` +
       `</item>`
-  );
+    );
+  });
 
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">` +
+    `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">` +
     `<channel>` +
     channelBits.join('') +
     itemBits.join('') +
@@ -148,10 +278,16 @@ export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedI
 
   const entries = items.map(item => {
     const eid = escapeXml(item.id);
+    const enc = item.enclosure;
+    const enclosureLink =
+      enc !== undefined
+        ? `<link rel="enclosure" href="${escapeXml(enc.url)}" type="${escapeXml(enc.type)}" length="${enc.length}"/>`
+        : '';
     return (
       `<entry>` +
       `<title>${escapeXml(item.title)}</title>` +
       `<link href="${escapeXml(item.url)}" rel="alternate" type="text/html"/>` +
+      enclosureLink +
       `<id>${eid}</id>` +
       `<updated>${toIso8601(item.updated)}</updated>` +
       `<published>${toIso8601(item.updated)}</published>` +

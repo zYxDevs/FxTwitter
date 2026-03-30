@@ -846,5 +846,5 @@ export const RetweetersTimelineQuery: GraphQLQuery = {
     count: 20,
     cursor: null
   },
-  features: profileTimelineFeatures
+  features: retweetersWebFeatures
 };

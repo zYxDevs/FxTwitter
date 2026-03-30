@@ -193,8 +193,14 @@ export const profileMediaAPI = async (
   };
 };
 
-const emptyRelationshipList = (): APIProfileRelationshipList => ({
+const relationshipListUserNotFound = (): APIProfileRelationshipList => ({
   code: 404,
+  results: [],
+  cursor: { top: null, bottom: null }
+});
+
+const emptySuccessRelationshipList = (): APIProfileRelationshipList => ({
+  code: 200,
   results: [],
   cursor: { top: null, bottom: null }
 });
@@ -211,7 +217,7 @@ const profileRelationshipListAPI = async (
       ? handleOrId.value
       : await getTwitterUserRestIdByScreenName(c, handleOrId.value);
   if (!userId) {
-    return emptyRelationshipList();
+    return relationshipListUserNotFound();
   }
 
   const methods =
@@ -270,7 +276,7 @@ const profileRelationshipListAPI = async (
 
   const instructions = getFollowersFollowingInstructions(results.list.data, kind);
   if (!instructions) {
-    return emptyRelationshipList();
+    return emptySuccessRelationshipList();
   }
 
   const { users, cursors } = processUserRelationshipTimelineInstructions(instructions);

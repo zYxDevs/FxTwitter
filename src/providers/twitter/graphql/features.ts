@@ -92,13 +92,11 @@ export const TWITTER_GRAPHQL_FEATURES = {
 export type TwitterGqlFeatureKey = keyof typeof TWITTER_GRAPHQL_FEATURES;
 
 export function pickTwitterGqlFeatures(
-  keys: readonly TwitterGqlFeatureKey[],
-  overrides?: Partial<Record<TwitterGqlFeatureKey, boolean>>
+  keys: readonly TwitterGqlFeatureKey[]
 ): Record<string, boolean> {
   const result: Record<string, boolean> = {};
   for (const key of keys) {
-    const override = overrides?.[key];
-    result[key] = override !== undefined ? override : TWITTER_GRAPHQL_FEATURES[key];
+    result[key] = TWITTER_GRAPHQL_FEATURES[key];
   }
   return result;
 }

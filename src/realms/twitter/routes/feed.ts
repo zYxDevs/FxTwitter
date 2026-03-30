@@ -15,7 +15,7 @@ import {
 import { getBranding } from '../../../helpers/branding';
 import { Constants } from '../../../constants';
 
-const DEFAULT_FEED_COUNT = 100;
+const DEFAULT_FEED_COUNT = 90;
 const FEED_CACHE_CONTROL = 'public, max-age=120';
 
 type SyndicationFeedKind = 'timeline' | 'media';
@@ -119,61 +119,12 @@ async function serveFeed(
     format === 'rss' ? 'application/rss+xml; charset=utf-8' : 'application/atom+xml; charset=utf-8';
   c.header('Content-Type', contentType);
 
-  const notFoundDesc =
-    kind === 'media'
-      ? 'User not found or media timeline unavailable.'
-      : 'User not found or timeline unavailable.';
-  const errorDesc =
-    kind === 'media'
-      ? 'Media timeline temporarily unavailable.'
-      : 'Timeline temporarily unavailable.';
-
   if (apiResult.code === 404) {
-    const empty = statusesToFeedItems([], {});
-    const branding = getBranding(c);
-    const xml =
-      format === 'rss'
-        ? toRss20Xml(
-            {
-              ...meta,
-              channelTitle: `@${handle} (not found) — ${branding.name}`,
-              channelDescription: notFoundDesc
-            },
-            empty
-          )
-        : toAtomFeedXml(
-            {
-              ...meta,
-              channelTitle: `@${handle} (not found) — ${branding.name}`,
-              channelDescription: notFoundDesc
-            },
-            empty
-          );
-    return c.body(xml, 404);
+    return c.body('', 404);
   }
 
   if (apiResult.code !== 200) {
-    const empty = statusesToFeedItems([], {});
-    const branding = getBranding(c);
-    const xml =
-      format === 'rss'
-        ? toRss20Xml(
-            {
-              ...meta,
-              channelTitle: `@${handle} — ${branding.name}`,
-              channelDescription: errorDesc
-            },
-            empty
-          )
-        : toAtomFeedXml(
-            {
-              ...meta,
-              channelTitle: `@${handle} — ${branding.name}`,
-              channelDescription: errorDesc
-            },
-            empty
-          );
-    return c.body(xml, apiResult.code as ContentfulStatusCode);
+    return c.body('', apiResult.code as ContentfulStatusCode);
   }
 
   const xml = format === 'rss' ? toRss20Xml(meta, items) : toAtomFeedXml(meta, items);
@@ -184,16 +135,8 @@ export const profileFeedRssTwitter = (c: Context) =>
   serveFeed(c, c.req.param('handle'), 'rss', 'twitter', 'timeline');
 export const profileFeedAtomTwitter = (c: Context) =>
   serveFeed(c, c.req.param('handle'), 'atom', 'twitter', 'timeline');
-export const profileFeedRssApi = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'rss', 'api', 'timeline');
-export const profileFeedAtomApi = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'atom', 'api', 'timeline');
 
 export const profileMediaFeedRssTwitter = (c: Context) =>
   serveFeed(c, c.req.param('handle'), 'rss', 'twitter', 'media');
 export const profileMediaFeedAtomTwitter = (c: Context) =>
   serveFeed(c, c.req.param('handle'), 'atom', 'twitter', 'media');
-export const profileMediaFeedRssApi = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'rss', 'api', 'media');
-export const profileMediaFeedAtomApi = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'atom', 'api', 'media');

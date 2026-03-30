@@ -22,12 +22,6 @@ import {
 } from './routes/twitter';
 import { oembed } from './routes/oembed';
 import { linkHitRequest, linkGoRequest } from './hit';
-import {
-  profileFeedAtomApi,
-  profileFeedRssApi,
-  profileMediaFeedAtomApi,
-  profileMediaFeedRssApi
-} from '../twitter/routes/feed';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import {
   conversationV2Route,
@@ -72,10 +66,6 @@ api.openapi(statusRepostsV2Route, statusRepostsAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
-api.get('/2/profile/:handle/feed.xml', profileFeedRssApi);
-api.get('/2/profile/:handle/feed.atom.xml', profileFeedAtomApi);
-api.get('/2/profile/:handle/media.xml', profileMediaFeedRssApi);
-api.get('/2/profile/:handle/media.atom.xml', profileMediaFeedAtomApi);
 api.openapi(profileArticlesV2Route, profileArticlesAPIRequest);
 api.openapi(profileAboutV2Route, profileAboutAPIRequest);
 api.openapi(profileMediaV2Route, profileMediaAPIRequest);

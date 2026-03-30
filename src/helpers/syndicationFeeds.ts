@@ -118,7 +118,7 @@ export function syndicationEnclosureFromStatus(
         return {
           url: picked.url,
           type: picked.mime,
-          length: typeof first.filesize === 'number' ? first.filesize : 0,
+          length: 0,
           thumbnailUrl: first.thumbnail_url ?? undefined
         };
       }

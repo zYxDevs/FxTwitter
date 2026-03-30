@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { twitterFetch } from '../fetch';

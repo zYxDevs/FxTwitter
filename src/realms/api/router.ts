@@ -57,7 +57,7 @@ api.use('*', async (c, next) => {
 
 api.use(trimTrailingSlash());
 
-/* Private/internal — not listed in OpenAPI */
+/* Private/internal, not listed in OpenAPI */
 api.get('/2/hit', linkHitRequest);
 api.get('/2/go', linkGoRequest);
 

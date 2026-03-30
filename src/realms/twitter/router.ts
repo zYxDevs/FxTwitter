@@ -11,6 +11,12 @@ import { trimTrailingSlash } from 'hono/trailing-slash';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { activityRequest } from './routes/activity';
 import { getBranding } from '../../helpers/branding';
+import {
+  profileFeedAtomTwitter,
+  profileFeedRssTwitter,
+  profileMediaFeedAtomTwitter,
+  profileMediaFeedRssTwitter
+} from './routes/feed';
 
 export const twitter = new Hono();
 
@@ -100,6 +106,11 @@ twitter.get(
   genericTwitterRedirect
 ); /* https://github.com/FxEmbed/FxEmbed/issues/730 */
 twitter.get('/hashtag/:hashtag', genericTwitterRedirect);
+
+twitter.get('/:handle{[0-9a-zA-Z_]+}/feed.xml', profileFeedRssTwitter);
+twitter.get('/:handle{[0-9a-zA-Z_]+}/feed.atom.xml', profileFeedAtomTwitter);
+twitter.get('/:handle{[0-9a-zA-Z_]+}/media.xml', profileMediaFeedRssTwitter);
+twitter.get('/:handle{[0-9a-zA-Z_]+}/media.atom.xml', profileMediaFeedAtomTwitter);
 
 twitter.get('/:handle', _profileRequest);
 /* Redirect profile subpages in case someone links them for some reason (https://github.com/FxEmbed/FxEmbed/issues/603) */

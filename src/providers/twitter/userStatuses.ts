@@ -213,19 +213,10 @@ export const profileStatusesAPIPaginated = async (
   c: Context,
   withReplies = false
 ): Promise<APISearchResults> => {
-  const target = Math.min(
-    PROFILE_STATUSES_FEED_TARGET_CAP,
-    Math.max(1, maxTotal)
-  );
+  const target = Math.min(PROFILE_STATUSES_FEED_TARGET_CAP, Math.max(1, maxTotal));
   return paginateAndMerge(
     cursor =>
-      profileStatusesAPI(
-        handleOrId,
-        PROFILE_STATUSES_FEED_PER_PAGE,
-        cursor,
-        c,
-        withReplies
-      ),
+      profileStatusesAPI(handleOrId, PROFILE_STATUSES_FEED_PER_PAGE, cursor, c, withReplies),
     target
   );
 };
@@ -377,18 +368,9 @@ export const profileMediaAPIPaginated = async (
   maxTotal: number,
   c: Context
 ): Promise<APISearchResults> => {
-  const target = Math.min(
-    PROFILE_STATUSES_FEED_TARGET_CAP,
-    Math.max(1, maxTotal)
-  );
+  const target = Math.min(PROFILE_STATUSES_FEED_TARGET_CAP, Math.max(1, maxTotal));
   return paginateAndMerge(
-    cursor =>
-      profileMediaAPI(
-        handleOrId,
-        PROFILE_STATUSES_FEED_PER_PAGE,
-        cursor,
-        c
-      ),
+    cursor => profileMediaAPI(handleOrId, PROFILE_STATUSES_FEED_PER_PAGE, cursor, c),
     target
   );
 };

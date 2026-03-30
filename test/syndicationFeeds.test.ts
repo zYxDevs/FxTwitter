@@ -215,6 +215,33 @@ test('toAtomFeedXml omits author block when authorName is empty', () => {
   expect(xml).not.toContain('<author>');
 });
 
+test('toRss20Xml includes channel image when channelImageUrl is set', () => {
+  const avatar = 'https://pbs.twimg.com/profile_images/1/normal.jpg';
+  const xml = toRss20Xml(
+    { ...mockMeta, channelImageUrl: avatar },
+    statusesToFeedItems([baseStatus()], {})
+  );
+  expect(xml).toContain('<image>');
+  expect(xml).toContain(`<url>${avatar}</url>`);
+  expect(xml).toContain('<title>Test channel</title>');
+  expect(xml).toContain('<link>https://fxtwitter.com/example</link>');
+  expect(xml).toContain('</image>');
+});
+
+test('toRss20Xml omits channel image when channelImageUrl is unset', () => {
+  const xml = toRss20Xml(mockMeta, statusesToFeedItems([baseStatus()], {}));
+  expect(xml).not.toContain('<image>');
+});
+
+test('toAtomFeedXml includes icon when channelImageUrl is set', () => {
+  const avatar = 'https://pbs.twimg.com/profile_images/1/normal.jpg';
+  const xml = toAtomFeedXml(
+    { ...mockMeta, channelImageUrl: avatar },
+    statusesToFeedItems([baseStatus()], {})
+  );
+  expect(xml).toContain(`<icon>${avatar}</icon>`);
+});
+
 test('tweet text with angle brackets is escaped inside CDATA-wrapped HTML', () => {
   const s = baseStatus({ text: 'a ]]> b' });
   const xml = toRss20Xml(mockMeta, statusesToFeedItems([s], {}));

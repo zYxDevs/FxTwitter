@@ -9,6 +9,11 @@ export type SyndicationFeedMeta = {
   selfUrlAtom: string;
   /** Feed-level Atom author (RFC 4287); not duplicated on entries. */
   authorName?: string;
+  /**
+   * Channel artwork: RSS 2.0 `<image>`, Atom `<icon>` (RFC 4287).
+   * Many readers show this as the feed / author avatar.
+   */
+  channelImageUrl?: string;
 };
 
 /** RSS 2.0 `<enclosure>` / Atom `<link rel="enclosure">`; optional Media RSS thumbnail for video. */
@@ -39,7 +44,7 @@ export const escapeXml = (text: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-/** CDATA cannot contain the literal `]]>` — split if present. */
+/** CDATA cannot contain the literal `]]>`, split if present. */
 const cdataWrap = (inner: string): string =>
   `<![CDATA[${inner.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
 
@@ -226,6 +231,16 @@ export function toRss20Xml(meta: SyndicationFeedMeta, items: SyndicationFeedItem
     `<atom:link href="${escapeXml(meta.selfUrlRss)}" rel="self" type="application/rss+xml" />`
   ];
 
+  if (meta.channelImageUrl) {
+    channelBits.push(
+      `<image>` +
+        `<url>${escapeXml(meta.channelImageUrl)}</url>` +
+        `<title>${escapeXml(meta.channelTitle)}</title>` +
+        `<link>${escapeXml(meta.profileWebUrl)}</link>` +
+        `</image>`
+    );
+  }
+
   const itemBits = items.map(item => {
     const enc = item.enclosure;
     const enclosureBits = enc
@@ -265,6 +280,11 @@ export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedI
       ? `<author><name>${escapeXml(meta.authorName)}</name></author>`
       : '';
 
+  const iconBit =
+    meta.channelImageUrl !== undefined && meta.channelImageUrl !== ''
+      ? `<icon>${escapeXml(meta.channelImageUrl)}</icon>`
+      : '';
+
   const head =
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<feed xmlns="http://www.w3.org/2005/Atom">` +
@@ -274,6 +294,7 @@ export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedI
     `<id>${escapeXml(feedId)}</id>` +
     `<updated>${toIso8601(updated)}</updated>` +
     `<subtitle>${escapeXml(meta.channelDescription)}</subtitle>` +
+    iconBit +
     authorBlock;
 
   const entries = items.map(item => {

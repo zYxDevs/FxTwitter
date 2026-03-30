@@ -49,6 +49,24 @@ function feedAuthorName(handle: string, results: APITwitterStatus[]): string {
   return fromPost ?? `@${screen}`;
 }
 
+function feedChannelTitle(handle: string, results: APITwitterStatus[]): string {
+  const screenFromUrl = handle.replace(/^@/, '').toLowerCase();
+  const authorForProfile =
+    results.find(
+      s => s.author && s.author.screen_name.replace(/^@/, '').toLowerCase() === screenFromUrl
+    )?.author ?? results.find(s => s.author)?.author;
+
+  const screen = (authorForProfile?.screen_name ?? handle.replace(/^@/, '')).replace(/^@/, '');
+  const atScreen = `@${screen}`;
+  const displayName = authorForProfile?.name?.trim();
+  return displayName ? `${displayName} (${atScreen})` : atScreen;
+}
+
+function feedChannelImageUrl(results: APITwitterStatus[]): string | undefined {
+  const url = results.find(s => s.author?.avatar_url)?.author?.avatar_url;
+  return url ?? undefined;
+}
+
 function buildMeta(
   c: Context,
   handle: string,
@@ -60,17 +78,20 @@ function buildMeta(
   const enc = encodeURIComponent(handle);
   const profileWebUrl = `${origin}/${enc}`;
   const authorName = feedAuthorName(handle, results);
+  const channelTitle = feedChannelTitle(handle, results);
+  const channelImageUrl = feedChannelImageUrl(results);
 
   if (kind === 'media') {
     const selfUrlRss = `${origin}/${enc}/media.xml`;
     const selfUrlAtom = `${origin}/${enc}/media.atom.xml`;
     return {
-      channelTitle: `@${handle}`,
+      channelTitle,
       channelDescription: `Media from @${handle} via ${branding.name}.`,
       profileWebUrl,
       selfUrlRss,
       selfUrlAtom,
-      authorName
+      authorName,
+      ...(channelImageUrl ? { channelImageUrl } : {})
     };
   }
 
@@ -78,12 +99,13 @@ function buildMeta(
   const selfUrlAtom = `${origin}/${enc}/feed.atom.xml`;
 
   return {
-    channelTitle: `@${handle} — ${branding.name}`,
+    channelTitle,
     channelDescription: `Posts by @${handle}`,
     profileWebUrl,
     selfUrlRss,
     selfUrlAtom,
-    authorName
+    authorName,
+    ...(channelImageUrl ? { channelImageUrl } : {})
   };
 }
 

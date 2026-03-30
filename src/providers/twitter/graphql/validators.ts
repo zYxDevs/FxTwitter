@@ -1,3 +1,16 @@
+export const validateRetweetersTimelineResponse = (response: unknown): boolean => {
+  const r = response as TwitterRetweetersTimelineResponse;
+  return Array.isArray(r?.data?.retweeters_timeline?.timeline?.instructions);
+};
+
+export const getRetweetersTimelineInstructions = (
+  response: unknown
+): TimelineInstruction[] | undefined => {
+  const r = response as TwitterRetweetersTimelineResponse;
+  const instructions = r?.data?.retweeters_timeline?.timeline?.instructions;
+  return Array.isArray(instructions) ? instructions : undefined;
+};
+
 export const validateAboutAccountQuery = (response: unknown): boolean => {
   const aboutAccountResponse = response as AboutAccountQueryResponse;
   const result = aboutAccountResponse?.data?.user_result_by_screen_name?.result;

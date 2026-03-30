@@ -12,6 +12,7 @@ import {
   profileStatusesAPIRequest,
   searchAPIRequest,
   statusAPIRequest,
+  statusRepostsAPIRequest,
   threadAPIRequest,
   trendsAPIRequest,
   typeaheadAPIRequest
@@ -27,6 +28,7 @@ import {
   profileV2Route,
   searchV2Route,
   statusV2Route,
+  statusRepostsV2Route,
   threadV2Route,
   trendsV2Route,
   typeaheadV2Route
@@ -54,6 +56,7 @@ api.get('/2/hit', linkHitRequest);
 api.get('/2/go', linkGoRequest);
 
 api.openapi(statusV2Route, statusAPIRequest);
+api.openapi(statusRepostsV2Route, statusRepostsAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);

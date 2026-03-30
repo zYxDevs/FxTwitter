@@ -49,13 +49,7 @@ import {
 export const api = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
 
 api.use('*', async (c, next) => {
-  const p = c.req.path;
-  const isSyndicationFeed =
-    /\/feed\.xml$/i.test(p) ||
-    /\/feed\.atom\.xml$/i.test(p) ||
-    /\/media\.xml$/i.test(p) ||
-    /\/media\.atom\.xml$/i.test(p);
-  if (!c.req.header('user-agent') && !isSyndicationFeed) {
+  if (!c.req.header('user-agent')) {
     return c.json(
       {
         error:

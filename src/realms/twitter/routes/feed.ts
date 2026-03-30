@@ -79,6 +79,7 @@ async function serveFeed(
   kind: SyndicationFeedKind
 ): Promise<Response> {
   if (!handle) {
+    c.header('Cache-Control', 'no-store');
     return c.body('', 404);
   }
   const parsed = parseHandleOrId(handle);
@@ -99,20 +100,22 @@ async function serveFeed(
   const meta = buildMeta(c, handle, kind);
   const items = statusesToFeedItems(apiResult.results, { omitSensitive });
 
-  c.header('Cache-Control', FEED_CACHE_CONTROL);
   c.header('Access-Control-Allow-Origin', '*');
 
-  const contentType =
-    format === 'rss' ? 'application/rss+xml; charset=utf-8' : 'application/atom+xml; charset=utf-8';
-  c.header('Content-Type', contentType);
-
   if (apiResult.code === 404) {
+    c.header('Cache-Control', 'no-store');
     return c.body('', 404);
   }
 
   if (apiResult.code !== 200) {
+    c.header('Cache-Control', 'no-store');
     return c.body('', apiResult.code as ContentfulStatusCode);
   }
+
+  const contentType =
+    format === 'rss' ? 'application/rss+xml; charset=utf-8' : 'application/atom+xml; charset=utf-8';
+  c.header('Content-Type', contentType);
+  c.header('Cache-Control', FEED_CACHE_CONTROL);
 
   const xml = format === 'rss' ? toRss20Xml(meta, items) : toAtomFeedXml(meta, items);
   return c.body(xml, 200);

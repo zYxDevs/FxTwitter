@@ -140,8 +140,8 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       format: content_type,
       type: media.type === 'animated_gif' ? 'gif' : 'video',
       formats: formats,
-      publisher: media.additional_media_info.source_user
-        ? convertToApiUser(media.additional_media_info.source_user.user_results.result)
+      publisher: media.additional_media_info?.source_user
+        ? convertToApiUser(media.additional_media_info.source_user.user_results?.result)
         : null
     };
   }

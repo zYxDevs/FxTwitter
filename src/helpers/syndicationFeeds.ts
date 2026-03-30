@@ -215,13 +215,17 @@ export function statusesToFeedItems(
   return out;
 }
 
-function feedUpdated(items: SyndicationFeedItem[]): Date {
-  if (items.length === 0) return new Date();
+export function feedUpdated(items: SyndicationFeedItem[], fallback?: Date): Date {
+  if (items.length === 0) return fallback ?? new Date(0);
   return new Date(Math.max(...items.map(i => i.updated.getTime())));
 }
 
-export function toRss20Xml(meta: SyndicationFeedMeta, items: SyndicationFeedItem[]): string {
-  const lastBuild = feedUpdated(items);
+export function toRss20Xml(
+  meta: SyndicationFeedMeta,
+  items: SyndicationFeedItem[],
+  feedUpdatedFallback?: Date
+): string {
+  const lastBuild = feedUpdated(items, feedUpdatedFallback);
   const channelBits = [
     `<title>${escapeXml(meta.channelTitle)}</title>`,
     `<link>${escapeXml(meta.profileWebUrl)}</link>`,
@@ -271,8 +275,12 @@ export function toRss20Xml(meta: SyndicationFeedMeta, items: SyndicationFeedItem
   );
 }
 
-export function toAtomFeedXml(meta: SyndicationFeedMeta, items: SyndicationFeedItem[]): string {
-  const updated = feedUpdated(items);
+export function toAtomFeedXml(
+  meta: SyndicationFeedMeta,
+  items: SyndicationFeedItem[],
+  feedUpdatedFallback?: Date
+): string {
+  const updated = feedUpdated(items, feedUpdatedFallback);
   const feedId = meta.selfUrlAtom;
 
   const authorBlock =

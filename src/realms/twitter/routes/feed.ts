@@ -67,6 +67,12 @@ function feedChannelImageUrl(results: APITwitterStatus[]): string | undefined {
   return url ?? undefined;
 }
 
+/** Newest post time from raw API results (used when safe filter empties all items). */
+function newestUnfilteredStatusDate(results: APITwitterStatus[]): Date | undefined {
+  if (results.length === 0) return undefined;
+  return new Date(Math.max(...results.map(s => s.created_timestamp * 1000)));
+}
+
 function buildMeta(
   c: Context,
   handle: string,
@@ -138,6 +144,9 @@ async function serveFeed(
 
   const meta = buildMeta(c, handle, kind, apiResult.results);
   const items = statusesToFeedItems(apiResult.results, { omitSensitive });
+  const feedUpdatedFallback = omitSensitive
+    ? newestUnfilteredStatusDate(apiResult.results)
+    : undefined;
 
   c.header('Access-Control-Allow-Origin', '*');
 
@@ -156,7 +165,10 @@ async function serveFeed(
   c.header('Content-Type', contentType);
   c.header('Cache-Control', FEED_CACHE_CONTROL);
 
-  const xml = format === 'rss' ? toRss20Xml(meta, items) : toAtomFeedXml(meta, items);
+  const xml =
+    format === 'rss'
+      ? toRss20Xml(meta, items, feedUpdatedFallback)
+      : toAtomFeedXml(meta, items, feedUpdatedFallback);
   return c.body(xml, 200);
 }
 

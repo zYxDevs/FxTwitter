@@ -73,17 +73,19 @@ function buildMeta(
   kind: SyndicationFeedKind,
   results: APITwitterStatus[]
 ): SyndicationFeedMeta {
-  const origin = new URL(c.req.url).origin;
+  const requestUrl = new URL(c.req.url);
+  const origin = requestUrl.origin;
+  const qs = requestUrl.search;
   const branding = getBranding(c);
   const enc = encodeURIComponent(handle);
-  const profileWebUrl = `${origin}/${enc}`;
+  const profileWebUrl = `${origin}/${enc}${qs}`;
   const authorName = feedAuthorName(handle, results);
   const channelTitle = feedChannelTitle(handle, results);
   const channelImageUrl = feedChannelImageUrl(results);
 
   if (kind === 'media') {
-    const selfUrlRss = `${origin}/${enc}/media.xml`;
-    const selfUrlAtom = `${origin}/${enc}/media.atom.xml`;
+    const selfUrlRss = `${origin}/${enc}/media.xml${qs}`;
+    const selfUrlAtom = `${origin}/${enc}/media.atom.xml${qs}`;
     return {
       channelTitle,
       channelDescription: `Media from @${handle} via ${branding.name}.`,
@@ -95,8 +97,8 @@ function buildMeta(
     };
   }
 
-  const selfUrlRss = `${origin}/${enc}/feed.xml`;
-  const selfUrlAtom = `${origin}/${enc}/feed.atom.xml`;
+  const selfUrlRss = `${origin}/${enc}/feed.xml${qs}`;
+  const selfUrlAtom = `${origin}/${enc}/feed.atom.xml${qs}`;
 
   return {
     channelTitle,

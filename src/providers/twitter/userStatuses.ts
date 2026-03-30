@@ -131,6 +131,77 @@ export const profileStatusesAPI = async (
   };
 };
 
+/** Max timeline pages to merge for feeds (100 posts × ~20/slice → cap rounds). */
+const PROFILE_STATUSES_FEED_MAX_PAGES = 10;
+
+/**
+ * Fetches up to `maxTotal` statuses (cap 100) by walking `cursor.bottom` across
+ * multiple `profileStatusesAPI` calls. Dedupes by tweet id. Stops when the
+ * target count is reached, there is no bottom cursor, or a page returns no rows.
+ */
+export const profileStatusesAPIPaginated = async (
+  handleOrId: ProfileHandleOrId,
+  maxTotal: number,
+  c: Context,
+  withReplies = false
+): Promise<APISearchResults> => {
+  const target = Math.min(100, Math.max(1, maxTotal));
+  const perPageCount = 100;
+  const merged: APITwitterStatus[] = [];
+  const seenIds = new Set<string>();
+  let cursor: string | null = null;
+  let lastCursors: APISearchResults['cursor'] = { top: null, bottom: null };
+  let pages = 0;
+
+  while (merged.length < target && pages < PROFILE_STATUSES_FEED_MAX_PAGES) {
+    pages += 1;
+    const page = await profileStatusesAPI(handleOrId, perPageCount, cursor, c, withReplies);
+
+    if (page.code === 404) {
+      if (merged.length === 0) {
+        return page;
+      }
+      break;
+    }
+
+    if (page.code !== 200) {
+      if (merged.length === 0) {
+        return page;
+      }
+      break;
+    }
+
+    lastCursors = page.cursor;
+
+    if (page.results.length === 0) {
+      break;
+    }
+
+    for (const s of page.results) {
+      if (seenIds.has(s.id)) continue;
+      seenIds.add(s.id);
+      merged.push(s);
+      if (merged.length >= target) break;
+    }
+
+    if (merged.length >= target) break;
+
+    const bottom = page.cursor.bottom;
+    if (!bottom || bottom === cursor) break;
+    cursor = bottom;
+  }
+
+  if (merged.length === 0) {
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  return {
+    code: 200,
+    results: merged.slice(0, target),
+    cursor: lastCursors
+  };
+};
+
 export const profileArticlesAPI = async (
   handleOrId: ProfileHandleOrId,
   count: number,
@@ -267,6 +338,71 @@ export const profileMediaAPI = async (
       top: topCursor,
       bottom: bottomCursor
     }
+  };
+};
+
+/**
+ * Same pagination strategy as `profileStatusesAPIPaginated`, for the profile media tab timeline.
+ */
+export const profileMediaAPIPaginated = async (
+  handleOrId: ProfileHandleOrId,
+  maxTotal: number,
+  c: Context
+): Promise<APISearchResults> => {
+  const target = Math.min(100, Math.max(1, maxTotal));
+  const perPageCount = 100;
+  const merged: APITwitterStatus[] = [];
+  const seenIds = new Set<string>();
+  let cursor: string | null = null;
+  let lastCursors: APISearchResults['cursor'] = { top: null, bottom: null };
+  let pages = 0;
+
+  while (merged.length < target && pages < PROFILE_STATUSES_FEED_MAX_PAGES) {
+    pages += 1;
+    const page = await profileMediaAPI(handleOrId, perPageCount, cursor, c);
+
+    if (page.code === 404) {
+      if (merged.length === 0) {
+        return page;
+      }
+      break;
+    }
+
+    if (page.code !== 200) {
+      if (merged.length === 0) {
+        return page;
+      }
+      break;
+    }
+
+    lastCursors = page.cursor;
+
+    if (page.results.length === 0) {
+      break;
+    }
+
+    for (const s of page.results) {
+      if (seenIds.has(s.id)) continue;
+      seenIds.add(s.id);
+      merged.push(s);
+      if (merged.length >= target) break;
+    }
+
+    if (merged.length >= target) break;
+
+    const bottom = page.cursor.bottom;
+    if (!bottom || bottom === cursor) break;
+    cursor = bottom;
+  }
+
+  if (merged.length === 0) {
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  return {
+    code: 200,
+    results: merged.slice(0, target),
+    cursor: lastCursors
   };
 };
 

@@ -55,10 +55,19 @@ export const handleProfile = async (
   /* Base headers included in all responses */
   const headers = [`<meta property="twitter:site" content="@${user.screen_name}"/>`];
 
+  const branding = getBranding(c);
+  const feedOrigin = new URL(c.req.url).origin;
+  const enc = encodeURIComponent(username);
+  const linkTitle = `@${username} — ${branding.name}`.replace(/"/g, '&quot;');
+  headers.push(
+    `<link rel="alternate" type="application/rss+xml" title="${linkTitle}" href="${feedOrigin}/${enc}/feed.xml"/>`
+  );
+  headers.push(
+    `<link rel="alternate" type="application/atom+xml" title="${linkTitle}" href="${feedOrigin}/${enc}/feed.atom.xml"/>`
+  );
+
   // TODO Add card creation logic here
   /* Finally, after all that work we return the response HTML! */
-
-  const branding = getBranding(c);
 
   return c.html(
     Strings.BASE_HTML.format({

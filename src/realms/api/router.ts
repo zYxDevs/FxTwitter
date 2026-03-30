@@ -22,6 +22,12 @@ import {
 } from './routes/twitter';
 import { oembed } from './routes/oembed';
 import { linkHitRequest, linkGoRequest } from './hit';
+import {
+  profileFeedAtomApi,
+  profileFeedRssApi,
+  profileMediaFeedAtomApi,
+  profileMediaFeedRssApi
+} from '../twitter/routes/feed';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import {
   conversationV2Route,
@@ -43,7 +49,13 @@ import {
 export const api = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
 
 api.use('*', async (c, next) => {
-  if (!c.req.header('user-agent')) {
+  const p = c.req.path;
+  const isSyndicationFeed =
+    /\/feed\.xml$/i.test(p) ||
+    /\/feed\.atom\.xml$/i.test(p) ||
+    /\/media\.xml$/i.test(p) ||
+    /\/media\.atom\.xml$/i.test(p);
+  if (!c.req.header('user-agent') && !isSyndicationFeed) {
     return c.json(
       {
         error:
@@ -66,6 +78,10 @@ api.openapi(statusRepostsV2Route, statusRepostsAPIRequest);
 api.openapi(threadV2Route, threadAPIRequest);
 api.openapi(conversationV2Route, conversationAPIRequest);
 api.openapi(profileStatusesV2Route, profileStatusesAPIRequest);
+api.get('/2/profile/:handle/feed.xml', profileFeedRssApi);
+api.get('/2/profile/:handle/feed.atom.xml', profileFeedAtomApi);
+api.get('/2/profile/:handle/media.xml', profileMediaFeedRssApi);
+api.get('/2/profile/:handle/media.atom.xml', profileMediaFeedAtomApi);
 api.openapi(profileArticlesV2Route, profileArticlesAPIRequest);
 api.openapi(profileAboutV2Route, profileAboutAPIRequest);
 api.openapi(profileMediaV2Route, profileMediaAPIRequest);

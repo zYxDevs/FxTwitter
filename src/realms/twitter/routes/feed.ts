@@ -13,7 +13,6 @@ import {
   type SyndicationFeedMeta
 } from '../../../helpers/syndicationFeeds';
 import { getBranding } from '../../../helpers/branding';
-import { Constants } from '../../../constants';
 
 const DEFAULT_FEED_COUNT = 90;
 const FEED_CACHE_CONTROL = 'public, max-age=120';
@@ -43,25 +42,15 @@ function parseMediaFeedQuery(c: Context): { count: number; safe: boolean } {
   };
 }
 
-function buildMeta(
-  c: Context,
-  handle: string,
-  pathKind: 'twitter' | 'api',
-  kind: SyndicationFeedKind
-): SyndicationFeedMeta {
+function buildMeta(c: Context, handle: string, kind: SyndicationFeedKind): SyndicationFeedMeta {
   const origin = new URL(c.req.url).origin;
   const branding = getBranding(c);
   const enc = encodeURIComponent(handle);
-  const publicHost = Constants.STANDARD_DOMAIN_LIST[0];
-  const profileWebUrl = pathKind === 'api' ? `https://${publicHost}/${enc}` : `${origin}/${enc}`;
+  const profileWebUrl = `${origin}/${enc}`;
 
   if (kind === 'media') {
-    const selfUrlRss =
-      pathKind === 'api' ? `${origin}/2/profile/${enc}/media.xml` : `${origin}/${enc}/media.xml`;
-    const selfUrlAtom =
-      pathKind === 'api'
-        ? `${origin}/2/profile/${enc}/media.atom.xml`
-        : `${origin}/${enc}/media.atom.xml`;
+    const selfUrlRss = `${origin}/${enc}/media.xml`;
+    const selfUrlAtom = `${origin}/${enc}/media.atom.xml`;
     return {
       channelTitle: `@${handle} (media) — ${branding.name}`,
       channelDescription: `Media from @${handle}.`,
@@ -71,12 +60,8 @@ function buildMeta(
     };
   }
 
-  const selfUrlRss =
-    pathKind === 'api' ? `${origin}/2/profile/${enc}/feed.xml` : `${origin}/${enc}/feed.xml`;
-  const selfUrlAtom =
-    pathKind === 'api'
-      ? `${origin}/2/profile/${enc}/feed.atom.xml`
-      : `${origin}/${enc}/feed.atom.xml`;
+  const selfUrlRss = `${origin}/${enc}/feed.xml`;
+  const selfUrlAtom = `${origin}/${enc}/feed.atom.xml`;
 
   return {
     channelTitle: `@${handle} — ${branding.name}`,
@@ -91,10 +76,12 @@ async function serveFeed(
   c: Context,
   handle: string | undefined,
   format: 'rss' | 'atom',
-  pathKind: 'twitter' | 'api',
   kind: SyndicationFeedKind
 ): Promise<Response> {
-  const parsed = parseHandleOrId(handle ?? '');
+  if (!handle) {
+    return c.body('', 404);
+  }
+  const parsed = parseHandleOrId(handle);
 
   let apiResult;
   let omitSensitive: boolean;
@@ -109,7 +96,7 @@ async function serveFeed(
     apiResult = await profileMediaAPIPaginated(parsed, q.count, c);
   }
 
-  const meta = buildMeta(c, handle ?? '', pathKind, kind);
+  const meta = buildMeta(c, handle, kind);
   const items = statusesToFeedItems(apiResult.results, { omitSensitive });
 
   c.header('Cache-Control', FEED_CACHE_CONTROL);
@@ -132,11 +119,11 @@ async function serveFeed(
 }
 
 export const profileFeedRssTwitter = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'rss', 'twitter', 'timeline');
+  serveFeed(c, c.req.param('handle'), 'rss', 'timeline');
 export const profileFeedAtomTwitter = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'atom', 'twitter', 'timeline');
+  serveFeed(c, c.req.param('handle'), 'atom', 'timeline');
 
 export const profileMediaFeedRssTwitter = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'rss', 'twitter', 'media');
+  serveFeed(c, c.req.param('handle'), 'rss', 'media');
 export const profileMediaFeedAtomTwitter = (c: Context) =>
-  serveFeed(c, c.req.param('handle'), 'atom', 'twitter', 'media');
+  serveFeed(c, c.req.param('handle'), 'atom', 'media');

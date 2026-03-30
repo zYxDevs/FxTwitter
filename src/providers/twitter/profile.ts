@@ -270,7 +270,7 @@ const populateUserProperties = async (
  * Fetches user data; optionally runs AboutAccountQuery in parallel via graphQLOrchestrator.
  * Uses weighted endpoint methods for rate limit leveling on user endpoints.
  */
-const fetchUserWithAboutAccount = async (
+const fetchUser = async (
   c: Context,
   screenName: string,
   includeAboutAccount = false
@@ -337,7 +337,7 @@ const fetchUserWithAboutAccount = async (
   };
 };
 
-const fetchUserByIdWithAboutAccount = async (
+const fetchUserById = async (
   c: Context,
   userId: string,
   includeAboutAccount = false
@@ -407,7 +407,7 @@ export const getTwitterUserRestIdByScreenName = async (
   c: Context,
   screenName: string
 ): Promise<string | null> => {
-  const { userResponse } = await fetchUserWithAboutAccount(c, screenName, false);
+  const { userResponse } = await fetchUser(c, screenName, false);
   if (!userResponse) {
     return null;
   }
@@ -425,7 +425,7 @@ export const userAPI = async (
   legacyApiUserCounts = false,
   includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
-  const { userResponse, aboutAccountResponse } = await fetchUserWithAboutAccount(
+  const { userResponse, aboutAccountResponse } = await fetchUser(
     c,
     username,
     includeAboutAccount
@@ -509,7 +509,7 @@ export const userAPIById = async (
   legacyApiUserCounts = false,
   includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
-  const { userResponse, aboutProfileResponse } = await fetchUserByIdWithAboutAccount(
+  const { userResponse, aboutProfileResponse } = await fetchUserById(
     c,
     userId,
     includeAboutAccount

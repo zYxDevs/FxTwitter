@@ -149,6 +149,7 @@ export default {
           }
         case 'UserTweets':
         case 'UserMedia':
+        case 'UserArticlesTweets':
           const tweetsUserId = variables.userId;
           try {
             const tweetsModule = await import(`../mocks/UserTweets/${tweetsUserId}.json`);
@@ -208,6 +209,52 @@ export default {
                     result: {
                       __typename: 'User',
                       profile_timeline_v2: {
+                        timeline: { instructions: [] }
+                      }
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+        case 'ProfileArticlesTimeline': {
+          const articlesRestId = variables.rest_id as string;
+          try {
+            const tweetsModule = await import(`../mocks/UserTweets/${articlesRestId}.json`);
+            const tweetsMock = (
+              'default' in tweetsModule && tweetsModule.default
+                ? tweetsModule.default
+                : tweetsModule
+            ) as {
+              data?: { user?: { result?: { timeline?: { timeline?: unknown } } } };
+            };
+            const inner = tweetsMock.data?.user?.result?.timeline?.timeline;
+            const wrappedArticles = {
+              data: {
+                user_result_by_rest_id: {
+                  rest_id: articlesRestId,
+                  result: {
+                    __typename: 'User',
+                    profile_articles_timeline: {
+                      id: 'mock-profile-articles-timeline',
+                      timeline: inner ?? { instructions: [] }
+                    }
+                  }
+                }
+              }
+            };
+            return new Response(JSON.stringify(wrappedArticles));
+          } catch (error) {
+            console.error('Error loading ProfileArticlesTimeline mock:', error);
+            return new Response(
+              JSON.stringify({
+                data: {
+                  user_result_by_rest_id: {
+                    rest_id: articlesRestId,
+                    result: {
+                      __typename: 'User',
+                      profile_articles_timeline: {
                         timeline: { instructions: [] }
                       }
                     }

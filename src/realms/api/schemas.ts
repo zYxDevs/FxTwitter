@@ -501,6 +501,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       media: APIMediaContainerSchema,
       raw_text: z.object({
         text: z.string(),
+        display_text_range: z.tuple([z.number(), z.number()]),
         facets: z.array(APIFacetSchema)
       }),
       lang: z.string().nullable(),

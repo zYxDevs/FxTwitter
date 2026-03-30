@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { twitterFetch } from '../fetch';
+import { pickTwitterGqlFeatures, type TwitterGqlFeatureKey } from './features';
 
 export interface GraphQLQuery {
   httpMethod: string;
@@ -8,7 +9,8 @@ export interface GraphQLQuery {
   queryName: string;
   requiresAccount: boolean;
   variables: Record<string, unknown>;
-  features?: Record<string, boolean>;
+  featureKeys?: readonly TwitterGqlFeatureKey[];
+  featureOverrides?: Partial<Record<TwitterGqlFeatureKey, boolean>>;
   fieldToggles?: Record<string, boolean>;
 }
 
@@ -26,8 +28,9 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
 
   let url = `${Constants.TWITTER_API_ROOT}/graphql/${query.queryId}/${query.queryName}`;
   url += `?variables=${encodeURIComponent(JSON.stringify(allVariables))}`;
-  if (query.features) {
-    url += `&features=${encodeURIComponent(JSON.stringify(query.features))}`;
+  if (query.featureKeys && query.featureKeys.length > 0) {
+    const features = pickTwitterGqlFeatures(query.featureKeys, query.featureOverrides);
+    url += `&features=${encodeURIComponent(JSON.stringify(features))}`;
   }
   if (query.fieldToggles) {
     url += `&fieldToggles=${encodeURIComponent(JSON.stringify(query.fieldToggles))}`;

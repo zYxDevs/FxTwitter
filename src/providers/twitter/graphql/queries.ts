@@ -1,45 +1,7 @@
 import { GraphQLQuery } from './request';
 import type { TwitterGqlFeatureKey } from './features';
 
-const tweetResultByRestIdFeatureKeys = [
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'premium_content_api_read_enabled',
-  'communities_web_enable_tweet_community_results_fetch',
-  'c9s_tweet_anatomy_moderator_badge_enabled',
-  'responsive_web_grok_analyze_button_fetch_trends_enabled',
-  'responsive_web_grok_analyze_post_followups_enabled',
-  'responsive_web_jetfuel_frame',
-  'responsive_web_grok_share_attachment_enabled',
-  'responsive_web_grok_annotations_enabled',
-  'articles_preview_enabled',
-  'responsive_web_edit_tweet_api_enabled',
-  'graphql_is_translatable_rweb_tweet_is_translatable_enabled',
-  'view_counts_everywhere_api_enabled',
-  'longform_notetweets_consumption_enabled',
-  'responsive_web_twitter_article_tweet_consumption_enabled',
-  'content_disclosure_indicator_enabled',
-  'content_disclosure_ai_generated_indicator_enabled',
-  'responsive_web_grok_show_grok_translated_post',
-  'responsive_web_grok_analysis_button_from_backend',
-  'post_ctas_fetch_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'standardized_nudges_misinfo',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'responsive_web_grok_image_annotation_enabled',
-  'responsive_web_grok_imagine_annotation_enabled',
-  'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled',
-  'responsive_web_enhance_cards_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const tweetDetailFeatureKeys = [
+const rwebTweetFeatureKeys = [
   'rweb_video_screen_enabled',
   'profile_label_improvements_pcf_label_in_post_enabled',
   'responsive_web_profile_redirect_enabled',
@@ -75,99 +37,14 @@ const tweetDetailFeatureKeys = [
   'responsive_web_grok_image_annotation_enabled',
   'responsive_web_grok_imagine_annotation_enabled',
   'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_enhance_cards_enabled'
+  'responsive_web_enhance_cards_enabled',
+  'tweet_awards_web_tipping_enabled'
 ] as const satisfies readonly TwitterGqlFeatureKey[];
 
-const conversationTimelineFeatureKeys = [
-  'ios_button_layout_fix_use_grok_annotations',
-  'conversational_replies_ios_downvote_api_enabled',
-  'ios_home_timeline_external_status_injections_fetch_tweet_facepile_enabled',
-  'profile_foundations_has_spaces_graphql_enabled',
-  'graphql_unified_card_enabled',
-  'birdwatch_consumption_enabled',
-  'ios_notifications_replies_mentions_device_follow_enabled',
-  'grok_ios_tweet_detail_followups_enabled',
-  'ios_tweet_detail_always_load_is_translatable',
-  'tweet_context_is_enabled',
-  'unified_cards_destination_url_params_enabled',
-  'grok_translations_community_note_translation_is_enabled',
-  'rito_safety_mode_features_enabled',
-  'profile_label_improvements_pcf_settings_enabled',
-  'view_counts_everywhere_api_enabled',
-  'profile_label_improvements_pcf_edit_profile_enabled',
-  'x_jetfuel_enable_frames_on_posts',
-  'unified_cards_ad_metadata_container_dynamic_card_content_query_enabled',
-  'continue_watching_consume_graphql',
-  'grok_translations_post_auto_translation_is_enabled',
-  'tweetypie_unmention_optimization_enabled',
-  'grok_ios_author_view_analyze_button_fetch_trends_enabled',
-  'grok_edit_with_grok_button_under_post_include_grok_image_annotation_in_graphql',
-  'tweet_with_visibility_results_prefer_gql_media_interstitial_enabled',
-  'immersive_video_status_linkable_timestamps',
-  'ssp_ads_preroll_enabled',
-  'grok_translations_community_note_auto_translation_is_enabled',
-  'articles_api_enabled',
-  'articles_preview_enabled',
-  'c9s_tweet_anatomy_moderator_badge_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const tweetResultsByIdsFeatureKeys = [
-  'grok_translations_community_note_translation_is_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'grok_android_analyze_trend_fetch_enabled',
-  'super_follow_badge_privacy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'super_follow_user_api_enabled',
-  'super_follow_tweet_api_enabled',
-  'articles_api_enabled',
-  'profile_label_improvements_pcf_label_in_profile_enabled',
-  'premium_content_api_read_enabled',
-  'grok_translations_community_note_auto_translation_is_enabled',
-  'android_graphql_skip_api_media_color_palette',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'tweetypie_unmention_optimization_enabled',
-  'longform_notetweets_consumption_enabled',
-  'subscriptions_verification_info_enabled',
-  'grok_translations_post_auto_translation_is_enabled',
-  'blue_business_profile_image_shape_enabled',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'immersive_video_status_linkable_timestamps',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'super_follow_exclusive_tweet_notifications_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const tweetResultByIdFeatureKeys = [
-  'grok_translations_community_note_translation_is_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'grok_android_analyze_trend_fetch_enabled',
-  'super_follow_badge_privacy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'super_follow_user_api_enabled',
-  'super_follow_tweet_api_enabled',
-  'articles_api_enabled',
-  'profile_label_improvements_pcf_label_in_profile_enabled',
-  'premium_content_api_read_enabled',
-  'grok_translations_community_note_auto_translation_is_enabled',
-  'android_graphql_skip_api_media_color_palette',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'tweetypie_unmention_optimization_enabled',
-  'longform_notetweets_consumption_enabled',
-  'subscriptions_verification_info_enabled',
-  'grok_translations_post_auto_translation_is_enabled',
-  'blue_business_profile_image_shape_enabled',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'immersive_video_status_linkable_timestamps',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'super_follow_exclusive_tweet_notifications_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userByScreenNameFeatureKeys = [
-  'responsive_web_grok_bio_auto_translation_is_enabled',
+const rwebUserFeatureKeys = [
   'hidden_profile_subscriptions_enabled',
-  'payments_enabled',
   'profile_label_improvements_pcf_label_in_post_enabled',
+  'responsive_web_profile_redirect_enabled',
   'rweb_tipjar_consumption_enabled',
   'verified_phone_label_enabled',
   'subscriptions_verification_info_is_identity_verified_enabled',
@@ -180,170 +57,16 @@ const userByScreenNameFeatureKeys = [
   'responsive_web_graphql_timeline_navigation_enabled'
 ] as const satisfies readonly TwitterGqlFeatureKey[];
 
-const userResultByScreenNameQueryFeatureKeys = [
-  'profile_label_improvements_pcf_label_in_profile_enabled',
-  'verified_phone_label_enabled',
-  'super_follow_badge_privacy_enabled',
-  'subscriptions_verification_info_enabled',
-  'super_follow_user_api_enabled',
-  'blue_business_profile_image_shape_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'immersive_video_status_linkable_timestamps',
-  'super_follow_exclusive_tweet_notifications_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userResultByScreenNameFeatureKeys = [
+const iOSUserResultFeatureKeys = [
   'rito_safety_mode_features_enabled',
   'hidden_profile_subscriptions_enabled',
   'profile_foundations_has_spaces_graphql_enabled',
-  'articles_timeline_profile_tab_enabled',
-  'ios_notifications_replies_mentions_device_follow_enabled',
-  'subscriptions_feature_can_gift_premium',
-  'immersive_video_status_linkable_timestamps'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userByRestIdFeatureKeys = [
-  'hidden_profile_subscriptions_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'highlights_tweets_tab_ui_enabled',
-  'responsive_web_twitter_article_notes_tab_enabled',
-  'subscriptions_feature_can_gift_premium',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userResultByRestIdFeatureKeys = [
-  'rito_safety_mode_features_enabled',
-  'profile_foundations_has_spaces_graphql_enabled',
-  'hidden_profile_subscriptions_enabled',
-  'subscriptions_feature_can_gift_premium',
-  'ios_notifications_replies_mentions_device_follow_enabled',
   'profile_label_improvements_pcf_settings_enabled',
   'articles_timeline_profile_tab_enabled',
+  'subscriptions_feature_can_gift_premium',
+  'immersive_video_status_linkable_timestamps',
   'profile_label_improvements_pcf_edit_profile_enabled',
-  'immersive_video_status_linkable_timestamps'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const exploreTimelineFeatureKeys = [
-  'rweb_video_screen_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'premium_content_api_read_enabled',
-  'communities_web_enable_tweet_community_results_fetch',
-  'c9s_tweet_anatomy_moderator_badge_enabled',
-  'responsive_web_grok_analyze_button_fetch_trends_enabled',
-  'responsive_web_grok_analyze_post_followups_enabled',
-  'responsive_web_jetfuel_frame',
-  'responsive_web_grok_share_attachment_enabled',
-  'responsive_web_grok_annotations_enabled',
-  'articles_preview_enabled',
-  'responsive_web_edit_tweet_api_enabled',
-  'graphql_is_translatable_rweb_tweet_is_translatable_enabled',
-  'view_counts_everywhere_api_enabled',
-  'longform_notetweets_consumption_enabled',
-  'responsive_web_twitter_article_tweet_consumption_enabled',
-  'tweet_awards_web_tipping_enabled',
-  'content_disclosure_indicator_enabled',
-  'content_disclosure_ai_generated_indicator_enabled',
-  'responsive_web_grok_show_grok_translated_post',
-  'responsive_web_grok_analysis_button_from_backend',
-  'post_ctas_fetch_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'standardized_nudges_misinfo',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'responsive_web_grok_image_annotation_enabled',
-  'responsive_web_grok_imagine_annotation_enabled',
-  'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_enhance_cards_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userTweetsTimelineFeatureKeys = [
-  'rweb_video_screen_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'premium_content_api_read_enabled',
-  'c9s_tweet_anatomy_moderator_badge_enabled',
-  'responsive_web_grok_analyze_button_fetch_trends_enabled',
-  'responsive_web_grok_analyze_post_followups_enabled',
-  'responsive_web_jetfuel_frame',
-  'responsive_web_grok_share_attachment_enabled',
-  'responsive_web_grok_annotations_enabled',
-  'articles_preview_enabled',
-  'responsive_web_edit_tweet_api_enabled',
-  'graphql_is_translatable_rweb_tweet_is_translatable_enabled',
-  'view_counts_everywhere_api_enabled',
-  'longform_notetweets_consumption_enabled',
-  'responsive_web_twitter_article_tweet_consumption_enabled',
-  'tweet_awards_web_tipping_enabled',
-  'content_disclosure_indicator_enabled',
-  'content_disclosure_ai_generated_indicator_enabled',
-  'responsive_web_grok_show_grok_translated_post',
-  'responsive_web_grok_analysis_button_from_backend',
-  'post_ctas_fetch_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'standardized_nudges_misinfo',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'responsive_web_grok_image_annotation_enabled',
-  'responsive_web_grok_imagine_annotation_enabled',
-  'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_enhance_cards_enabled'
-] as const satisfies readonly TwitterGqlFeatureKey[];
-
-const userMediaFeatureKeys = [
-  'rweb_video_screen_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'premium_content_api_read_enabled',
-  'communities_web_enable_tweet_community_results_fetch',
-  'c9s_tweet_anatomy_moderator_badge_enabled',
-  'responsive_web_grok_analyze_button_fetch_trends_enabled',
-  'responsive_web_grok_analyze_post_followups_enabled',
-  'responsive_web_jetfuel_frame',
-  'responsive_web_grok_share_attachment_enabled',
-  'responsive_web_grok_annotations_enabled',
-  'articles_preview_enabled',
-  'responsive_web_edit_tweet_api_enabled',
-  'graphql_is_translatable_rweb_tweet_is_translatable_enabled',
-  'view_counts_everywhere_api_enabled',
-  'longform_notetweets_consumption_enabled',
-  'responsive_web_twitter_article_tweet_consumption_enabled',
-  'content_disclosure_indicator_enabled',
-  'content_disclosure_ai_generated_indicator_enabled',
-  'responsive_web_grok_show_grok_translated_post',
-  'responsive_web_grok_analysis_button_from_backend',
-  'post_ctas_fetch_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'standardized_nudges_misinfo',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
-  'longform_notetweets_inline_media_enabled',
-  'responsive_web_grok_image_annotation_enabled',
-  'responsive_web_grok_imagine_annotation_enabled',
-  'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_enhance_cards_enabled'
+  'ios_notifications_replies_mentions_device_follow_enabled'
 ] as const satisfies readonly TwitterGqlFeatureKey[];
 
 const iOSTimelineFeatureKeys = [
@@ -379,43 +102,42 @@ const iOSTimelineFeatureKeys = [
   'c9s_tweet_anatomy_moderator_badge_enabled'
 ] as const satisfies readonly TwitterGqlFeatureKey[];
 
-const retweetersWebFeatureKeys = [
-  'rweb_video_screen_enabled',
-  'profile_label_improvements_pcf_label_in_post_enabled',
-  'responsive_web_profile_redirect_enabled',
-  'rweb_tipjar_consumption_enabled',
-  'verified_phone_label_enabled',
-  'creator_subscriptions_tweet_preview_api_enabled',
-  'responsive_web_graphql_timeline_navigation_enabled',
-  'responsive_web_graphql_skip_user_profile_image_extensions_enabled',
-  'premium_content_api_read_enabled',
-  'communities_web_enable_tweet_community_results_fetch',
-  'c9s_tweet_anatomy_moderator_badge_enabled',
-  'responsive_web_grok_analyze_button_fetch_trends_enabled',
-  'responsive_web_grok_analyze_post_followups_enabled',
-  'responsive_web_jetfuel_frame',
-  'responsive_web_grok_share_attachment_enabled',
-  'responsive_web_grok_annotations_enabled',
-  'articles_preview_enabled',
-  'responsive_web_edit_tweet_api_enabled',
-  'graphql_is_translatable_rweb_tweet_is_translatable_enabled',
-  'view_counts_everywhere_api_enabled',
-  'longform_notetweets_consumption_enabled',
-  'responsive_web_twitter_article_tweet_consumption_enabled',
-  'content_disclosure_indicator_enabled',
-  'content_disclosure_ai_generated_indicator_enabled',
-  'responsive_web_grok_show_grok_translated_post',
-  'responsive_web_grok_analysis_button_from_backend',
-  'post_ctas_fetch_enabled',
-  'freedom_of_speech_not_reach_fetch_enabled',
-  'standardized_nudges_misinfo',
-  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
-  'longform_notetweets_rich_text_read_enabled',
+const androidTweetFeatureKeys = [
+  'grok_translations_community_note_translation_is_enabled',
   'longform_notetweets_inline_media_enabled',
-  'responsive_web_grok_image_annotation_enabled',
-  'responsive_web_grok_imagine_annotation_enabled',
-  'responsive_web_grok_community_note_auto_translation_is_enabled',
-  'responsive_web_enhance_cards_enabled'
+  'grok_android_analyze_trend_fetch_enabled',
+  'super_follow_badge_privacy_enabled',
+  'longform_notetweets_rich_text_read_enabled',
+  'super_follow_user_api_enabled',
+  'super_follow_tweet_api_enabled',
+  'articles_api_enabled',
+  'profile_label_improvements_pcf_label_in_profile_enabled',
+  'premium_content_api_read_enabled',
+  'grok_translations_community_note_auto_translation_is_enabled',
+  'android_graphql_skip_api_media_color_palette',
+  'creator_subscriptions_tweet_preview_api_enabled',
+  'freedom_of_speech_not_reach_fetch_enabled',
+  'tweetypie_unmention_optimization_enabled',
+  'longform_notetweets_consumption_enabled',
+  'subscriptions_verification_info_enabled',
+  'grok_translations_post_auto_translation_is_enabled',
+  'blue_business_profile_image_shape_enabled',
+  'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled',
+  'immersive_video_status_linkable_timestamps',
+  'profile_label_improvements_pcf_label_in_post_enabled',
+  'super_follow_exclusive_tweet_notifications_enabled'
+] as const satisfies readonly TwitterGqlFeatureKey[];
+
+const androidUserFeatureKeys = [
+  'profile_label_improvements_pcf_label_in_profile_enabled',
+  'verified_phone_label_enabled',
+  'super_follow_badge_privacy_enabled',
+  'subscriptions_verification_info_enabled',
+  'super_follow_user_api_enabled',
+  'blue_business_profile_image_shape_enabled',
+  'profile_label_improvements_pcf_label_in_post_enabled',
+  'immersive_video_status_linkable_timestamps',
+  'super_follow_exclusive_tweet_notifications_enabled'
 ] as const satisfies readonly TwitterGqlFeatureKey[];
 
 export const TweetResultByRestIdQuery: GraphQLQuery = {
@@ -428,7 +150,7 @@ export const TweetResultByRestIdQuery: GraphQLQuery = {
     includePromotedContent: false,
     withVoice: false
   },
-  featureKeys: tweetResultByRestIdFeatureKeys,
+  featureKeys: rwebTweetFeatureKeys,
   fieldToggles: {
     withArticleRichContentState: true,
     withArticlePlainText: false,
@@ -447,7 +169,7 @@ export const TweetResultsByRestIdsQuery: GraphQLQuery = {
     includePromotedContent: false,
     withVoice: false
   },
-  featureKeys: tweetResultByRestIdFeatureKeys,
+  featureKeys: rwebTweetFeatureKeys,
   fieldToggles: {
     withArticleRichContentState: true
   }
@@ -469,7 +191,7 @@ export const TweetDetailQuery: GraphQLQuery = {
     withVoice: false,
     cursor: null
   },
-  featureKeys: tweetDetailFeatureKeys,
+  featureKeys: rwebTweetFeatureKeys,
   fieldToggles: {
     withArticleRichContentState: true,
     withArticlePlainText: false,
@@ -507,7 +229,7 @@ export const ConversationTimelineQuery: GraphQLQuery = {
     include_cta: true,
     skip_author_community_relationship: false
   },
-  featureKeys: conversationTimelineFeatureKeys
+  featureKeys: iOSTimelineFeatureKeys
 };
 
 export const TweetResultsByIdsQuery: GraphQLQuery = {
@@ -524,7 +246,7 @@ export const TweetResultsByIdsQuery: GraphQLQuery = {
     includeCommunityTweetRelationship: true,
     includeTweetVisibilityNudge: true
   },
-  featureKeys: tweetResultsByIdsFeatureKeys
+  featureKeys: androidTweetFeatureKeys
 };
 
 export const TweetResultByIdQuery: GraphQLQuery = {
@@ -540,7 +262,7 @@ export const TweetResultByIdQuery: GraphQLQuery = {
     includeCommunityTweetRelationship: true,
     includeTweetVisibilityNudge: true
   },
-  featureKeys: tweetResultByIdFeatureKeys
+  featureKeys: androidTweetFeatureKeys
 };
 
 export const UserByScreenNameQuery: GraphQLQuery = {
@@ -551,7 +273,7 @@ export const UserByScreenNameQuery: GraphQLQuery = {
   variables: {
     // screen_name: ''
   },
-  featureKeys: userByScreenNameFeatureKeys,
+  featureKeys: rwebUserFeatureKeys,
   fieldToggles: {
     withAuxiliaryUserLabels: true
   }
@@ -575,12 +297,12 @@ export const UserResultByScreenNameQueryQuery: GraphQLQuery = {
     includeEditControl: true,
     include_verified_phone_status: false
   },
-  featureKeys: userResultByScreenNameQueryFeatureKeys
+  featureKeys: androidUserFeatureKeys
 };
 
 export const UserResultByScreenNameQuery: GraphQLQuery = {
   httpMethod: 'GET',
-  queryId: '5moJkBXyS_m_WjHEEZUm9Q',
+  queryId: '1mhXYcVoS_46OrXj1yy1jg',
   queryName: 'UserResultByScreenName',
   requiresAccount: true,
   variables: {
@@ -598,7 +320,7 @@ export const UserResultByScreenNameQuery: GraphQLQuery = {
     include_hidden_profile_likes: true
     // screen_name: 'x'
   },
-  featureKeys: userResultByScreenNameFeatureKeys
+  featureKeys: iOSUserResultFeatureKeys
 };
 
 export const AboutAccountQuery: GraphQLQuery = {
@@ -619,7 +341,7 @@ export const UserByRestIdQuery: GraphQLQuery = {
   variables: {
     withGrokTranslatedBio: true
   },
-  featureKeys: userByRestIdFeatureKeys,
+  featureKeys: rwebUserFeatureKeys,
   fieldToggles: {
     withPayments: false,
     withAuxiliaryUserLabels: true
@@ -645,7 +367,7 @@ export const UserResultByRestIdQuery: GraphQLQuery = {
     include_dm_muting: false,
     include_hidden_profile_likes: false
   },
-  featureKeys: userResultByRestIdFeatureKeys
+  featureKeys: iOSUserResultFeatureKeys
 };
 
 export const UserProfileAboutQuery: GraphQLQuery = {
@@ -668,7 +390,7 @@ export const SearchTimelineQuery: GraphQLQuery = {
     // product: 'Latest', // | 'Top' | 'Media',
     // cursor: null
   },
-  featureKeys: exploreTimelineFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const ExplorePageQuery: GraphQLQuery = {
@@ -679,7 +401,7 @@ export const ExplorePageQuery: GraphQLQuery = {
   variables: {
     cursor: ''
   },
-  featureKeys: exploreTimelineFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const GenericTimelineByIdQuery: GraphQLQuery = {
@@ -690,9 +412,9 @@ export const GenericTimelineByIdQuery: GraphQLQuery = {
   variables: {
     // timelineId set per request
     count: 20,
-    withQuickPromoteEligibilityTweetFields: true
+    withQuickPromoteEligibilityTweetFields: false
   },
-  featureKeys: exploreTimelineFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const UserTweetsQuery: GraphQLQuery = {
@@ -704,11 +426,11 @@ export const UserTweetsQuery: GraphQLQuery = {
     // userId: '',
     // count: 20,
     includePromotedContent: false,
-    withQuickPromoteEligibilityTweetFields: true,
+    withQuickPromoteEligibilityTweetFields: false,
     withVoice: true,
     cursor: null
   },
-  featureKeys: userTweetsTimelineFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const UserMediaQuery: GraphQLQuery = {
@@ -723,7 +445,7 @@ export const UserMediaQuery: GraphQLQuery = {
     withVoice: true,
     cursor: null
   },
-  featureKeys: userMediaFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const ProfileTimelineQuery: GraphQLQuery = {
@@ -787,11 +509,11 @@ export const UserArticlesTweetsQuery: GraphQLQuery = {
   requiresAccount: true,
   variables: {
     includePromotedContent: false,
-    withQuickPromoteEligibilityTweetFields: true,
+    withQuickPromoteEligibilityTweetFields: false,
     withVoice: true,
     cursor: null
   },
-  featureKeys: userTweetsTimelineFeatureKeys,
+  featureKeys: rwebTweetFeatureKeys,
   fieldToggles: {
     withArticlePlainText: false
   }
@@ -835,7 +557,7 @@ export const UserTweetsAndRepliesQuery: GraphQLQuery = {
     withVoice: true,
     cursor: null
   },
-  featureKeys: userTweetsTimelineFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const FollowersQuery: GraphQLQuery = {
@@ -850,7 +572,7 @@ export const FollowersQuery: GraphQLQuery = {
     withGrokTranslatedBio: false,
     cursor: null
   },
-  featureKeys: userMediaFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const FollowingQuery: GraphQLQuery = {
@@ -865,7 +587,7 @@ export const FollowingQuery: GraphQLQuery = {
     withGrokTranslatedBio: false,
     cursor: null
   },
-  featureKeys: userMediaFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const FollowersByUserIDTimelineQuery: GraphQLQuery = {
@@ -936,7 +658,7 @@ export const RetweetersQuery: GraphQLQuery = {
     includePromotedContent: false,
     cursor: null
   },
-  featureKeys: retweetersWebFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };
 
 export const RetweetersTimelineQuery: GraphQLQuery = {
@@ -965,5 +687,5 @@ export const RetweetersTimelineQuery: GraphQLQuery = {
     count: 20,
     cursor: null
   },
-  featureKeys: retweetersWebFeatureKeys
+  featureKeys: rwebTweetFeatureKeys
 };

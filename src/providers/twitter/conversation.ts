@@ -611,7 +611,7 @@ const fetchSingleStatus = async (
         {
           name: 'TweetResultByRestId',
           query: TweetResultByRestIdQuery,
-          weight: 50,
+          weight: 500,
           fallbackOnly: processThread,
           variables: { tweetId: id },
           validator: (response: unknown) => {

@@ -75,6 +75,69 @@ export const APIPhotoSchema = z.object({
   altText: z.string().optional()
 });
 
+/** Same shape as `APIUser.about_account` (X “About this account” metadata). */
+export const APIAboutAccountSchema = z
+  .object({
+    based_in: z.string().nullable().optional(),
+    location_accurate: z.boolean().optional(),
+    created_country_accurate: z.boolean().nullable().optional(),
+    source: z.string().nullable().optional(),
+    username_changes: z
+      .object({
+        count: z.number(),
+        last_changed_at: z.string().nullable()
+      })
+      .optional()
+  })
+  .openapi('APIAboutAccount');
+
+export const APIUserSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    screen_name: z.string(),
+    avatar_url: z.string().nullable(),
+    banner_url: z.string().nullable(),
+    description: z.string(),
+    raw_description: z.object({
+      text: z.string(),
+      facets: z.array(APIFacetSchema)
+    }),
+    location: z.string(),
+    url: z.string(),
+    protected: z.boolean(),
+    followers: z.number(),
+    following: z.number(),
+    statuses: z.number(),
+    media_count: z.number(),
+    likes: z.number(),
+    joined: z.string(),
+    website: z
+      .object({
+        url: z.string(),
+        display_url: z.string()
+      })
+      .nullable(),
+    birthday: z
+      .object({
+        day: z.number().optional(),
+        month: z.number().optional(),
+        year: z.number().optional()
+      })
+      .nullable()
+      .optional(),
+    verification: z
+      .object({
+        verified: z.boolean(),
+        type: z.enum(['organization', 'government', 'individual']).nullable(),
+        verified_at: z.string().nullable().optional(),
+        identity_verified: z.boolean().optional()
+      })
+      .optional(),
+    about_account: APIAboutAccountSchema.optional()
+  })
+  .openapi('APIUser');
+
 export const APIVideoSchema = z.object({
   id: z.string().optional(),
   format: z.string().optional(),
@@ -86,8 +149,8 @@ export const APIVideoSchema = z.object({
   transcode_url: z.string().optional().nullable(),
   duration: z.number(),
   filesize: z.number().optional(),
-  variants: z.array(TweetMediaVariantSchema).optional(),
-  formats: z.array(APIVideoFormatSchema)
+  formats: z.array(APIVideoFormatSchema),
+  publisher: APIUserSchema.optional().nullable()
 });
 
 export const APIExternalMediaSchema = z.object({
@@ -179,69 +242,6 @@ export const APIMediaContainerSchema = z.object({
   mosaic: APIMosaicPhotoSchema.optional(),
   broadcast: APIBroadcastSchema.optional()
 });
-
-/** Same shape as `APIUser.about_account` (X “About this account” metadata). */
-export const APIAboutAccountSchema = z
-  .object({
-    based_in: z.string().nullable().optional(),
-    location_accurate: z.boolean().optional(),
-    created_country_accurate: z.boolean().nullable().optional(),
-    source: z.string().nullable().optional(),
-    username_changes: z
-      .object({
-        count: z.number(),
-        last_changed_at: z.string().nullable()
-      })
-      .optional()
-  })
-  .openapi('APIAboutAccount');
-
-export const APIUserSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    screen_name: z.string(),
-    avatar_url: z.string().nullable(),
-    banner_url: z.string().nullable(),
-    description: z.string(),
-    raw_description: z.object({
-      text: z.string(),
-      facets: z.array(APIFacetSchema)
-    }),
-    location: z.string(),
-    url: z.string(),
-    protected: z.boolean(),
-    followers: z.number(),
-    following: z.number(),
-    statuses: z.number(),
-    media_count: z.number(),
-    likes: z.number(),
-    joined: z.string(),
-    website: z
-      .object({
-        url: z.string(),
-        display_url: z.string()
-      })
-      .nullable(),
-    birthday: z
-      .object({
-        day: z.number().optional(),
-        month: z.number().optional(),
-        year: z.number().optional()
-      })
-      .nullable()
-      .optional(),
-    verification: z
-      .object({
-        verified: z.boolean(),
-        type: z.enum(['organization', 'government', 'individual']).nullable(),
-        verified_at: z.string().nullable().optional(),
-        identity_verified: z.boolean().optional()
-      })
-      .optional(),
-    about_account: APIAboutAccountSchema.optional()
-  })
-  .openapi('APIUser');
 
 /** User who reposted/retweeted this status (outer wrapper); null when the payload is the original post. */
 export const APIRepostedBySchema = z

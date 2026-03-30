@@ -131,6 +131,103 @@ export const processTimelineInstructions = (
   return { statuses, cursors };
 };
 
+type ItemContentWithUser = {
+  __typename?: string;
+  user_results?: { result?: { __typename?: string } };
+};
+
+const extractUserFromItemContent = (
+  itemContent: unknown,
+  users: GraphQLUser[]
+): void => {
+  const ic = itemContent as ItemContentWithUser;
+  if (ic?.__typename !== 'TimelineUser') return;
+  const result = ic.user_results?.result;
+  if (!result || typeof result !== 'object' || result.__typename !== 'User') return;
+  users.push(result as GraphQLUser);
+};
+
+/** Reposters / retweeters timeline: TimelineUser rows plus pagination cursors */
+export const processRetweetersUserTimelineInstructions = (
+  instructions: TimelineInstruction[]
+): { users: GraphQLUser[]; cursors: GraphQLTimelineCursor[] } => {
+  const users: GraphQLUser[] = [];
+  const cursors: GraphQLTimelineCursor[] = [];
+
+  const getItemContent = (
+    item: GraphQLTimelineItem
+  ): GraphQLTimelineTweet | GraphQLTimelineCursor | undefined => {
+    return item.itemContent ?? item.content;
+  };
+
+  instructions?.forEach(instruction => {
+    const kind =
+      (instruction as { type?: string }).type ??
+      (instruction as { __typename?: string }).__typename;
+
+    if (kind === 'TimelineReplaceEntry') {
+      const content = (instruction as TimelineReplaceEntryInstruction).entry?.content;
+      if (content?.__typename === 'TimelineTimelineCursor') {
+        cursors.push(normalizeCursor(content));
+      }
+      return;
+    }
+
+    if (kind === 'TimelineAddToModule') {
+      (instruction as TimelineAddModulesInstruction).moduleItems?.forEach(_moduleItem => {
+        const moduleItem = _moduleItem as {
+          item?: { itemContent?: unknown; content?: unknown };
+        };
+        const itemContent = moduleItem?.item?.itemContent ?? moduleItem?.item?.content;
+        if (!itemContent) return;
+        extractUserFromItemContent(itemContent, users);
+        if (
+          typeof itemContent === 'object' &&
+          itemContent !== null &&
+          (itemContent as { __typename?: string }).__typename === 'TimelineTimelineCursor'
+        ) {
+          cursors.push(normalizeCursor(itemContent as GraphQLTimelineCursor));
+        }
+      });
+      return;
+    }
+
+    if (kind === 'TimelineAddEntries') {
+      (instruction as TimelineAddEntriesInstruction).entries?.forEach(_entry => {
+        const entry = _entry as GraphQLTimelineTweetEntry | GraphQLConversationThread;
+        const content = (entry as GraphQLTimelineTweetEntry)?.content;
+
+        if (typeof content === 'undefined') return;
+
+        if (content.__typename === 'TimelineTimelineItem') {
+          const inner = getItemContent(content as GraphQLTimelineItem);
+          if (inner) {
+            extractUserFromItemContent(inner, users);
+            if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
+          }
+        } else if (isGraphQLTimelineCursor(content)) {
+          cursors.push(normalizeCursor(content));
+        } else if (
+          (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
+        ) {
+          (content as unknown as GraphQLTimelineModule).items?.forEach(item => {
+            const inner = getItemContent(item.item);
+            if (!inner) return;
+            extractUserFromItemContent(inner, users);
+            if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return { users, cursors };
+};
+
 export const searchAPI = async (
   query: string,
   feed: SearchFeed,

@@ -75,6 +75,7 @@ declare global {
   type APITwitterCommunity = import('../realms/api/schemas').APITwitterCommunity;
   type UserAPIResponse = import('../realms/api/schemas').UserAPIResponse;
   type APISearchResults = import('../realms/api/schemas').APISearchResults;
+  type APIUserListResults = import('../realms/api/schemas').APIUserListResults;
   type APITrendGroupedTopic = import('../realms/api/schemas').APITrendGroupedTopic;
   type APITrend = import('../realms/api/schemas').APITrend;
   type APITrendsResponse = import('../realms/api/schemas').APITrendsResponse;

@@ -425,11 +425,7 @@ export const userAPI = async (
   legacyApiUserCounts = false,
   includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
-  const { userResponse, aboutAccountResponse } = await fetchUser(
-    c,
-    username,
-    includeAboutAccount
-  );
+  const { userResponse, aboutAccountResponse } = await fetchUser(c, username, includeAboutAccount);
 
   if (!userResponse || !Object.keys(userResponse).length) {
     return {

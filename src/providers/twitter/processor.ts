@@ -235,6 +235,7 @@ export const buildAPITwitterStatus = async (
   // }
   apiStatus.raw_text = {
     text: status.legacy.full_text,
+    display_text_range: status.legacy.display_text_range,
     facets: []
   };
   // if (threadAuthor && threadAuthor.id !== apiUser.id) {
@@ -296,6 +297,8 @@ export const buildAPITwitterStatus = async (
 
   if (noteTweetText) {
     apiStatus.raw_text.text = noteTweetText;
+    // Note tweets don't have this and don't need it since they already exclude preceding mentions etc
+    apiStatus.raw_text.display_text_range = [0, noteTweetText.length];
     status.legacy.entities.urls = status.note_tweet?.note_tweet_results?.result?.entity_set.urls;
     status.legacy.entities.hashtags =
       status.note_tweet?.note_tweet_results?.result?.entity_set.hashtags;
@@ -471,7 +474,7 @@ export const buildAPITwitterStatus = async (
   } else if (replyScreenName && replyStatusId) {
     apiStatus.replying_to = {
       screen_name: replyScreenName,
-      post: replyStatusId
+      status: replyStatusId
     };
   } else {
     apiStatus.replying_to = null;

@@ -456,6 +456,7 @@ export type APITwitterStatus = {
   media: z.infer<typeof APIMediaContainerSchema>;
   raw_text: {
     text: string;
+    display_text_range: [number, number];
     facets: z.infer<typeof APIFacetSchema>[];
   };
   lang: string | null;
@@ -463,7 +464,7 @@ export type APITwitterStatus = {
   possibly_sensitive: boolean;
   replying_to: {
     screen_name: string;
-    post: string;
+    status: string;
   } | null;
   source: string | null;
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
@@ -508,7 +509,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       replying_to: z
         .object({
           screen_name: z.string(),
-          post: z.string()
+          status: z.string()
         })
         .nullable(),
       source: z.string().nullable(),

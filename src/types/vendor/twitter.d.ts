@@ -393,6 +393,7 @@ type GraphQLUser = {
 type GraphQLTwitterStatusLegacy = {
   id_str: string; // "1674824189176590336"
   created_at: string; // "Tue Sep 14 20:00:00 +0000 2021"
+  display_text_range: [number, number]; // [20, 67]
   conversation_id_str: string; // "1674824189176590336"
   bookmark_count: number; // 0
   bookmarked: boolean; // false

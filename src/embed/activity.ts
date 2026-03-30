@@ -425,7 +425,7 @@ export const handleActivity = async (
     created_at: new Date(thread.status.created_at).toISOString(),
     edited_at: null,
     reblog: null,
-    in_reply_to_id: thread.status.replying_to?.post,
+    in_reply_to_id: thread.status.replying_to?.status,
     in_reply_to_account_id: null,
     language: thread.status.lang,
     content: statusText,

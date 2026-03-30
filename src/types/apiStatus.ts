@@ -53,7 +53,7 @@ export interface APIStatus {
 
   replying_to: {
     screen_name: string;
-    post: string;
+    status: string;
   } | null;
 
   source: string | null;

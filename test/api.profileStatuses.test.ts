@@ -69,3 +69,33 @@ test('API profile statuses returns 404 for unknown user', async () => {
   expect(response.cursor.top).toBeNull();
   expect(response.cursor.bottom).toBeNull();
 });
+
+test('API profile statuses returns 204 when since is after all posts (seconds)', async () => {
+  /* Far-future Unix seconds: no posts are newer than this */
+  const since = Math.floor(Date.now() / 1000) + 86_400 * 365;
+  const result = await app.request(
+    new Request(`https://api.fxtwitter.com/2/profile/x/statuses?since=${since}`, {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(204);
+  expect((await result.text()).length).toEqual(0);
+});
+
+test('API profile statuses returns 200 with since=0', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/profile/x/statuses?since=0', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(200);
+  const response = (await result.json()) as APISearchResults;
+  expect(response.code).toEqual(200);
+  expect(response.results.length).toBeGreaterThan(0);
+});

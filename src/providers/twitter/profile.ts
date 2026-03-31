@@ -211,7 +211,9 @@ export const mergeUserProfileAboutData = (
   user: APIUser,
   aboutResponse: UserProfileAboutResponse
 ): APIUser => {
-  const result = aboutResponse?.data?.user_rest_result_by_rest_id?.result;
+  const result =
+    aboutResponse?.data?.user_result_by_rest_id?.result ??
+    aboutResponse?.data?.user_rest_result_by_rest_id?.result;
 
   if (!result) {
     return user;

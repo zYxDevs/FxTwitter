@@ -871,23 +871,25 @@ interface AboutAccountQueryResponse {
 }
 
 /** UserProfileAbout GraphQL (rest_id input); same about_profile shape as AboutAccountQuery */
-interface UserProfileAboutResponse {
-  data?: {
-    user_rest_result_by_rest_id?: {
-      rest_id?: string;
-      result?: {
-        about_profile?: {
-          created_country_accurate?: boolean;
-          account_based_in?: string;
-          location_accurate?: boolean;
-          source?: string;
-          username_changes?: {
-            count?: string;
-            last_changed_at_msec?: string;
-          };
-        };
+type UserProfileAboutByRestId = {
+  rest_id?: string;
+  result?: {
+    about_profile?: {
+      created_country_accurate?: boolean;
+      account_based_in?: string;
+      location_accurate?: boolean;
+      source?: string;
+      username_changes?: {
+        count?: string;
+        last_changed_at_msec?: string;
       };
     };
+  };
+};
+interface UserProfileAboutResponse {
+  data?: {
+    user_result_by_rest_id?: UserProfileAboutByRestId;
+    user_rest_result_by_rest_id?: UserProfileAboutByRestId;
   };
 }
 

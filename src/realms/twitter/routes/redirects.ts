@@ -4,6 +4,7 @@ import { sanitizeText } from '../../../helpers/utils';
 import { getBaseRedirectUrl } from '../router';
 import { Constants } from '../../../constants';
 import { getBranding } from '../../../helpers/branding';
+import { Experiment, experimentCheck } from '../../../experiments';
 
 export const genericTwitterRedirect = async (c: Context) => {
   const url = new URL(c.req.url);
@@ -18,6 +19,14 @@ export const genericTwitterRedirect = async (c: Context) => {
   if (baseUrl.startsWith('twitter:/')) {
     // can't resolve this url to valid deeplink
     return c.redirect(`${Constants.TWITTER_ROOT}/${url.pathname}`, 302);
+  }
+
+  if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
+    const app = await fetch(`https://app.fxtwitter.com${url.pathname}`);
+    const appBody = await app.text();
+    if (appBody.includes('<!doctype html>')) {
+      return c.html(appBody, 200);
+    }
   }
 
   return c.redirect(`${baseUrl}${url.pathname}`, 302);

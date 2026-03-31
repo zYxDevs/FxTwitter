@@ -263,6 +263,8 @@ export const profileStatusesV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/statuses',
   summary: 'List posts for a user',
+  description:
+    'Optional `since` (Unix time): when used without `cursor`, returns **204 No Content** if no posts in the page are newer than that instant; otherwise returns the normal JSON timeline. Values ≥ 1e12 are treated as milliseconds; smaller values as seconds.',
   request: {
     params: z.object({
       handle: z.string().openapi({
@@ -279,6 +281,10 @@ export const profileStatusesV2Route = createRoute({
         .string()
         .optional()
         .openapi({ description: 'Pagination cursor from prior response' }),
+      since: z.coerce.number().finite().min(0).optional().openapi({
+        description:
+          'Unix timestamp (seconds, or ms if ≥ 1e12). Without `cursor`, 204 if no post is strictly newer than this time.'
+      }),
       with_replies: z.string().optional().openapi({
         description:
           'If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines'
@@ -289,6 +295,10 @@ export const profileStatusesV2Route = createRoute({
     200: {
       description: 'Timeline page',
       content: { 'application/json': { schema: APISearchResultsSchema } }
+    },
+    204: {
+      description:
+        'No posts newer than `since` (only when `since` is set and `cursor` is omitted; same conditions as 200 otherwise)'
     },
     400: {
       description: 'Invalid path or query parameters (e.g. `count` out of range)',

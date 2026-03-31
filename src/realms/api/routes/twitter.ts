@@ -142,6 +142,9 @@ export const profileAboutAPIRequest: RouteHandler<typeof profileAboutV2Route> = 
   return c.json(aboutResponse, aboutResponse.code as 200 | 404);
 };
 
+const unixTimestampParamToMs = (unix: number): number =>
+  unix >= 1_000_000_000_000 ? unix : unix * 1000;
+
 export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Route> = async c => {
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
@@ -149,6 +152,7 @@ export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Rou
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
   const withReplies = isParamTruthy(query.with_replies ?? c.req.query('withReplies'));
+  const sinceParam = query.since;
 
   const statusesResponse = await profileStatusesAPI(
     parseHandleOrId(handle),
@@ -157,6 +161,24 @@ export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Rou
     c,
     withReplies
   );
+
+  const applySinceNoContent =
+    sinceParam !== undefined && cursor === null && statusesResponse.code === 200;
+
+  if (applySinceNoContent) {
+    const sinceMs = unixTimestampParamToMs(sinceParam);
+    const hasNewerPost = statusesResponse.results.some(s => {
+      const tMs = s.created_timestamp * 1000;
+      return Number.isFinite(tMs) && tMs > sinceMs;
+    });
+    if (!hasNewerPost) {
+      c.status(204);
+      for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+        c.header(header, value);
+      }
+      return c.body(null, 204);
+    }
+  }
 
   c.status(statusesResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

@@ -239,26 +239,10 @@ export const buildAPITwitterStatus = async (
     facets: []
   };
   // if (threadAuthor && threadAuthor.id !== apiUser.id) {
-  apiStatus.author = {
-    id: apiUser.id,
-    name: apiUser.name,
-    screen_name: apiUser.screen_name,
-    avatar_url: apiUser.avatar_url?.replace?.('_normal', '_200x200') ?? null,
-    banner_url: apiUser.banner_url,
-    description: apiUser.description,
-    raw_description: apiUser.raw_description,
-    location: apiUser.location,
-    url: apiUser.url,
-    followers: apiUser.followers,
-    following: apiUser.following,
-    joined: apiUser.joined,
-    statuses: apiUser.statuses,
-    likes: apiUser.likes,
-    media_count: apiUser.media_count,
-    protected: apiUser.protected,
-    birthday: apiUser.birthday,
-    website: apiUser.website
-  };
+  apiStatus.author = apiUser;
+  if (apiStatus.author.avatar_url) {
+    apiStatus.author.avatar_url = apiStatus.author.avatar_url.replace?.('_normal', '_200x200') ?? null;
+  }
   // }
   apiStatus.replies = status.legacy.reply_count;
   if (legacyAPI) {

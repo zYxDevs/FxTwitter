@@ -141,8 +141,8 @@ export const statusRequest = async (c: Context) => {
       if (!isBotUA && !flags.api && !flags.direct) {
         const baseUrl = getBaseRedirectUrl(c);
 
-        if (experimentCheck(Experiment.USE_TRAFFIC_CONTROL, baseUrl === Constants.TWITTER_ROOT)) {
-          const app = await fetch(`https://app.fxembed.com/${handle}/status/${id}`);
+        if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
+          const app = await fetch(`https://app.fxtwitter.com/${handle}/status/${id}`);
           const appBody = await app.text();
           if (appBody.includes('<!doctype html>')) {
             return c.html(appBody, 200);
@@ -177,8 +177,8 @@ export const statusRequest = async (c: Context) => {
        Obviously we just need to redirect to the status directly.*/
     console.log('Matched human UA', userAgent);
 
-    if (experimentCheck(Experiment.USE_TRAFFIC_CONTROL, baseUrl === Constants.TWITTER_ROOT)) {
-      const app = await fetch(`https://app.fxembed.com/${handle}/status/${id}`);
+    if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
+      const app = await fetch(`https://app.fxtwitter.com/${handle}/status/${id}`);
       const appBody = await app.text();
       console.log('appBody', appBody);
       if (appBody.includes('<!doctype html>')) {

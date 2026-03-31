@@ -6,10 +6,10 @@ export enum Experiment {
   IV_FORCE_THREAD_UNROLL = 'IV_FORCE_THREAD_UNROLL',
   VIDEO_REDIRECT_WORKAROUND = 'VIDEO_REDIRECT_WORKAROUND',
   ACTIVITY_EMBED = 'ACTIVITY_EMBED',
-  USE_TRAFFIC_CONTROL = 'USE_TRAFFIC_CONTROL',
   BROADCAST_STREAM_API = 'BROADCAST_STREAM_API',
   KITCHENSINK_VIDEO = 'KITCHENSINK_VIDEO',
-  KITCHENSINK_GIF = 'KITCHENSINK_GIF'
+  KITCHENSINK_GIF = 'KITCHENSINK_GIF',
+  USE_HORIZON_WEB = 'USE_HORIZON_WEB'
 }
 
 type ExperimentConfig = {
@@ -54,11 +54,6 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
     description: 'Use activity embed for Discord',
     percentage: 1
   },
-  [Experiment.USE_TRAFFIC_CONTROL]: {
-    name: 'Enable Traffic Control',
-    description: 'Use the Traffic Control web app to direct human traffic to app or web',
-    percentage: 0
-  },
   [Experiment.BROADCAST_STREAM_API]: {
     name: 'Broadcast Stream',
     description: 'Use FxTwitter Stream to load X/Twitter broadcasts',
@@ -73,6 +68,11 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
     name: 'KitchenSink GIF transcoder',
     description: 'Use KitchenSink GIF transcoder server',
     percentage: 1
+  },
+  [Experiment.USE_HORIZON_WEB]: {
+    name: 'Use Horizon Web',
+    description: 'Use Horizon Web to load X/Twitter pages',
+    percentage: 0
   }
 };
 

@@ -81,17 +81,7 @@ export const bskyStatusRequest = async (c: Context) => {
         Embeds will return as usual to bots as if direct media was never specified. */
       if (!isBotUA && !flags.api && !flags.direct) {
         const url = `${Constants.BSKY_ROOT}/profile/${handle}/post/${actualId}`;
-        if (experimentCheck(Experiment.USE_TRAFFIC_CONTROL)) {
-          const app = await fetch(`https://app.fxembed.com/profile/${handle}/post/${actualId}`);
-          const appBody = await app.text();
-          if (appBody.includes('<!doctype html>')) {
-            return c.html(appBody, 200);
-          } else {
-            return c.redirect(url, 302);
-          }
-        } else {
-          return c.redirect(url, 302);
-        }
+        return c.redirect(url, 302);
       }
 
       c.status(200);

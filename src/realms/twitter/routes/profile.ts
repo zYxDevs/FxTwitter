@@ -62,8 +62,8 @@ export const profileRequest = async (c: Context) => {
     /* Check for custom redirect */
 
     if (!isBotUA && !flags.api) {
-      if (experimentCheck(Experiment.USE_TRAFFIC_CONTROL, baseUrl === Constants.TWITTER_ROOT)) {
-        const app = await fetch(`https://app.fxembed.com/${handle}`);
+      if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
+        const app = await fetch(`https://app.fxtwitter.com/${handle}`);
         const appBody = await app.text();
         if (appBody.includes('<!doctype html>')) {
           return c.html(appBody, 200);
@@ -81,8 +81,8 @@ export const profileRequest = async (c: Context) => {
     /* A human has clicked a fxtwitter.com/:screen_name link!
         Obviously we just need to redirect to the user directly.*/
     console.log('Matched human UA', userAgent);
-    if (experimentCheck(Experiment.USE_TRAFFIC_CONTROL, baseUrl === Constants.TWITTER_ROOT)) {
-      const app = await fetch(`https://app.fxembed.com/${handle}`);
+    if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
+      const app = await fetch(`https://app.fxtwitter.com/${handle}`);
       const appBody = await app.text();
       if (appBody.includes('<!doctype html>')) {
         return c.html(appBody, 200);

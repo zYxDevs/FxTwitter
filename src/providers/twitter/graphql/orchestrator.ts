@@ -10,6 +10,7 @@ export interface GraphQLEndpointMethod {
   validator: (response: unknown) => boolean;
   variables?: Record<string, unknown>; // Optional per-method variables (merged with request variables)
   useElongator?: boolean;
+  headers?: Record<string, string>;
 }
 
 export interface GraphQLOrchestratorRequest {
@@ -21,6 +22,7 @@ export interface GraphQLOrchestratorRequest {
   validator?: (response: unknown) => boolean; // Used for single query
   required?: boolean; // If true, failure = overall failure (default: false for supplementary)
   useElongator?: boolean;
+  headers?: Record<string, string>;
 }
 
 export interface GraphQLOrchestratorResult {
@@ -35,10 +37,21 @@ export interface GraphQLOrchestratorResult {
  * Execute a request with weighted endpoint methods (for rate limit leveling)
  * Tries the selected endpoint first, then falls back to others on failure
  */
+const mergeRequestHeaders = (
+  orchestratorHeaders: Record<string, string> | undefined,
+  methodHeaders: Record<string, string> | undefined
+): Record<string, string> | undefined => {
+  if (orchestratorHeaders === undefined && methodHeaders === undefined) {
+    return undefined;
+  }
+  return { ...orchestratorHeaders, ...methodHeaders };
+};
+
 const executeWithMethods = async (
   c: Context,
   methods: GraphQLEndpointMethod[],
-  variables: Record<string, unknown>
+  variables: Record<string, unknown>,
+  requestHeaders?: Record<string, string>
 ): Promise<{ success: boolean; data: unknown | null; error?: Error }> => {
   // Filter methods with weight > 0
   const usableMethods = methods.filter(method => method.weight > 0);
@@ -86,7 +99,8 @@ const executeWithMethods = async (
         query: selectedMethod.query,
         variables: mergedVariables,
         validator: selectedMethod.validator,
-        useElongator: selectedMethod.useElongator
+        useElongator: selectedMethod.useElongator,
+        headers: mergeRequestHeaders(requestHeaders, selectedMethod.headers)
       });
 
       if (selectedMethod.validator(data)) {
@@ -110,7 +124,8 @@ const executeWithMethods = async (
         query: method.query,
         variables: mergedVariables,
         validator: method.validator,
-        useElongator: method.useElongator
+        useElongator: method.useElongator,
+        headers: mergeRequestHeaders(requestHeaders, method.headers)
       });
 
       if (method.validator(data)) {
@@ -144,7 +159,12 @@ export const graphQLOrchestrator = async (
       let data: unknown;
       // Handle methods (for rate limit leveling)
       if (request.methods && request.methods.length > 0) {
-        const result = await executeWithMethods(c, request.methods, request.variables ?? {});
+        const result = await executeWithMethods(
+          c,
+          request.methods,
+          request.variables ?? {},
+          request.headers
+        );
         if (!result.success) {
           throw result.error || new Error(`All methods failed for: ${request.key}`);
         }
@@ -155,7 +175,8 @@ export const graphQLOrchestrator = async (
           query: request.query,
           variables: request.variables ?? {},
           validator: request.validator,
-          useElongator: request.useElongator
+          useElongator: request.useElongator,
+          headers: request.headers
         });
 
         // Validate the response

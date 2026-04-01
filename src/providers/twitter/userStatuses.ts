@@ -27,6 +27,7 @@ import {
   validateUserMediaTimelineResponse,
   validateUserTweetsTimeline
 } from './graphql/validators';
+import { buildLanguageHeaders } from '../../helpers/language';
 import {
   convertToApiUser,
   getTwitterUserRestIdByScreenName,
@@ -44,7 +45,8 @@ export const profileStatusesAPI = async (
   count: number,
   cursor: string | null,
   c: Context,
-  withReplies = false
+  withReplies = false,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -58,6 +60,7 @@ export const profileStatusesAPI = async (
     {
       key: 'tweets',
       required: true,
+      headers: buildLanguageHeaders(language),
       methods: withReplies
         ? [
             {
@@ -113,7 +116,7 @@ export const profileStatusesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -211,12 +214,20 @@ export const profileStatusesAPIPaginated = async (
   handleOrId: ProfileHandleOrId,
   maxTotal: number,
   c: Context,
-  withReplies = false
+  withReplies = false,
+  language?: string
 ): Promise<APISearchResults> => {
   const target = Math.min(PROFILE_STATUSES_FEED_TARGET_CAP, Math.max(1, maxTotal));
   return paginateAndMerge(
     cursor =>
-      profileStatusesAPI(handleOrId, PROFILE_STATUSES_FEED_PER_PAGE, cursor, c, withReplies),
+      profileStatusesAPI(
+        handleOrId,
+        PROFILE_STATUSES_FEED_PER_PAGE,
+        cursor,
+        c,
+        withReplies,
+        language
+      ),
     target
   );
 };
@@ -225,7 +236,8 @@ export const profileArticlesAPI = async (
   handleOrId: ProfileHandleOrId,
   count: number,
   cursor: string | null,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -239,6 +251,7 @@ export const profileArticlesAPI = async (
     {
       key: 'articles',
       required: true,
+      headers: buildLanguageHeaders(language),
       methods: [
         {
           name: 'ProfileArticlesTimeline',
@@ -279,7 +292,7 @@ export const profileArticlesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -301,7 +314,8 @@ export const profileMediaAPI = async (
   handleOrId: ProfileHandleOrId,
   count: number,
   cursor: string | null,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -315,6 +329,7 @@ export const profileMediaAPI = async (
     {
       key: 'media',
       required: true,
+      headers: buildLanguageHeaders(language),
       query: UserMediaQuery,
       validator: validateUserMediaTimelineResponse,
       variables: {
@@ -342,7 +357,7 @@ export const profileMediaAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -366,11 +381,12 @@ export const profileMediaAPI = async (
 export const profileMediaAPIPaginated = async (
   handleOrId: ProfileHandleOrId,
   maxTotal: number,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const target = Math.min(PROFILE_STATUSES_FEED_TARGET_CAP, Math.max(1, maxTotal));
   return paginateAndMerge(
-    cursor => profileMediaAPI(handleOrId, PROFILE_STATUSES_FEED_PER_PAGE, cursor, c),
+    cursor => profileMediaAPI(handleOrId, PROFILE_STATUSES_FEED_PER_PAGE, cursor, c, language),
     target
   );
 };

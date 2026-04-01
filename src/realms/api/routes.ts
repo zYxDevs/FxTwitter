@@ -38,6 +38,14 @@ const aboutAccountQuery = z.object({
   })
 });
 
+const langQuery = z.object({
+  lang: z.string().optional().openapi({
+    description:
+      'Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing',
+    example: 'es'
+  })
+});
+
 export const statusV2Route = createRoute({
   method: 'get',
   path: '/2/status/{id}',
@@ -48,7 +56,7 @@ export const statusV2Route = createRoute({
     params: z.object({
       id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
     }),
-    query: aboutAccountQuery
+    query: aboutAccountQuery.merge(langQuery)
   },
   responses: {
     200: {
@@ -125,7 +133,7 @@ export const threadV2Route = createRoute({
     params: z.object({
       id: z.string().openapi({ description: 'Root tweet/post snowflake ID' })
     }),
-    query: aboutAccountQuery
+    query: aboutAccountQuery.merge(langQuery)
   },
   responses: {
     200: {
@@ -169,7 +177,8 @@ export const conversationV2Route = createRoute({
       cursor: z.string().optional().openapi({
         description: 'Pagination cursor from a prior response'
       }),
-      ...aboutAccountQuery.shape
+      ...aboutAccountQuery.shape,
+      ...langQuery.shape
     })
   },
   responses: {
@@ -288,7 +297,8 @@ export const profileStatusesV2Route = createRoute({
       with_replies: z.string().optional().openapi({
         description:
           'If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines'
-      })
+      }),
+      ...langQuery.shape
     })
   },
   responses: {
@@ -334,7 +344,8 @@ export const profileArticlesV2Route = createRoute({
       cursor: z
         .string()
         .optional()
-        .openapi({ description: 'Pagination cursor from prior response' })
+        .openapi({ description: 'Pagination cursor from prior response' }),
+      ...langQuery.shape
     })
   },
   responses: {
@@ -376,7 +387,8 @@ export const profileMediaV2Route = createRoute({
       cursor: z
         .string()
         .optional()
-        .openapi({ description: 'Pagination cursor from prior response' })
+        .openapi({ description: 'Pagination cursor from prior response' }),
+      ...langQuery.shape
     })
   },
   responses: {
@@ -501,7 +513,8 @@ export const searchV2Route = createRoute({
         description: 'Page size (default 30)',
         default: 30
       }),
-      cursor: z.string().optional()
+      cursor: z.string().optional(),
+      ...langQuery.shape
     })
   },
   responses: {

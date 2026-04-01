@@ -49,8 +49,9 @@ const shouldIncludeAboutAccount = (c: Context) => {
 
 export const statusAPIRequest: RouteHandler<typeof statusV2Route> = async c => {
   const { id } = c.req.valid('param');
+  const { lang } = c.req.valid('query');
 
-  let processedResponse = await constructTwitterThread(id, false, c, undefined, undefined);
+  let processedResponse = await constructTwitterThread(id, false, c, lang, undefined);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
     processedResponse = await attachAboutAccountData(c, processedResponse);
   }
@@ -80,8 +81,9 @@ export const statusRepostsAPIRequest: RouteHandler<typeof statusRepostsV2Route> 
 
 export const threadAPIRequest: RouteHandler<typeof threadV2Route> = async c => {
   const { id } = c.req.valid('param');
+  const { lang } = c.req.valid('query');
 
-  let processedResponse = await constructTwitterThread(id, true, c, undefined);
+  let processedResponse = await constructTwitterThread(id, true, c, lang);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
     processedResponse = await attachAboutAccountData(c, processedResponse);
   }
@@ -106,7 +108,13 @@ export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = 
   const rankingMode = rankingModeMap[query.ranking_mode ?? 'likes'] ?? 'Likes';
   const cursor = query.cursor ?? null;
 
-  const processedResponse = await constructTwitterConversation(id, c, rankingMode, cursor);
+  const processedResponse = await constructTwitterConversation(
+    id,
+    c,
+    rankingMode,
+    cursor,
+    query.lang
+  );
 
   c.status(processedResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -159,7 +167,8 @@ export const profileStatusesAPIRequest: RouteHandler<typeof profileStatusesV2Rou
     count,
     cursor,
     c,
-    withReplies
+    withReplies,
+    query.lang
   );
 
   const applySinceNoContent =
@@ -194,7 +203,13 @@ export const profileArticlesAPIRequest: RouteHandler<typeof profileArticlesV2Rou
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const articlesResponse = await profileArticlesAPI(parseHandleOrId(handle), count, cursor, c);
+  const articlesResponse = await profileArticlesAPI(
+    parseHandleOrId(handle),
+    count,
+    cursor,
+    c,
+    query.lang
+  );
 
   c.status(articlesResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -210,7 +225,13 @@ export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = 
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const mediaResponse = await profileMediaAPI(parseHandleOrId(handle), count, cursor, c);
+  const mediaResponse = await profileMediaAPI(
+    parseHandleOrId(handle),
+    count,
+    cursor,
+    c,
+    query.lang
+  );
 
   c.status(mediaResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -259,7 +280,7 @@ export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
   const count = query.count ?? 30;
   const cursor = query.cursor ?? null;
 
-  const searchResponse = await searchAPI(q, feed, count, cursor, c);
+  const searchResponse = await searchAPI(q, feed, count, cursor, c, query.lang);
 
   c.status(searchResponse.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

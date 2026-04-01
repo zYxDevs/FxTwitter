@@ -1,4 +1,5 @@
 import { Context } from 'hono';
+import { buildLanguageHeaders } from '../../helpers/language';
 import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
@@ -235,7 +236,8 @@ export const searchAPI = async (
   feed: SearchFeed,
   count: number,
   cursor: string | null,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const product = feedToProduct(feed);
 
@@ -250,6 +252,7 @@ export const searchAPI = async (
         product,
         cursor: cursor ?? null
       },
+      headers: buildLanguageHeaders(language),
       validator: (_response: unknown) => {
         const r = _response as TwitterSearchTimelineResponse;
         return Array.isArray(r?.data?.search_by_raw_query?.search_timeline?.timeline?.instructions);
@@ -273,7 +276,7 @@ export const searchAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })

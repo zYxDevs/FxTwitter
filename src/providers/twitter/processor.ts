@@ -14,6 +14,7 @@ import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
+import { normalizeLanguage } from '../../helpers/language';
 import { tcoResolver } from './tcoResolver';
 
 /** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
@@ -49,6 +50,12 @@ function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
     typeof nested?.reply_to_user_results !== 'undefined'
   ) {
     status.reply_to_user_results = nested.reply_to_user_results;
+  }
+  if (
+    typeof status.grok_translated_post_with_availability === 'undefined' &&
+    typeof nested?.grok_translated_post_with_availability !== 'undefined'
+  ) {
+    status.grok_translated_post_with_availability = nested.grok_translated_post_with_availability;
   }
 }
 
@@ -168,7 +175,9 @@ export const buildAPITwitterStatus = async (
   status: GraphQLTwitterStatus,
   language: string | undefined,
   threadAuthor: null | APIUser,
-  legacyAPI = false
+  legacyAPI = false,
+  /** When false (timelines, search, conversation), only use GraphQL inline translation — no Grok/Polyglot/AI calls. */
+  manualTranslationFallback = true
 ): Promise<APITwitterStatus | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
   let repostedBy: APIRepostedBy | null = null;
@@ -241,7 +250,8 @@ export const buildAPITwitterStatus = async (
   // if (threadAuthor && threadAuthor.id !== apiUser.id) {
   apiStatus.author = apiUser;
   if (apiStatus.author.avatar_url) {
-    apiStatus.author.avatar_url = apiStatus.author.avatar_url.replace?.('_normal', '_200x200') ?? null;
+    apiStatus.author.avatar_url =
+      apiStatus.author.avatar_url.replace?.('_normal', '_200x200') ?? null;
   }
   // }
   apiStatus.replies = status.legacy.reply_count;
@@ -473,7 +483,14 @@ export const buildAPITwitterStatus = async (
     status.quoted_tweet_results ??
     status.tweet?.quoted_tweet_results;
   if (quote) {
-    const buildQuote = await buildAPITwitterStatus(c, quote, language, threadAuthor, legacyAPI);
+    const buildQuote = await buildAPITwitterStatus(
+      c,
+      quote,
+      language,
+      threadAuthor,
+      legacyAPI,
+      manualTranslationFallback
+    );
     if ((buildQuote as FetchResults).status) {
       apiStatus.quote = undefined;
     } else {
@@ -698,62 +715,87 @@ export const buildAPITwitterStatus = async (
   if (
     typeof language === 'string' &&
     (language.length === 2 || language.length === 5) && // Only translate if the language is a valid ISO 639-1 or ISO 639-5 code
-    language !== status.legacy.lang && // Don't translate if the status language is the same as the target language
+    normalizeLanguage(language) !== normalizeLanguage(status.legacy?.lang || '') &&
     apiStatus.text.length > 1 // Don't translate if the status text is too short
   ) {
-    console.log(`Attempting to translate status to ${language}...`);
+    const normalizedTarget = normalizeLanguage(language);
+    console.log(`Attempting to translate status to ${normalizedTarget}...`);
     let didTranslate = false;
-    try {
-      const translateGrok = await translateStatusGrok(apiStatus, language, c);
-      console.log('Grok translation response:', JSON.stringify(translateGrok));
-      if (translateGrok !== null) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
-          ),
-          source_lang: apiStatus.lang ?? 'en',
-          target_lang: language,
-          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
-          provider: 'grok'
-        };
-        didTranslate = true;
-      }
-    } catch (error) {
-      console.error('Error translating status with Grok:', error);
-    }
-
-    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
-      const translatePolyglot = await translateStatus(apiStatus, language, c);
-      if (translatePolyglot !== null) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
-          ),
-          source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
-          target_lang: language.toLowerCase(),
-          source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
-            lng: 'en'
-          }),
-          provider: translatePolyglot?.provider ?? 'polyglot'
-        };
-        didTranslate = true;
-      }
-    }
-    if (c.env.AI && !didTranslate) {
-      console.log('Falling back to LLM translation');
-      const translateAPI = await translateStatusAI(apiStatus, language, c);
-      if (translateAPI !== null && translateAPI?.translated_text) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
-          ),
-          source_lang: apiStatus.lang ?? 'en',
-          target_lang: language,
-          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
-          provider: 'llm'
-        };
-      }
+    const inline = status.grok_translated_post_with_availability;
+    if (
+      inline?.is_available === true &&
+      inline.data &&
+      typeof inline.data.translation === 'string' &&
+      inline.data.translation.trim().length > 0 &&
+      normalizeLanguage(inline.data.destination_language) === normalizedTarget
+    ) {
+      const srcLang = (inline.data.source_language || apiStatus.lang || 'en').toLowerCase();
+      apiStatus.translation = {
+        text: unescapeText(
+          linkFixer(status.legacy?.entities?.urls, inline.data.translation.trim())
+        ),
+        source_lang: srcLang,
+        target_lang: normalizedTarget,
+        source_lang_en: i18next.t(`language_${srcLang}`, { lng: 'en' }),
+        provider: 'grok'
+      };
       didTranslate = true;
+    }
+    if (manualTranslationFallback) {
+      try {
+        if (!didTranslate) {
+          const translateGrok = await translateStatusGrok(apiStatus, language, c);
+          console.log('Grok translation response:', JSON.stringify(translateGrok));
+          if (translateGrok !== null) {
+            apiStatus.translation = {
+              text: unescapeText(
+                linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
+              ),
+              source_lang: apiStatus.lang ?? 'en',
+              target_lang: normalizedTarget,
+              source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+              provider: 'grok'
+            };
+            didTranslate = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error translating status with Grok:', error);
+      }
+
+      if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
+        const translatePolyglot = await translateStatus(apiStatus, language, c);
+        if (translatePolyglot !== null) {
+          apiStatus.translation = {
+            text: unescapeText(
+              linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
+            ),
+            source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
+            target_lang: normalizedTarget,
+            source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
+              lng: 'en'
+            }),
+            provider: translatePolyglot?.provider ?? 'polyglot'
+          };
+          didTranslate = true;
+        }
+      }
+      if (c.env.AI && !didTranslate) {
+        console.log('Falling back to LLM translation');
+        const translateAPI = await translateStatusAI(apiStatus, language, c);
+        if (translateAPI !== null && translateAPI?.translated_text) {
+          apiStatus.translation = {
+            text: unescapeText(
+              linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
+            ),
+            source_lang: apiStatus.lang ?? 'en',
+            target_lang: normalizedTarget,
+            source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+            provider: 'llm'
+          };
+          didTranslate = true;
+        }
+      }
     }
     if (!didTranslate) {
       console.log('No translation was successful, skipping');

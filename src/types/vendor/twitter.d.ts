@@ -471,6 +471,18 @@ type BirdwatchEntity = {
   };
 };
 
+/** Inline Grok translation when `x-twitter-client-language` matches destination. */
+type GrokTranslatedPostWithAvailability = {
+  is_available: boolean;
+  data?: {
+    destination_language: string;
+    source_language: string;
+    translation: string;
+    entities: TweetEntities;
+    associated_data: Record<string, unknown>;
+  };
+};
+
 type GraphQLTwitterStatus = {
   // Workaround
   result: GraphQLTwitterStatus;
@@ -520,6 +532,7 @@ type GraphQLTwitterStatus = {
         result: GraphQLUser;
       };
     };
+    grok_translated_post_with_availability?: GrokTranslatedPostWithAvailability;
   };
   edit_control: {
     edit_tweet_ids: string[];
@@ -529,6 +542,7 @@ type GraphQLTwitterStatus = {
   };
   edit_perspective?: unknown;
   is_translatable: boolean;
+  grok_translated_post_with_availability?: GrokTranslatedPostWithAvailability;
   views?: {
     count: string; // "562"
     state: string; // "EnabledWithCount"

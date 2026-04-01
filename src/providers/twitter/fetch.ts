@@ -67,9 +67,9 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     const csrfToken = crypto.randomUUID().replace(/-/g, '');
 
     const headers: Record<string, string> = {
-      ...(_headers ?? {}),
       Authorization: Constants.GUEST_BEARER_TOKEN,
-      ...Constants.BASE_HEADERS
+      ...Constants.BASE_HEADERS,
+      ...(_headers ?? {})
     };
 
     apiAttempts++;

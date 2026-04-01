@@ -1031,6 +1031,7 @@ export const constructTwitterConversation = async (
     originalStatus,
     language,
     null,
+    false,
     false
   )) as APITwitterStatus;
 
@@ -1064,6 +1065,7 @@ export const constructTwitterConversation = async (
         s,
         language,
         author,
+        false,
         false
       )) as APITwitterStatus;
       socialConversation.thread?.push(builtStatus);
@@ -1086,6 +1088,7 @@ export const constructTwitterConversation = async (
         s,
         language,
         null,
+        false,
         false
       )) as APITwitterStatus;
       if (builtStatus) {

@@ -175,7 +175,9 @@ export const buildAPITwitterStatus = async (
   status: GraphQLTwitterStatus,
   language: string | undefined,
   threadAuthor: null | APIUser,
-  legacyAPI = false
+  legacyAPI = false,
+  /** When false (timelines, search, conversation), only use GraphQL inline translation — no Grok/Polyglot/AI calls. */
+  manualTranslationFallback = true
 ): Promise<APITwitterStatus | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
   let repostedBy: APIRepostedBy | null = null;
@@ -481,7 +483,14 @@ export const buildAPITwitterStatus = async (
     status.quoted_tweet_results ??
     status.tweet?.quoted_tweet_results;
   if (quote) {
-    const buildQuote = await buildAPITwitterStatus(c, quote, language, threadAuthor, legacyAPI);
+    const buildQuote = await buildAPITwitterStatus(
+      c,
+      quote,
+      language,
+      threadAuthor,
+      legacyAPI,
+      manualTranslationFallback
+    );
     if ((buildQuote as FetchResults).status) {
       apiStatus.quote = undefined;
     } else {
@@ -732,59 +741,61 @@ export const buildAPITwitterStatus = async (
       };
       didTranslate = true;
     }
-    try {
-      if (!didTranslate) {
-        const translateGrok = await translateStatusGrok(apiStatus, language, c);
-        console.log('Grok translation response:', JSON.stringify(translateGrok));
-        if (translateGrok !== null) {
+    if (manualTranslationFallback) {
+      try {
+        if (!didTranslate) {
+          const translateGrok = await translateStatusGrok(apiStatus, language, c);
+          console.log('Grok translation response:', JSON.stringify(translateGrok));
+          if (translateGrok !== null) {
+            apiStatus.translation = {
+              text: unescapeText(
+                linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
+              ),
+              source_lang: apiStatus.lang ?? 'en',
+              target_lang: language,
+              source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+              provider: 'grok'
+            };
+            didTranslate = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error translating status with Grok:', error);
+      }
+
+      if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
+        const translatePolyglot = await translateStatus(apiStatus, language, c);
+        if (translatePolyglot !== null) {
           apiStatus.translation = {
             text: unescapeText(
-              linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
+              linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
             ),
-            source_lang: apiStatus.lang ?? 'en',
-            target_lang: language,
-            source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
-            provider: 'grok'
+            source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
+            target_lang: language.toLowerCase(),
+            source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
+              lng: 'en'
+            }),
+            provider: translatePolyglot?.provider ?? 'polyglot'
           };
           didTranslate = true;
         }
       }
-    } catch (error) {
-      console.error('Error translating status with Grok:', error);
-    }
-
-    if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
-      const translatePolyglot = await translateStatus(apiStatus, language, c);
-      if (translatePolyglot !== null) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
-          ),
-          source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
-          target_lang: language.toLowerCase(),
-          source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
-            lng: 'en'
-          }),
-          provider: translatePolyglot?.provider ?? 'polyglot'
-        };
+      if (c.env.AI && !didTranslate) {
+        console.log('Falling back to LLM translation');
+        const translateAPI = await translateStatusAI(apiStatus, language, c);
+        if (translateAPI !== null && translateAPI?.translated_text) {
+          apiStatus.translation = {
+            text: unescapeText(
+              linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
+            ),
+            source_lang: apiStatus.lang ?? 'en',
+            target_lang: language,
+            source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+            provider: 'llm'
+          };
+        }
         didTranslate = true;
       }
-    }
-    if (c.env.AI && !didTranslate) {
-      console.log('Falling back to LLM translation');
-      const translateAPI = await translateStatusAI(apiStatus, language, c);
-      if (translateAPI !== null && translateAPI?.translated_text) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
-          ),
-          source_lang: apiStatus.lang ?? 'en',
-          target_lang: language,
-          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
-          provider: 'llm'
-        };
-      }
-      didTranslate = true;
     }
     if (!didTranslate) {
       console.log('No translation was successful, skipping');

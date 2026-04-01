@@ -116,7 +116,7 @@ export const profileStatusesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -284,7 +284,7 @@ export const profileArticlesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -349,7 +349,7 @@ export const profileMediaAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })

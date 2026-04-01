@@ -46,6 +46,7 @@ export default defineConfig({
     POLYGLOT_ACCESS_TOKEN: JSON.stringify('example-token'),
     MOSAIC_BSKY_DOMAIN_LIST: JSON.stringify('mosaic.fxbsky.app'),
     API_HOST_LIST: JSON.stringify('api.fxtwitter.com'),
+    BLUESKY_API_HOST_LIST: JSON.stringify('api.fxbsky.app'),
     GIF_TRANSCODE_DOMAIN_LIST: JSON.stringify('gif.fxtwitter.com'),
     VIDEO_TRANSCODE_DOMAIN_LIST: JSON.stringify('video.fxtwitter.com'),
     VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: JSON.stringify('video.fxbsky.app'),

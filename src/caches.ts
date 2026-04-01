@@ -36,7 +36,12 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
   }
 
   let cacheKey: Request;
-  const returnAsJson = Constants.API_HOST_LIST.includes(cacheUrl.hostname);
+  const returnAsJson =
+    Constants.API_HOST_LIST.includes(cacheUrl.hostname) ||
+    Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname);
+  const skipReadThroughCache =
+    Constants.API_HOST_LIST.includes(cacheUrl.hostname) ||
+    Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname);
 
   /* If caching unavailable, ignore the rest of the cache middleware */
   if (typeof caches === 'undefined') {
@@ -55,7 +60,7 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
   switch (request.method) {
     case 'GET':
       if (
-        !Constants.API_HOST_LIST.includes(cacheUrl.hostname) &&
+        !skipReadThroughCache &&
         !cacheUrl.pathname.startsWith('/api/v1/statuses') &&
         !request.header('Cookie')?.includes('base_redirect')
       ) {

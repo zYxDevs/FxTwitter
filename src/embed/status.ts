@@ -13,7 +13,7 @@ import { renderInstantView } from '../render/instantview';
 import { constructTwitterThread } from '../providers/twitter/conversation';
 import { Experiment, experimentCheck } from '../experiments';
 import translationResources from '../../i18n/resources';
-import { constructBlueskyThread } from '../providers/bsky/conversation';
+import { constructBlueskyThread } from '../providers/bluesky/conversation';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
@@ -129,7 +129,7 @@ export const handleStatus = async (
       useActivity ? undefined : useLanguage,
       flags?.api ?? false
     );
-  } else if (provider === DataProvider.Bsky) {
+  } else if (provider === DataProvider.Bluesky) {
     thread = await constructBlueskyThread(
       statusId,
       authorHandle ?? '',
@@ -181,7 +181,7 @@ export const handleStatus = async (
   }
 
   if (status === null) {
-    if (provider === DataProvider.Bsky) {
+    if (provider === DataProvider.Bluesky) {
       return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
@@ -193,7 +193,7 @@ export const handleStatus = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
-      if (provider === DataProvider.Bsky) {
+      if (provider === DataProvider.Bluesky) {
         return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
       } else {
         return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
@@ -344,10 +344,10 @@ export const handleStatus = async (
       `<meta property="twitter:site" content="@${status.author.screen_name}"/>`,
       `<meta property="twitter:creator" content="@${status.author.screen_name}"/>`
     );
-  } else if (status.provider === DataProvider.Bsky) {
+  } else if (status.provider === DataProvider.Bluesky) {
     headers.push(
-      `<link rel="canonical" href="${Constants.BSKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`,
-      `<meta property="og:url" content="${Constants.BSKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
+      `<link rel="canonical" href="${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`,
+      `<meta property="og:url" content="${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
     );
   }
 
@@ -367,9 +367,9 @@ export const handleStatus = async (
       headers.push(
         `<meta http-equiv="refresh" content="0;url=${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}"/>`
       );
-    } else if (provider === DataProvider.Bsky) {
+    } else if (provider === DataProvider.Bluesky) {
       headers.push(
-        `<meta http-equiv="refresh" content="0;url=${Constants.BSKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
+        `<meta http-equiv="refresh" content="0;url=${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
       );
     }
   }
@@ -754,7 +754,7 @@ export const handleStatus = async (
     if (language !== status.lang) {
       data.l = language;
     }
-    if (status.provider === DataProvider.Bsky) {
+    if (status.provider === DataProvider.Bluesky) {
       data.h = status.author.id;
     }
     if (flags.textOnly) {
@@ -770,7 +770,7 @@ export const handleStatus = async (
     console.log('snowflake', snowflake);
     let base: string;
     switch (status.provider) {
-      case DataProvider.Bsky:
+      case DataProvider.Bluesky:
         base = Constants.STANDARD_BSKY_DOMAIN_LIST[0];
         break;
       case DataProvider.TikTok:

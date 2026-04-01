@@ -9,6 +9,7 @@ import type {
   APIFacet,
   APIPhoto,
   APIPoll,
+  APIRepostedBy,
   APITranslate,
   APITwitterStatus,
   APIUser,
@@ -60,10 +61,16 @@ export interface APIStatus {
 
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: DataProvider;
+
+  /** ATProto commit CID (Bluesky only); `id` is the public web record key (rkey). */
+  cid?: string;
+  /** `at://…/app.bsky.feed.post/…` (Bluesky only). */
+  at_uri?: string;
 }
 
 export interface APIBlueskyStatus extends APIStatus {
-  provider: DataProvider.Bsky;
+  provider: DataProvider.Bluesky;
+  reposted_by?: APIRepostedBy;
 }
 
 export interface APITikTokStatus extends APIStatus {

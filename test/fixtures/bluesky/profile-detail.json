@@ -1,0 +1,13 @@
+{
+  "did": "did:plc:abc123fixture",
+  "handle": "test.bsky.social",
+  "displayName": "Fixture User",
+  "description": "Hello https://example.com/page bio",
+  "avatar": "https://cdn.bsky.app/img/avatar/plain/did:plc:abc123fixture@jpeg",
+  "banner": "https://cdn.bsky.app/img/banner/plain/did:plc:abc123fixture@jpeg",
+  "followersCount": 100,
+  "followsCount": 50,
+  "postsCount": 42,
+  "indexedAt": "2024-06-01T12:00:00.000Z",
+  "labels": []
+}

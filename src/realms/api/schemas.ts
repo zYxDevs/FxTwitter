@@ -537,6 +537,108 @@ export const SocialThreadSchema = z
   })
   .openapi('SocialThread');
 
+/** Bluesky normalized post (API v2–shaped; omits Twitter-only fields). */
+export type APIBlueskyStatus = {
+  id: string;
+  cid?: string;
+  at_uri?: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  quotes?: number;
+  replies: number;
+  quote?: APIBlueskyStatus;
+  poll?: z.infer<typeof APIPollSchema>;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  translation?: z.infer<typeof APITranslateSchema>;
+  possibly_sensitive: boolean;
+  replying_to: {
+    screen_name: string;
+    status: string;
+  } | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'bluesky';
+  /** Present when this row is a repost (`reasonRepost` in author feed). */
+  reposted_by?: z.infer<typeof APIRepostedBySchema>;
+};
+
+export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
+  .lazy(() =>
+    z.object({
+      id: z.string(),
+      cid: z.string().optional(),
+      at_uri: z.string().optional(),
+      url: z.string(),
+      text: z.string(),
+      created_at: z.string(),
+      created_timestamp: z.number(),
+      likes: z.number(),
+      reposts: z.number(),
+      quotes: z.number().optional(),
+      replies: z.number(),
+      quote: APIBlueskyStatusSchema.optional(),
+      poll: APIPollSchema.optional(),
+      author: APIUserSchema,
+      media: APIMediaContainerSchema,
+      raw_text: z.object({
+        text: z.string(),
+        facets: z.array(APIFacetSchema)
+      }),
+      lang: z.string().nullable(),
+      translation: APITranslateSchema.optional(),
+      possibly_sensitive: z.boolean(),
+      replying_to: z
+        .object({
+          screen_name: z.string(),
+          status: z.string()
+        })
+        .nullable(),
+      source: z.string().nullable(),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      provider: z.literal('bluesky'),
+      reposted_by: APIRepostedBySchema.optional()
+    })
+  )
+  .openapi('APIBlueskyStatus');
+
+export const SocialThreadBlueskySchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIBlueskyStatusSchema.nullable(),
+    thread: z.array(APIBlueskyStatusSchema).nullable(),
+    author: APIUserSchema.nullable()
+  })
+  .openapi('SocialThreadBluesky');
+
+export type SocialThreadBluesky = z.infer<typeof SocialThreadBlueskySchema>;
+
+export const SocialConversationBlueskySchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIBlueskyStatusSchema.nullable(),
+    thread: z.array(APIBlueskyStatusSchema).nullable(),
+    replies: z.array(APIBlueskyStatusSchema).nullable(),
+    author: APIUserSchema.nullable(),
+    cursor: z
+      .object({
+        bottom: z.string().nullable()
+      })
+      .nullable()
+  })
+  .openapi('SocialConversationBluesky');
+
+export type SocialConversationBluesky = z.infer<typeof SocialConversationBlueskySchema>;
+
 export const SocialConversationSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
@@ -580,6 +682,14 @@ export const APISearchResultsSchema = z
     cursor: SearchCursorSchema
   })
   .openapi('APISearchResults');
+
+export const APISearchResultsBlueskySchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIBlueskyStatusSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APISearchResultsBluesky');
 
 export const APIUserListResultsSchema = z
   .object({
@@ -688,6 +798,7 @@ export type UserAPIResponse = z.infer<typeof UserAPIResponseSchema>;
 export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSchema>;
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
+export type APISearchResultsBluesky = z.infer<typeof APISearchResultsBlueskySchema>;
 export type APIProfileRelationshipList = z.infer<typeof APIProfileRelationshipListSchema>;
 export type APIUserListResults = z.infer<typeof APIUserListResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;

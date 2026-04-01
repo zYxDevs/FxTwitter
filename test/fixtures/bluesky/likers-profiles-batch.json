@@ -1,0 +1,26 @@
+{
+  "profiles": [
+    {
+      "did": "did:plc:likerone",
+      "handle": "liker.one",
+      "displayName": "Liker One",
+      "description": "First liker bio",
+      "followersCount": 31,
+      "followsCount": 26,
+      "postsCount": 14,
+      "indexedAt": "2024-03-01T00:00:00.000Z",
+      "labels": []
+    },
+    {
+      "did": "did:plc:likertwo",
+      "handle": "liker.two",
+      "displayName": "Liker Two",
+      "description": "Second liker bio",
+      "followersCount": 42,
+      "followsCount": 36,
+      "postsCount": 19,
+      "indexedAt": "2024-03-02T00:00:00.000Z",
+      "labels": []
+    }
+  ]
+}

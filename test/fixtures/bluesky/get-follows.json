@@ -1,0 +1,20 @@
+{
+  "subject": {
+    "did": "did:plc:subjectfixture",
+    "handle": "author.test",
+    "displayName": "Author Fixture"
+  },
+  "follows": [
+    {
+      "did": "did:plc:followingone",
+      "handle": "following.one",
+      "displayName": "Following One"
+    },
+    {
+      "did": "did:plc:followingtwo",
+      "handle": "following.two",
+      "displayName": "Following Two"
+    }
+  ],
+  "cursor": "next-following-cursor"
+}

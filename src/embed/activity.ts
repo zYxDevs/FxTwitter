@@ -2,7 +2,7 @@
 import { Strings } from '../strings';
 import { DataProvider, returnError } from './status';
 import { constructTwitterThread } from '../providers/twitter/conversation';
-import { constructBlueskyThread } from '../providers/bsky/conversation';
+import { constructBlueskyThread } from '../providers/bluesky/conversation';
 import { Constants } from '../constants';
 import { getActivitySocialProof } from '../helpers/socialproof';
 import i18next from 'i18next';
@@ -192,8 +192,8 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
 const linkifyMentions = (text: string, status: APIStatus) => {
   let baseUrl = '';
   switch (status.provider) {
-    case DataProvider.Bsky:
-      baseUrl = `${Constants.BSKY_ROOT}/profile/`;
+    case DataProvider.Bluesky:
+      baseUrl = `${Constants.BLUESKY_ROOT}/profile/`;
       break;
     case DataProvider.Twitter:
       baseUrl = `${Constants.TWITTER_ROOT}/`;
@@ -219,8 +219,8 @@ const linkifyMentions = (text: string, status: APIStatus) => {
 const linkifyHashtags = (text: string, status: APIStatus) => {
   let baseUrl = '';
   switch (status.provider) {
-    case DataProvider.Bsky:
-      baseUrl = `${Constants.BSKY_ROOT}/hashtag`;
+    case DataProvider.Bluesky:
+      baseUrl = `${Constants.BLUESKY_ROOT}/hashtag`;
       break;
     case DataProvider.Twitter:
       baseUrl = `${Constants.TWITTER_ROOT}/hashtag`;
@@ -274,10 +274,10 @@ const formatStatus = (text: string, status: APIStatus) => {
     let baseMentionUrl = '';
 
     switch (status.provider) {
-      case DataProvider.Bsky:
-        baseHashtagUrl = `${Constants.BSKY_ROOT}/hashtag`;
+      case DataProvider.Bluesky:
+        baseHashtagUrl = `${Constants.BLUESKY_ROOT}/hashtag`;
         baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
-        baseMentionUrl = `${Constants.BSKY_ROOT}/profile/`;
+        baseMentionUrl = `${Constants.BLUESKY_ROOT}/profile/`;
         break;
       case DataProvider.Twitter:
         baseHashtagUrl = `${Constants.TWITTER_ROOT}/hashtag`;
@@ -385,7 +385,7 @@ export const handleActivity = async (
   let thread: SocialThread;
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(statusId, false, c, language ?? undefined, false);
-  } else if (provider === DataProvider.Bsky) {
+  } else if (provider === DataProvider.Bluesky) {
     thread = await constructBlueskyThread(
       statusId,
       authorHandle ?? '',

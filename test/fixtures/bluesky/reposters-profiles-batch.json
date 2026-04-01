@@ -1,0 +1,26 @@
+{
+  "profiles": [
+    {
+      "did": "did:plc:reposterone",
+      "handle": "reposter.one",
+      "displayName": "Reposter One",
+      "description": "First reposter bio",
+      "followersCount": 11,
+      "followsCount": 6,
+      "postsCount": 4,
+      "indexedAt": "2024-03-01T00:00:00.000Z",
+      "labels": []
+    },
+    {
+      "did": "did:plc:repostertwo",
+      "handle": "reposter.two",
+      "displayName": "Reposter Two",
+      "description": "Second reposter bio",
+      "followersCount": 22,
+      "followsCount": 16,
+      "postsCount": 9,
+      "indexedAt": "2024-03-02T00:00:00.000Z",
+      "labels": []
+    }
+  ]
+}

@@ -5,7 +5,7 @@ const getDomain = (twitterId: string, provider: DataProvider): string | null => 
   let mosaicDomains: string[] = [];
   if (provider === DataProvider.Twitter) {
     mosaicDomains = Constants.MOSAIC_DOMAIN_LIST;
-  } else if (provider === DataProvider.Bsky) {
+  } else if (provider === DataProvider.Bluesky) {
     mosaicDomains = Constants.MOSAIC_BSKY_DOMAIN_LIST;
   }
 
@@ -38,7 +38,7 @@ export const handleMosaic = async (
       mosaicMedia = mediaList.map(
         media => media.url?.match(/(?<=\/media\/)[\w-]+(?=[.?])/g)?.[0] || ''
       );
-    } else if (provider === DataProvider.Bsky) {
+    } else if (provider === DataProvider.Bluesky) {
       mosaicMedia = mediaList.map(media =>
         (media.url?.match(/did:plc:[\w/]+/g)?.[0] || '').replace('/', '_')
       );

@@ -24,7 +24,7 @@ export const linkFixer = (entities: TcoExpansion[] | undefined, text: string): s
   return text;
 };
 
-export const linkFixerBsky = (facets: BlueskyFacet[], text: string): string => {
+export const linkFixerBluesky = (facets: BlueskyFacet[], text: string): string => {
   let offset = 0;
   if (Array.isArray(facets) && facets.length) {
     console.log('facets', facets);

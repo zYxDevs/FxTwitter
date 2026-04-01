@@ -1,0 +1,198 @@
+{
+  "thread": {
+    "$type": "app.bsky.feed.defs#threadViewPost",
+    "post": {
+      "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv",
+      "cid": "bafycidconvroot",
+      "author": {
+        "did": "did:plc:test111",
+        "handle": "author.test",
+        "displayName": "Author",
+        "avatar": "https://cdn.bsky.app/img/avatar.png",
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "associated": { "chat": { "allowIncoming": "all" } },
+        "labels": []
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Root for conversation",
+        "createdAt": "2024-06-01T12:00:00.000Z",
+        "langs": ["en"],
+        "facets": []
+      },
+      "indexedAt": "2024-06-01T12:01:00.000Z",
+      "labels": [],
+      "likeCount": 5,
+      "repostCount": 0,
+      "replyCount": 5,
+      "quoteCount": 0
+    },
+    "replies": [
+        {
+          "$type": "app.bsky.feed.defs#threadViewPost",
+          "post": {
+            "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyself1",
+            "cid": "bafycidself1",
+            "author": {
+              "did": "did:plc:test111",
+              "handle": "author.test",
+              "displayName": "Author",
+              "avatar": "https://cdn.bsky.app/img/avatar.png",
+              "createdAt": "2023-01-01T00:00:00.000Z",
+              "associated": { "chat": { "allowIncoming": "all" } },
+              "labels": []
+            },
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "Self thread part",
+              "createdAt": "2024-06-01T12:05:00.000Z",
+              "langs": ["en"],
+              "reply": {
+                "parent": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" },
+                "root": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" }
+              },
+              "facets": []
+            },
+            "indexedAt": "2024-06-01T12:05:00.000Z",
+            "labels": [],
+            "likeCount": 0,
+            "repostCount": 0,
+            "replyCount": 0,
+            "quoteCount": 0
+          }
+        },
+        {
+          "$type": "app.bsky.feed.defs#threadViewPost",
+          "post": {
+            "uri": "at://did:plc:other2/app.bsky.feed.post/rkeylowlikes",
+            "cid": "bafycidlow",
+            "author": {
+              "did": "did:plc:other2",
+              "handle": "low.test",
+              "displayName": "Low",
+              "avatar": "https://cdn.bsky.app/img/avatar.png",
+              "createdAt": "2023-01-01T00:00:00.000Z",
+              "associated": { "chat": { "allowIncoming": "all" } },
+              "labels": []
+            },
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "One like",
+              "createdAt": "2024-06-01T13:00:00.000Z",
+              "langs": ["en"],
+              "reply": {
+                "parent": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" },
+                "root": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" }
+              },
+              "facets": []
+            },
+            "indexedAt": "2024-06-01T13:00:00.000Z",
+            "labels": [],
+            "likeCount": 1,
+            "repostCount": 0,
+            "replyCount": 0,
+            "quoteCount": 0
+          }
+        },
+        {
+          "$type": "app.bsky.feed.defs#threadViewPost",
+          "post": {
+            "uri": "at://did:plc:other3/app.bsky.feed.post/rkeymidlikes",
+            "cid": "bafycidmid",
+            "author": {
+              "did": "did:plc:other3",
+              "handle": "mid.test",
+              "displayName": "Mid",
+              "avatar": "https://cdn.bsky.app/img/avatar.png",
+              "createdAt": "2023-01-01T00:00:00.000Z",
+              "associated": { "chat": { "allowIncoming": "all" } },
+              "labels": []
+            },
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "Three likes",
+              "createdAt": "2024-06-01T13:30:00.000Z",
+              "langs": ["en"],
+              "reply": {
+                "parent": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" },
+                "root": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" }
+              },
+              "facets": []
+            },
+            "indexedAt": "2024-06-01T13:30:00.000Z",
+            "labels": [],
+            "likeCount": 3,
+            "repostCount": 0,
+            "replyCount": 0,
+            "quoteCount": 0
+          }
+        },
+        {
+          "$type": "app.bsky.feed.defs#threadViewPost",
+          "post": {
+            "uri": "at://did:plc:other4/app.bsky.feed.post/rkeyhilikes",
+            "cid": "bafycidhi",
+            "author": {
+              "did": "did:plc:other4",
+              "handle": "hi.test",
+              "displayName": "Hi",
+              "avatar": "https://cdn.bsky.app/img/avatar.png",
+              "createdAt": "2023-01-01T00:00:00.000Z",
+              "associated": { "chat": { "allowIncoming": "all" } },
+              "labels": []
+            },
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "Ten likes",
+              "createdAt": "2024-06-01T14:00:00.000Z",
+              "langs": ["en"],
+              "reply": {
+                "parent": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" },
+                "root": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" }
+              },
+              "facets": []
+            },
+            "indexedAt": "2024-06-01T14:00:00.000Z",
+            "labels": [],
+            "likeCount": 10,
+            "repostCount": 0,
+            "replyCount": 0,
+            "quoteCount": 0
+          }
+        },
+        {
+          "$type": "app.bsky.feed.defs#threadViewPost",
+          "post": {
+            "uri": "at://did:plc:other5/app.bsky.feed.post/rkeytwolikes",
+            "cid": "bafycidtwo",
+            "author": {
+              "did": "did:plc:other5",
+              "handle": "two.test",
+              "displayName": "Two",
+              "avatar": "https://cdn.bsky.app/img/avatar.png",
+              "createdAt": "2023-01-01T00:00:00.000Z",
+              "associated": { "chat": { "allowIncoming": "all" } },
+              "labels": []
+            },
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "Two likes",
+              "createdAt": "2024-06-01T14:30:00.000Z",
+              "langs": ["en"],
+              "reply": {
+                "parent": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" },
+                "root": { "cid": "bafycidconvroot", "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyconv" }
+              },
+              "facets": []
+            },
+            "indexedAt": "2024-06-01T14:30:00.000Z",
+            "labels": [],
+            "likeCount": 2,
+            "repostCount": 0,
+            "replyCount": 0,
+            "quoteCount": 0
+          }
+        }
+    ]
+  }
+}

@@ -26,20 +26,37 @@ function clampCount(raw: string | undefined): number {
   return Math.min(100, Math.max(1, n));
 }
 
-function parseFeedQuery(c: Context): { count: number; withReplies: boolean; safe: boolean } {
+/** Matches JSON API `lang` query; optional `language` alias for embed-style URLs. */
+function feedRequestLanguage(c: Context): string | undefined {
   const q = c.req.query();
+  const raw = q.lang ?? q.language;
+  if (typeof raw !== 'string' || raw.length === 0) return undefined;
+  return raw;
+}
+
+function parseFeedQuery(c: Context): {
+  count: number;
+  withReplies: boolean;
+  safe: boolean;
+  language?: string;
+} {
+  const q = c.req.query();
+  const language = feedRequestLanguage(c);
   return {
     count: clampCount(q.count),
     withReplies: isParamTruthy(q.with_replies ?? q.withReplies),
-    safe: isParamTruthy(q.safe)
+    safe: isParamTruthy(q.safe),
+    ...(language ? { language } : {})
   };
 }
 
-function parseMediaFeedQuery(c: Context): { count: number; safe: boolean } {
+function parseMediaFeedQuery(c: Context): { count: number; safe: boolean; language?: string } {
   const q = c.req.query();
+  const language = feedRequestLanguage(c);
   return {
     count: clampCount(q.count),
-    safe: isParamTruthy(q.safe)
+    safe: isParamTruthy(q.safe),
+    ...(language ? { language } : {})
   };
 }
 
@@ -135,11 +152,11 @@ async function serveFeed(
   if (kind === 'timeline') {
     const q = parseFeedQuery(c);
     omitSensitive = q.safe;
-    apiResult = await profileStatusesAPIPaginated(parsed, q.count, c, q.withReplies);
+    apiResult = await profileStatusesAPIPaginated(parsed, q.count, c, q.withReplies, q.language);
   } else {
     const q = parseMediaFeedQuery(c);
     omitSensitive = q.safe;
-    apiResult = await profileMediaAPIPaginated(parsed, q.count, c);
+    apiResult = await profileMediaAPIPaginated(parsed, q.count, c, q.language);
   }
 
   const meta = buildMeta(c, handle, kind, apiResult.results);

@@ -2,10 +2,14 @@
 export const buildLanguageHeaders = (
   language: string | undefined
 ): Record<string, string> | undefined => {
-  if (typeof language !== 'string' || language.length === 0) {
+  if (typeof language !== 'string') {
     return undefined;
   }
-  return { 'x-twitter-client-language': normalizeLanguage(language) };
+  const cleaned = language.trim().toLowerCase();
+  if (cleaned.length === 0) {
+    return undefined;
+  }
+  return { 'x-twitter-client-language': normalizeLanguage(cleaned) };
 };
 
 export const normalizeLanguage = (language: string) => {

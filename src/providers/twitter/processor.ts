@@ -715,12 +715,12 @@ export const buildAPITwitterStatus = async (
   if (
     typeof language === 'string' &&
     (language.length === 2 || language.length === 5) && // Only translate if the language is a valid ISO 639-1 or ISO 639-5 code
-    language !== status.legacy.lang && // Don't translate if the status language is the same as the target language
+    normalizeLanguage(language) !== normalizeLanguage(status.legacy?.lang || '') &&
     apiStatus.text.length > 1 // Don't translate if the status text is too short
   ) {
-    console.log(`Attempting to translate status to ${language}...`);
-    let didTranslate = false;
     const normalizedTarget = normalizeLanguage(language);
+    console.log(`Attempting to translate status to ${normalizedTarget}...`);
+    let didTranslate = false;
     const inline = status.grok_translated_post_with_availability;
     if (
       inline?.is_available === true &&
@@ -735,7 +735,7 @@ export const buildAPITwitterStatus = async (
           linkFixer(status.legacy?.entities?.urls, inline.data.translation.trim())
         ),
         source_lang: srcLang,
-        target_lang: language,
+        target_lang: normalizedTarget,
         source_lang_en: i18next.t(`language_${srcLang}`, { lng: 'en' }),
         provider: 'grok_inline'
       };
@@ -752,7 +752,7 @@ export const buildAPITwitterStatus = async (
                 linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
               ),
               source_lang: apiStatus.lang ?? 'en',
-              target_lang: language,
+              target_lang: normalizedTarget,
               source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
               provider: 'grok'
             };
@@ -771,7 +771,7 @@ export const buildAPITwitterStatus = async (
               linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
             ),
             source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
-            target_lang: language.toLowerCase(),
+            target_lang: normalizedTarget,
             source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
               lng: 'en'
             }),
@@ -789,7 +789,7 @@ export const buildAPITwitterStatus = async (
               linkFixer(status.legacy?.entities?.urls, translateAPI?.translated_text || '')
             ),
             source_lang: apiStatus.lang ?? 'en',
-            target_lang: language,
+            target_lang: normalizedTarget,
             source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
             provider: 'llm'
           };

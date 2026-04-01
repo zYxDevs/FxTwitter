@@ -27,6 +27,7 @@ import {
   validateUserMediaTimelineResponse,
   validateUserTweetsTimeline
 } from './graphql/validators';
+import { buildLanguageHeaders } from '../../helpers/language';
 import {
   convertToApiUser,
   getTwitterUserRestIdByScreenName,
@@ -44,7 +45,8 @@ export const profileStatusesAPI = async (
   count: number,
   cursor: string | null,
   c: Context,
-  withReplies = false
+  withReplies = false,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -58,6 +60,7 @@ export const profileStatusesAPI = async (
     {
       key: 'tweets',
       required: true,
+      headers: buildLanguageHeaders(language),
       methods: withReplies
         ? [
             {
@@ -113,7 +116,7 @@ export const profileStatusesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -225,7 +228,8 @@ export const profileArticlesAPI = async (
   handleOrId: ProfileHandleOrId,
   count: number,
   cursor: string | null,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -239,6 +243,7 @@ export const profileArticlesAPI = async (
     {
       key: 'articles',
       required: true,
+      headers: buildLanguageHeaders(language),
       methods: [
         {
           name: 'ProfileArticlesTimeline',
@@ -279,7 +284,7 @@ export const profileArticlesAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })
@@ -301,7 +306,8 @@ export const profileMediaAPI = async (
   handleOrId: ProfileHandleOrId,
   count: number,
   cursor: string | null,
-  c: Context
+  c: Context,
+  language?: string
 ): Promise<APISearchResults> => {
   const userId =
     handleOrId.type === 'userId'
@@ -315,6 +321,7 @@ export const profileMediaAPI = async (
     {
       key: 'media',
       required: true,
+      headers: buildLanguageHeaders(language),
       query: UserMediaQuery,
       validator: validateUserMediaTimelineResponse,
       variables: {
@@ -342,7 +349,7 @@ export const profileMediaAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, undefined, null, false).catch(err => {
+        buildAPITwitterStatus(c, status, language, null, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })

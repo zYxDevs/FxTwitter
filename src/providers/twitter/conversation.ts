@@ -1,6 +1,7 @@
 import { Constants } from '../../constants';
 import { buildAPITwitterStatus } from './processor';
 import { Experiment, experimentCheck } from '../../experiments';
+import { buildLanguageHeaders } from '../../helpers/language';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -101,8 +102,10 @@ export const fetchTweetDetail = async (
   c: Context,
   status: string,
   cursor: string | null = null,
-  rankingMode?: TweetDetailRankingMode
+  rankingMode?: TweetDetailRankingMode,
+  language?: string
 ): Promise<TweetDetailResponse> => {
+  const langHeaders = buildLanguageHeaders(language);
   const results = await graphQLOrchestrator(c, [
     {
       key: 'threadedConversation',
@@ -130,7 +133,8 @@ export const fetchTweetDetail = async (
           }
         }
       ],
-      required: true
+      required: true,
+      headers: langHeaders
     }
   ]);
 
@@ -147,7 +151,8 @@ export const fetchByRestId = async (
   useElongator = experimentCheck(
     Experiment.ELONGATOR_BY_DEFAULT,
     typeof c.env?.TwitterProxy !== 'undefined'
-  )
+  ),
+  language?: string
 ): Promise<TweetResultByRestIdResponse> => {
   return graphqlRequest(c, {
     query: TweetResultByRestIdQuery,
@@ -155,6 +160,7 @@ export const fetchByRestId = async (
       tweetId: status
     },
     useElongator: useElongator,
+    headers: buildLanguageHeaders(language),
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultByRestIdResponse;
       // If we get a not found error it's still a valid response
@@ -195,7 +201,8 @@ export const fetchByRestIds = async (
   useElongator = experimentCheck(
     Experiment.ELONGATOR_BY_DEFAULT,
     typeof c.env?.TwitterProxy !== 'undefined'
-  )
+  ),
+  language?: string
 ): Promise<TweetResultsByRestIdsResponse> => {
   return graphqlRequest(c, {
     query: TweetResultsByRestIdsQuery,
@@ -203,6 +210,7 @@ export const fetchByRestIds = async (
       tweetIds: statuses
     },
     useElongator: useElongator,
+    headers: buildLanguageHeaders(language),
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultsByRestIdsResponse;
       // If we get a not found error it's still a valid response
@@ -243,7 +251,8 @@ export const fetchByIds = async (
   useElongator = experimentCheck(
     Experiment.ELONGATOR_BY_DEFAULT,
     typeof c.env?.TwitterProxy !== 'undefined'
-  )
+  ),
+  language?: string
 ): Promise<TweetResultsByIdsResponse> => {
   return graphqlRequest(c, {
     query: TweetResultsByIdsQuery,
@@ -251,6 +260,7 @@ export const fetchByIds = async (
       rest_ids: statuses
     },
     useElongator: useElongator,
+    headers: buildLanguageHeaders(language),
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultsByIdsResponse;
       // If we get a not found error it's still a valid response
@@ -291,7 +301,8 @@ export const fetchById = async (
   useElongator = experimentCheck(
     Experiment.ELONGATOR_BY_DEFAULT,
     typeof c.env?.TwitterProxy !== 'undefined'
-  )
+  ),
+  language?: string
 ): Promise<TweetResultByIdResponse> => {
   return graphqlRequest(c, {
     query: TweetResultByIdQuery,
@@ -299,6 +310,7 @@ export const fetchById = async (
       rest_id: status
     },
     useElongator: useElongator,
+    headers: buildLanguageHeaders(language),
     validator: (_conversation: unknown) => {
       const conversation = _conversation as TweetResultByIdResponse;
       // If we get a not found error it's still a valid response
@@ -544,7 +556,8 @@ const filterBucketStatuses = (tweets: GraphQLTwitterStatus[], original: GraphQLT
 const fetchSingleStatus = async (
   id: string,
   c: Context,
-  processThread = false
+  processThread = false,
+  language?: string
 ): Promise<
   | TweetDetailResponse
   | TweetResultByRestIdResponse
@@ -568,10 +581,12 @@ const fetchSingleStatus = async (
     typeof c.env?.TwitterProxy !== 'undefined'
   );
 
+  const langHeaders = buildLanguageHeaders(language);
+
   // If elongator is not enabled, only use TweetResultByRestId
   if (!hasElongator) {
     try {
-      return await fetchByRestId(id, c);
+      return await fetchByRestId(id, c, undefined, language);
     } catch (_e) {
       return null;
     }
@@ -581,6 +596,7 @@ const fetchSingleStatus = async (
   const results = await graphQLOrchestrator(c, [
     {
       key: 'status',
+      headers: langHeaders,
       methods: [
         {
           name: 'TweetDetail',
@@ -676,7 +692,7 @@ export const constructTwitterThread = async (
     | TweetResultsByRestIdsResponse
     | TweetResultsByIdsResponse
     | TweetResultByIdResponse
-    | null = await fetchSingleStatus(id, c, processThread);
+    | null = await fetchSingleStatus(id, c, processThread, language);
   let status: APITwitterStatus;
 
   if (!response) {
@@ -731,7 +747,7 @@ export const constructTwitterThread = async (
       (!status.article.content?.blocks || status.article.content.blocks.length === 0)
     ) {
       console.log('Article lacks content blocks, re-fetching with TweetResultByRestId...');
-      const articleResponse = await fetchByRestIds([id], c);
+      const articleResponse = await fetchByRestIds([id], c, undefined, language);
       if (articleResponse?.data?.tweetResult?.[0]?.result) {
         const rebuiltStatus = await buildAPITwitterStatus(
           c,
@@ -754,7 +770,7 @@ export const constructTwitterThread = async (
     else if (typeof c.env?.TwitterProxy !== 'undefined') {
       console.log('Need thread data, trying TweetDetail...');
       if (experimentCheck(Experiment.TWEET_DETAIL_API)) {
-        const threadResponse = await fetchTweetDetail(c, id, null);
+        const threadResponse = await fetchTweetDetail(c, id, null, undefined, language);
         if (threadResponse?.data) {
           response = threadResponse;
         }
@@ -855,7 +871,7 @@ export const constructTwitterThread = async (
       let loadCursor: TweetDetailResponse;
 
       try {
-        loadCursor = await fetchTweetDetail(c, id, cursor.value);
+        loadCursor = await fetchTweetDetail(c, id, cursor.value, undefined, language);
 
         if (
           typeof loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ===
@@ -920,7 +936,7 @@ export const constructTwitterThread = async (
       let loadCursor: TweetDetailResponse;
 
       try {
-        loadCursor = await fetchTweetDetail(c, id, cursor.value);
+        loadCursor = await fetchTweetDetail(c, id, cursor.value, undefined, language);
 
         if (
           typeof loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ===
@@ -990,9 +1006,10 @@ export const constructTwitterConversation = async (
   id: string,
   c: Context,
   rankingMode: TweetDetailRankingMode = 'Likes',
-  cursor: string | null = null
+  cursor: string | null = null,
+  language?: string
 ): Promise<SocialConversation> => {
-  const response = await fetchTweetDetail(c, id, cursor, rankingMode);
+  const response = await fetchTweetDetail(c, id, cursor, rankingMode, language);
 
   if (!response?.data?.threaded_conversation_with_injections_v2?.instructions) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
@@ -1012,7 +1029,7 @@ export const constructTwitterConversation = async (
   const status = (await buildAPITwitterStatus(
     c,
     originalStatus,
-    undefined,
+    language,
     null,
     false
   )) as APITwitterStatus;
@@ -1045,7 +1062,7 @@ export const constructTwitterConversation = async (
       const builtStatus = (await buildAPITwitterStatus(
         c,
         s,
-        undefined,
+        language,
         author,
         false
       )) as APITwitterStatus;
@@ -1067,7 +1084,7 @@ export const constructTwitterConversation = async (
       const builtStatus = (await buildAPITwitterStatus(
         c,
         s,
-        undefined,
+        language,
         null,
         false
       )) as APITwitterStatus;

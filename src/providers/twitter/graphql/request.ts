@@ -18,10 +18,12 @@ interface GraphQLRequest {
   validator: (response: unknown) => boolean;
   variables: Record<string, unknown>;
   useElongator?: boolean;
+  /** Merged last into twitterFetch headers (e.g. `x-twitter-client-language`). */
+  headers?: Record<string, string>;
 }
 
 export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promise<unknown> => {
-  const { query, validator, variables } = request;
+  const { query, validator, variables, headers: requestHeaders } = request;
   console.log(`📤 ${query.queryName} (${JSON.stringify(variables)})`);
   const allVariables = { ...query.variables, ...(variables ?? {}) };
 
@@ -37,6 +39,7 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
   return twitterFetch(c, {
     url,
     method: 'GET',
+    headers: requestHeaders,
     validateFunction: validator,
     elongatorRequired: query.requiresAccount
   });

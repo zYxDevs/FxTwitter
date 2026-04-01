@@ -14,6 +14,7 @@ import { translateStatus } from '../../helpers/translate';
 import i18next from 'i18next';
 import { translateStatusGrok } from '../../helpers/translateGrok';
 import { experimentCheck, Experiment } from '../../experiments';
+import { normalizeLanguage } from '../../helpers/language';
 import { tcoResolver } from './tcoResolver';
 
 /** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
@@ -49,6 +50,12 @@ function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
     typeof nested?.reply_to_user_results !== 'undefined'
   ) {
     status.reply_to_user_results = nested.reply_to_user_results;
+  }
+  if (
+    typeof status.grok_translated_post_with_availability === 'undefined' &&
+    typeof nested?.grok_translated_post_with_availability !== 'undefined'
+  ) {
+    status.grok_translated_post_with_availability = nested.grok_translated_post_with_availability;
   }
 }
 
@@ -241,7 +248,8 @@ export const buildAPITwitterStatus = async (
   // if (threadAuthor && threadAuthor.id !== apiUser.id) {
   apiStatus.author = apiUser;
   if (apiStatus.author.avatar_url) {
-    apiStatus.author.avatar_url = apiStatus.author.avatar_url.replace?.('_normal', '_200x200') ?? null;
+    apiStatus.author.avatar_url =
+      apiStatus.author.avatar_url.replace?.('_normal', '_200x200') ?? null;
   }
   // }
   apiStatus.replies = status.legacy.reply_count;
@@ -703,20 +711,43 @@ export const buildAPITwitterStatus = async (
   ) {
     console.log(`Attempting to translate status to ${language}...`);
     let didTranslate = false;
+    const normalizedTarget = normalizeLanguage(language);
+    const inline = status.grok_translated_post_with_availability;
+    if (
+      inline?.is_available === true &&
+      inline.data &&
+      typeof inline.data.translation === 'string' &&
+      inline.data.translation.trim().length > 0 &&
+      normalizeLanguage(inline.data.destination_language) === normalizedTarget
+    ) {
+      const srcLang = (inline.data.source_language || apiStatus.lang || 'en').toLowerCase();
+      apiStatus.translation = {
+        text: unescapeText(
+          linkFixer(status.legacy?.entities?.urls, inline.data.translation.trim())
+        ),
+        source_lang: srcLang,
+        target_lang: language,
+        source_lang_en: i18next.t(`language_${srcLang}`, { lng: 'en' }),
+        provider: 'grok_inline'
+      };
+      didTranslate = true;
+    }
     try {
-      const translateGrok = await translateStatusGrok(apiStatus, language, c);
-      console.log('Grok translation response:', JSON.stringify(translateGrok));
-      if (translateGrok !== null) {
-        apiStatus.translation = {
-          text: unescapeText(
-            linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
-          ),
-          source_lang: apiStatus.lang ?? 'en',
-          target_lang: language,
-          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
-          provider: 'grok'
-        };
-        didTranslate = true;
+      if (!didTranslate) {
+        const translateGrok = await translateStatusGrok(apiStatus, language, c);
+        console.log('Grok translation response:', JSON.stringify(translateGrok));
+        if (translateGrok !== null) {
+          apiStatus.translation = {
+            text: unescapeText(
+              linkFixer(status.legacy?.entities?.urls, translateGrok?.result?.text || '')
+            ),
+            source_lang: apiStatus.lang ?? 'en',
+            target_lang: language,
+            source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+            provider: 'grok'
+          };
+          didTranslate = true;
+        }
       }
     } catch (error) {
       console.error('Error translating status with Grok:', error);

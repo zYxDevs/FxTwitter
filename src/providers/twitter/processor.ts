@@ -737,7 +737,7 @@ export const buildAPITwitterStatus = async (
         source_lang: srcLang,
         target_lang: normalizedTarget,
         source_lang_en: i18next.t(`language_${srcLang}`, { lng: 'en' }),
-        provider: 'grok_inline'
+        provider: 'grok'
       };
       didTranslate = true;
     }

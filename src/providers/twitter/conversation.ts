@@ -4,7 +4,6 @@ import { Experiment, experimentCheck } from '../../experiments';
 import { buildLanguageHeaders } from '../../helpers/language';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
-import { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { APITwitterStatus } from '../../realms/api/schemas';
 import { InputFlags } from '../../types/types';
 import {
@@ -1106,16 +1105,4 @@ export const constructTwitterConversation = async (
   }
 
   return socialConversation;
-};
-
-export const threadAPIProvider = async (c: Context) => {
-  const id = c.req.param('id') as string;
-
-  const processedResponse = await constructTwitterThread(id, true, c, undefined);
-
-  // Add every header from Constants.API_RESPONSE_HEADERS
-  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-    c.header(header, value);
-  }
-  return c.json(processedResponse, processedResponse.code as ContentfulStatusCode);
 };

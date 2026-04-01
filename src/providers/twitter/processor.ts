@@ -793,8 +793,8 @@ export const buildAPITwitterStatus = async (
             source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
             provider: 'llm'
           };
+          didTranslate = true;
         }
-        didTranslate = true;
       }
     }
     if (!didTranslate) {

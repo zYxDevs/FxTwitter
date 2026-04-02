@@ -276,7 +276,7 @@ const formatStatus = (text: string, status: APIStatus) => {
     switch (status.provider) {
       case DataProvider.Bluesky:
         baseHashtagUrl = `${Constants.BLUESKY_ROOT}/hashtag`;
-        baseSymbolUrl = `${Constants.TWITTER_ROOT}/search?q=%24`;
+        baseSymbolUrl = `${Constants.BLUESKY_ROOT}/search?q=%24`;
         baseMentionUrl = `${Constants.BLUESKY_ROOT}/profile/`;
         break;
       case DataProvider.Twitter:
@@ -329,7 +329,9 @@ const formatStatus = (text: string, status: APIStatus) => {
           offset += newFacet.length - oldLen;
           break;
         case 'symbol':
-          newFacet = `<a href="${baseSymbolUrl}/${facet.original}">$${facet.original}</a>`;
+          newFacet = baseSymbolUrl
+            ? `<a href="${baseSymbolUrl}/${facet.original}">$${facet.original}</a>`
+            : `$${facet.original}`;
           text = text.slice(0, start) + newFacet + text.slice(end);
           offset += newFacet.length - oldLen;
           break;

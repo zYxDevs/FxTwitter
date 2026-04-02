@@ -10,6 +10,12 @@ test('rkeyFromPostAtUri extracts record key', () => {
 
 test('didFromAtUri extracts DID', () => {
   expect(didFromAtUri('at://did:plc:abc123/app.bsky.feed.post/rkey')).toEqual('did:plc:abc123');
+  expect(didFromAtUri('at://did:web:example.com/app.bsky.feed.post/rkey')).toEqual(
+    'did:web:example.com'
+  );
+  expect(didFromAtUri('at://user.bsky.social/app.bsky.feed.post/rkey')).toBeNull();
+  expect(didFromAtUri('at://Did:plc:abc/app.bsky.feed.post/rkey')).toBeNull();
+  expect(didFromAtUri('at://did:/app.bsky.feed.post/rkey')).toBeNull();
   expect(didFromAtUri('https://bsky.app')).toBeNull();
 });
 

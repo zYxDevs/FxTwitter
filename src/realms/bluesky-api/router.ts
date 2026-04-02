@@ -82,4 +82,4 @@ blueskyApi.doc('/2/openapi.json', {
 
 blueskyApi.get('/robots.txt', async c => c.text(Strings.ROBOTS_TXT_API));
 
-blueskyApi.get('*', async c => c.json({ code: 404, message: 'Not found' }, 404));
+blueskyApi.all('*', async c => c.json({ code: 404, message: 'Not found' }, 404));

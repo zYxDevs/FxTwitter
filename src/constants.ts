@@ -15,11 +15,13 @@ export const Constants = {
   POLYGLOT_ACCESS_TOKEN: POLYGLOT_ACCESS_TOKEN,
   API_HOST_LIST: API_HOST_LIST.split(','),
   API_HOST_ROOT: `https://${API_HOST_LIST.split(',')[0]}`,
-  BLUESKY_API_HOST_LIST: BLUESKY_API_HOST_LIST.split(',')
+  BLUESKY_API_HOST_LIST: (BLUESKY_API_HOST_LIST ?? '')
+    .split(',')
     .map(s => s.trim())
     .filter(Boolean),
   BLUESKY_API_HOST_ROOT: (() => {
-    const h = BLUESKY_API_HOST_LIST.split(',')
+    const h = (BLUESKY_API_HOST_LIST ?? '')
+      .split(',')
       .map(s => s.trim())
       .filter(Boolean)[0];
     return h ? `https://${h}` : '';

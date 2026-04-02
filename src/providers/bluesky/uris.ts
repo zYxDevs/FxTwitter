@@ -11,12 +11,17 @@ export const rkeyFromPostAtUri = (uri: string | undefined | null): string | null
 export const atUriForFeedPost = (repo: string, rkey: string): string =>
   `at://${repo}/app.bsky.feed.post/${rkey}`;
 
-/** DID from AT URI `at://<did>/...`. */
+/** DID from AT URI `at://<did>/...` when the repo segment is a DID (not a handle). */
 export const didFromAtUri = (uri: string | undefined | null): string | null => {
   if (!uri?.startsWith('at://')) return null;
   const rest = uri.slice('at://'.length);
   const did = rest.split('/')[0];
-  return did || null;
+  if (!did || !did.startsWith('did:')) return null;
+  const methodEnd = did.indexOf(':', 4);
+  if (methodEnd === -1 || methodEnd === did.length - 1) return null;
+  const method = did.slice(4, methodEnd);
+  if (!/^[a-z0-9]+$/.test(method)) return null;
+  return did;
 };
 
 export const blueskyWebPostUrl = (handle: string, rkey: string): string =>

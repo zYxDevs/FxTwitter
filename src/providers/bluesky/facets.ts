@@ -20,6 +20,7 @@ export const blueskyFacetsToApiFacets = (
   for (const facet of facets) {
     const start = utf8ByteOffsetToUtf16Index(text, facet.index.byteStart);
     const end = utf8ByteOffsetToUtf16Index(text, facet.index.byteEnd);
+    if (end <= start) continue;
     for (const feature of facet.features) {
       if (feature.$type === 'app.bsky.richtext.facet#link' && feature.uri) {
         out.push({

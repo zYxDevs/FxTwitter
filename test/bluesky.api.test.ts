@@ -114,10 +114,9 @@ test('GET /2/search returns results and cursor.bottom', async () => {
     throw new Error(`Unexpected fetch: ${u}`);
   });
 
-  const res = await app.request(
-    'https://api.fxbsky.app/2/search?q=fixture',
-    { headers: { 'User-Agent': 'FxEmbedTest/1.0' } }
-  );
+  const res = await app.request('https://api.fxbsky.app/2/search?q=fixture', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
@@ -483,7 +482,13 @@ test('GET /2/profile/{handle}/followers returns users, hydrates via getProfiles,
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
-    results: { id: string; screen_name: string; followers: number; following: number; statuses: number }[];
+    results: {
+      id: string;
+      screen_name: string;
+      followers: number;
+      following: number;
+      statuses: number;
+    }[];
     cursor: { top: null; bottom: string | null };
   };
   expect(body.code).toBe(200);
@@ -504,13 +509,10 @@ test('GET /2/profile/{handle}/followers accepts count and cursor query params', 
     if (u.includes('app.bsky.graph.getFollowers')) {
       expect(u).toContain('limit=5');
       expect(u).toContain('cursor=page-two-token');
-      return new Response(
-        JSON.stringify({ ...getFollowers, followers: [], cursor: undefined }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      return new Response(JSON.stringify({ ...getFollowers, followers: [], cursor: undefined }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     throw new Error(`Unexpected fetch: ${u}`);
   });
@@ -579,7 +581,13 @@ test('GET /2/profile/{handle}/following returns users, hydrates via getProfiles,
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
-    results: { id: string; screen_name: string; followers: number; following: number; statuses: number }[];
+    results: {
+      id: string;
+      screen_name: string;
+      followers: number;
+      following: number;
+      statuses: number;
+    }[];
     cursor: { top: null; bottom: string | null };
   };
   expect(body.code).toBe(200);
@@ -667,14 +675,19 @@ test('GET /2/status/{handle}/{rkey}/reposts returns users, hydrates via getProfi
     throw new Error(`Unexpected fetch: ${u}`);
   });
 
-  const res = await app.request(
-    'https://api.fxbsky.app/2/status/author.test/rkeyrepost/reposts',
-    { headers: { 'User-Agent': 'FxEmbedTest/1.0' } }
-  );
+  const res = await app.request('https://api.fxbsky.app/2/status/author.test/rkeyrepost/reposts', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
-    results: { id: string; screen_name: string; followers: number; following: number; statuses: number }[];
+    results: {
+      id: string;
+      screen_name: string;
+      followers: number;
+      following: number;
+      statuses: number;
+    }[];
     cursor: { top: null; bottom: string | null };
   };
   expect(body.code).toBe(200);
@@ -722,10 +735,9 @@ test('GET /2/status/{handle}/{rkey}/reposts maps upstream not found to 404', asy
     throw new Error(`Unexpected fetch: ${u}`);
   });
 
-  const res = await app.request(
-    'https://api.fxbsky.app/2/status/bad.actor/rkeygone/reposts',
-    { headers: { 'User-Agent': 'FxEmbedTest/1.0' } }
-  );
+  const res = await app.request('https://api.fxbsky.app/2/status/bad.actor/rkeygone/reposts', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
   expect(res.status).toBe(404);
   const body = (await res.json()) as {
     code: number;
@@ -766,7 +778,13 @@ test('GET /2/status/{handle}/{rkey}/likes returns users, hydrates via getProfile
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
-    results: { id: string; screen_name: string; followers: number; following: number; statuses: number }[];
+    results: {
+      id: string;
+      screen_name: string;
+      followers: number;
+      following: number;
+      statuses: number;
+    }[];
     cursor: { top: null; bottom: string | null };
   };
   expect(body.code).toBe(200);
@@ -814,10 +832,9 @@ test('GET /2/status/{handle}/{rkey}/likes maps upstream not found to 404', async
     throw new Error(`Unexpected fetch: ${u}`);
   });
 
-  const res = await app.request(
-    'https://api.fxbsky.app/2/status/bad.actor/rkeygone/likes',
-    { headers: { 'User-Agent': 'FxEmbedTest/1.0' } }
-  );
+  const res = await app.request('https://api.fxbsky.app/2/status/bad.actor/rkeygone/likes', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
   expect(res.status).toBe(404);
   const body = (await res.json()) as {
     code: number;

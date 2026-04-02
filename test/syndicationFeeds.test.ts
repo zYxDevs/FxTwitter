@@ -63,9 +63,7 @@ const baseStatus = (over: Partial<APITwitterStatus> = {}): APITwitterStatus =>
   }) as APITwitterStatus;
 
 test('escapeXml escapes special characters', () => {
-  expect(escapeXml(`a & b < c > d ' e "`)).toBe(
-    'a &amp; b &lt; c &gt; d &apos; e &quot;'
-  );
+  expect(escapeXml(`a & b < c > d ' e "`)).toBe('a &amp; b &lt; c &gt; d &apos; e &quot;');
 });
 
 test('statusesToFeedItems omits sensitive posts when safe mode', () => {
@@ -114,7 +112,9 @@ test('toRss20Xml is well-formed and includes atom self link', () => {
   expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   expect(xml).toContain('xmlns:atom="http://www.w3.org/2005/Atom"');
   expect(xml).toContain('xmlns:media="http://search.yahoo.com/mrss/"');
-  expect(xml).toContain('<atom:link href="https://fxtwitter.com/example/feed.xml" rel="self" type="application/rss+xml" />');
+  expect(xml).toContain(
+    '<atom:link href="https://fxtwitter.com/example/feed.xml" rel="self" type="application/rss+xml" />'
+  );
   expect(xml).toContain('<guid isPermaLink="true">https://x.com/example/status/1</guid>');
   expect(xml).toContain('<![CDATA[');
   expect(xml).toContain('&lt;world&gt;');
@@ -160,7 +160,11 @@ test('RSS enclosure uses progressive video and media:thumbnail when present', ()
           thumbnail_url: 'https://pbs.twimg.com/expand_thumb.jpg',
           formats: [
             { url: 'https://video.twimg.com/playlist.m3u8', container: 'm3u8' as const },
-            { url: 'https://video.twimg.com/vid.mp4', container: 'mp4' as const, bitrate: 2_000_000 }
+            {
+              url: 'https://video.twimg.com/vid.mp4',
+              container: 'mp4' as const,
+              bitrate: 2_000_000
+            }
           ]
         }
       ]
@@ -193,7 +197,9 @@ test('syndicationEnclosureFromStatus uses link card image when no tweet media', 
 test('toAtomFeedXml includes self link and entry content', () => {
   const xml = toAtomFeedXml(mockMeta, statusesToFeedItems([baseStatus()], {}));
   expect(xml).toContain('xmlns="http://www.w3.org/2005/Atom"');
-  expect(xml).toContain('<link href="https://fxtwitter.com/example/feed.atom.xml" rel="self" type="application/atom+xml"/>');
+  expect(xml).toContain(
+    '<link href="https://fxtwitter.com/example/feed.atom.xml" rel="self" type="application/atom+xml"/>'
+  );
   expect(xml).toContain('<content type="html">');
   expect(xml).toContain('https://x.com/example/status/1');
 });

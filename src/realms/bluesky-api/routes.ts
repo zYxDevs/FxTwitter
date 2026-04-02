@@ -212,7 +212,8 @@ export const blueskyConversationV2Route = createRoute({
     }),
     query: z.object({
       ranking_mode: z.enum(['likes', 'recency']).optional().openapi({
-        description: 'How direct replies are ranked (default: likes). Ignored when `cursor` is set; the cursor carries the mode used for the session.',
+        description:
+          'How direct replies are ranked (default: likes). Ignored when `cursor` is set; the cursor carries the mode used for the session.',
         default: 'likes'
       }),
       cursor: z
@@ -220,7 +221,8 @@ export const blueskyConversationV2Route = createRoute({
         .optional()
         .openapi({ description: 'Opaque pagination cursor from prior response (`cursor.bottom`)' }),
       count: z.coerce.number().int().min(1).max(100).optional().openapi({
-        description: 'Reply page size for the first request (default 20). Subsequent pages use the size embedded in `cursor`.',
+        description:
+          'Reply page size for the first request (default 20). Subsequent pages use the size embedded in `cursor`.',
         default: 20
       }),
       ...langQuery.shape

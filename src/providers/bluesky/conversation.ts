@@ -263,11 +263,7 @@ export const constructBlueskyConversation = async (
   }
 
   const raw = isContinuation
-    ? await fetchPostThread(
-        focalUri,
-        CONVERSATION_PAGE_DEPTH,
-        CONVERSATION_PAGE_PARENT_HEIGHT
-      )
+    ? await fetchPostThread(focalUri, CONVERSATION_PAGE_DEPTH, CONVERSATION_PAGE_PARENT_HEIGHT)
     : await fetchPostThread(focalUri, THREAD_FETCH_DEPTH, THREAD_PARENT_HEIGHT_FIRST_PAGE);
 
   if (!raw?.thread?.post) {

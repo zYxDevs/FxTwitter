@@ -3,12 +3,36 @@ import { ClientTransaction } from './transaction/transaction';
 import { getRandomTwitterAccount } from './credentials';
 import { mergeCookies } from './cookies';
 import { isAllowlisted, needsTransactionId } from './allowlist';
-import { classifyAPIErrors, jsonError } from './errors';
+import { classifyAPIErrors, jsonError, jsonHasTruthyErrorsProperty } from './errors';
 import { sendDiscordAlert } from './discord';
 import type { ProxyEnv } from './types';
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Twitter JSON shapes vary by endpoint */
 const redactUsername = false;
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value !== null && typeof value === 'object') {
+    return value as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+/** True when none of the usual success payload fields are present (same checks as original). */
+function twitterResponseLooksEmpty(json: unknown): boolean {
+  const o = asRecord(json);
+  if (!o) return true;
+  const result = asRecord(o['result']);
+  return (
+    typeof o['data'] === 'undefined' &&
+    typeof o['translation'] === 'undefined' &&
+    typeof o['source'] === 'undefined' &&
+    typeof result?.['text'] === 'undefined' &&
+    typeof o['num_results'] === 'undefined' &&
+    typeof o['status'] === 'undefined' &&
+    typeof o['user'] === 'undefined' &&
+    typeof o['user_results'] === 'undefined' &&
+    typeof o['user_result'] === 'undefined'
+  );
+}
 
 /**
  * Authenticated X API proxy (formerly elongator worker). Forwards to api.x.com with session cookies.
@@ -39,7 +63,7 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
   const textDecoder = new TextDecoder('utf-8');
 
   let response: Response;
-  let json: any;
+  let json: unknown;
   let errors: boolean;
   let decodedBody: string;
   let attempts = 0;
@@ -92,9 +116,12 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
       attempts++;
       console.log('---------------------------------------------');
       console.log(`Attempt #${attempts} with account ${redactUsername ? '[REDACTED]' : username}`);
-      json = JSON.parse(decodedBody);
+      json = JSON.parse(decodedBody) as unknown;
 
-      if (json.errors || decodedBody.includes('"reason":"NsfwViewerIsUnderage"')) {
+      if (
+        jsonHasTruthyErrorsProperty(json) ||
+        decodedBody.includes('"reason":"NsfwViewerIsUnderage"')
+      ) {
         const outcome = classifyAPIErrors(json, decodedBody, response.status);
         if (outcome.action === 'respond') {
           return outcome.response;
@@ -114,20 +141,10 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
       }
 
       if (env.EXCEPTION_DISCORD_WEBHOOK && errors) {
-        await sendDiscordAlert(env, username, requestPath, json.errors, variables);
+        await sendDiscordAlert(env, username, requestPath, asRecord(json)?.['errors'], variables);
       }
 
-      if (
-        typeof json.data === 'undefined' &&
-        typeof json.translation === 'undefined' &&
-        typeof json.source === 'undefined' &&
-        typeof json.result?.text === 'undefined' &&
-        typeof json.num_results === 'undefined' &&
-        typeof json.status === 'undefined' &&
-        typeof json.user === 'undefined' &&
-        typeof json.user_results === 'undefined' &&
-        typeof json.user_result === 'undefined'
-      ) {
+      if (twitterResponseLooksEmpty(json)) {
         console.log(
           `No data was sent. Response code ${response.status}. Data sent`,
           rawBody ?? '[empty]'

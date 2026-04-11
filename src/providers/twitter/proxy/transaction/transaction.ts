@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Cheerio DOM nodes */
+import type { AnyNode } from 'domhandler';
 import { load, CheerioAPI } from 'cheerio';
 import { Cubic } from './cubic';
 import { isOdd, interpolate, convertRotationToMatrix, floatToHex } from './utils';
@@ -192,7 +192,7 @@ export class ClientTransaction {
     return Array.from(bytes);
   }
 
-  private getFrames(): any[] {
+  private getFrames(): AnyNode[] {
     return this.homePage('[id^="loading-x-anim"]').toArray();
   }
 

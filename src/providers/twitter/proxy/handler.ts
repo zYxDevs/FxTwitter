@@ -2,7 +2,7 @@ import { filterObject } from './filter';
 import { ClientTransaction } from './transaction/transaction';
 import { getRandomTwitterAccount } from './credentials';
 import { mergeCookies } from './cookies';
-import { isAllowlisted, needsTransactionId } from './allowlist';
+import { needsTransactionId } from './allowlist';
 import { classifyAPIErrors, jsonError, jsonHasTruthyErrorsProperty } from './errors';
 import { sendDiscordAlert } from './discord';
 import type { ProxyEnv } from './types';
@@ -41,10 +41,6 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
   const url = new URL(request.url);
   const apiUrl = `https://api.x.com${url.pathname}${url.search}`;
   const requestPath = url.pathname.split('?')[0];
-
-  if (!isAllowlisted(apiUrl)) {
-    return jsonError('Endpoint not allowlisted', 403);
-  }
 
   const headers = new Headers(request.headers);
   headers.delete('x-guest-token');

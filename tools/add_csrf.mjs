@@ -40,7 +40,10 @@ async function getCsrfToken(account) {
   );
 
   const setCookie = response.headers.get('set-cookie');
-  return setCookie?.match(/ct0=(.*?);/)?.[1] ?? '';
+  if (!setCookie) return null;
+  const match = setCookie.match(/ct0=(.*?);/);
+  const ct0 = match?.[1];
+  return ct0 ? ct0 : null;
 }
 
 async function main() {
@@ -54,7 +57,13 @@ async function main() {
 
   const updated = [];
   for (const account of data.twitter.accounts) {
-    const csrfToken = await getCsrfToken(account);
+    const fetched = await getCsrfToken(account);
+    const csrfToken = fetched ?? account.csrfToken;
+    if (!csrfToken) {
+      throw new Error(
+        `Could not obtain ct0/csrf for @${account.username} (no Set-Cookie ct0 and no existing csrfToken)`
+      );
+    }
     updated.push({ ...account, csrfToken });
     await sleep(50);
     console.log(`Activated @${account.username} (csrf length ${csrfToken.length})`);

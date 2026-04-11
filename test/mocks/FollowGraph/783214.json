@@ -29,7 +29,10 @@
                             "avatar": {
                               "image_url": "https://pbs.twimg.com/profile_images/default_normal.jpg"
                             },
-                            "profile_bio": { "description": "test", "entities": { "description": {} } },
+                            "profile_bio": {
+                              "description": "test",
+                              "entities": { "description": {} }
+                            },
                             "relationship_counts": { "followers": 10, "following": 5 },
                             "tweet_counts": { "tweets": 1, "media_tweets": 0 },
                             "privacy": { "protected": false },

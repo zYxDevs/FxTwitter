@@ -1,0 +1,17 @@
+{
+  "uri": "at://author.test/app.bsky.feed.post/rkeyrepost",
+  "cid": "bafyrepostedfixture",
+  "repostedBy": [
+    {
+      "did": "did:plc:reposterone",
+      "handle": "reposter.one",
+      "displayName": "Reposter One"
+    },
+    {
+      "did": "did:plc:repostertwo",
+      "handle": "reposter.two",
+      "displayName": "Reposter Two"
+    }
+  ],
+  "cursor": "next-reposts-cursor"
+}

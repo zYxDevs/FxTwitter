@@ -1,0 +1,31 @@
+{
+  "thread": {
+    "$type": "app.bsky.feed.defs#threadViewPost",
+    "post": {
+      "uri": "at://did:plc:test111/app.bsky.feed.post/rkeymain",
+      "cid": "bafycidmain",
+      "author": {
+        "did": "did:plc:test111",
+        "handle": "author.test",
+        "displayName": "Author",
+        "avatar": "https://cdn.bsky.app/img/avatar.png",
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "associated": { "chat": { "allowIncoming": "all" } },
+        "labels": []
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Hello world",
+        "createdAt": "2024-06-01T12:00:00.000Z",
+        "langs": ["en"],
+        "facets": []
+      },
+      "indexedAt": "2024-06-01T12:01:00.000Z",
+      "labels": [],
+      "likeCount": 2,
+      "repostCount": 1,
+      "replyCount": 3,
+      "quoteCount": 0
+    }
+  }
+}

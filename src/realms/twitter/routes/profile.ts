@@ -26,6 +26,10 @@ export const profileRequest = async (c: Context) => {
      the http-equiv="refresh" meta tag will ensure an actual human is sent to the destination. */
   const isBotUA = userAgent.match(Constants.BOT_UA_REGEX) !== null;
 
+  if (!handle) {
+    return c.redirect(getBranding(c).redirect, 302);
+  }
+
   /* If not a valid screen name, we redirect to project GitHub */
   if (handle.match(/\w{1,15}/gi)?.[0] !== handle) {
     return c.redirect(getBranding(c).redirect, 302);

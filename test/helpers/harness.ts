@@ -292,15 +292,12 @@ export default {
           const restId = variables.rest_id as string;
           try {
             const mod = await import(`../mocks/FollowGraph/${restId}.json`);
-            const payload = (
-              'default' in mod && mod.default ? mod.default : mod
-            ) as {
+            const payload = ('default' in mod && mod.default ? mod.default : mod) as {
               data?: {
                 user?: { result?: { timeline?: { timeline?: { instructions?: unknown[] } } } };
               };
             };
-            const instructions =
-              payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
+            const instructions = payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
             return new Response(
               JSON.stringify({
                 data: {
@@ -335,15 +332,12 @@ export default {
           const restId = variables.rest_id as string;
           try {
             const mod = await import(`../mocks/FollowGraph/${restId}.json`);
-            const payload = (
-              'default' in mod && mod.default ? mod.default : mod
-            ) as {
+            const payload = ('default' in mod && mod.default ? mod.default : mod) as {
               data?: {
                 user?: { result?: { timeline?: { timeline?: { instructions?: unknown[] } } } };
               };
             };
-            const instructions =
-              payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
+            const instructions = payload.data?.user?.result?.timeline?.timeline?.instructions ?? [];
             return new Response(
               JSON.stringify({
                 data: {

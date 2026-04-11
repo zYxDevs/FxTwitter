@@ -4,7 +4,6 @@ import { Experiment, experimentCheck } from '../experiments';
 import { handleQuote } from '../helpers/quote';
 import { DataProvider } from '../enum';
 import type { APITwitterStatus } from '../realms/api/schemas';
-import { APIMedia, APIVideo, RenderProperties, ResponseInstructions } from '../types/types';
 import { getBranding } from '../helpers/branding';
 import { getGIFTranscodeDomain, shouldTranscodeGif } from '../helpers/giftranscode';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
@@ -63,7 +62,7 @@ export const renderVideo = (
   let url = video.url;
 
   if (
-    status.provider !== DataProvider.Bsky &&
+    status.provider !== DataProvider.Bluesky &&
     shouldTranscodeGif(properties.context) &&
     video.type === 'gif'
   ) {

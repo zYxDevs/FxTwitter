@@ -1,0 +1,31 @@
+{
+  "posts": [
+    {
+      "uri": "at://did:plc:test111/app.bsky.feed.post/rkeysearch",
+      "cid": "bafysearch1",
+      "author": {
+        "did": "did:plc:test111",
+        "handle": "author.test",
+        "displayName": "Author",
+        "avatar": "https://cdn.bsky.app/img/avatar.png",
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "associated": { "chat": { "allowIncoming": "all" } },
+        "labels": []
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Search hit fixture",
+        "createdAt": "2024-06-01T12:00:00.000Z",
+        "langs": ["en"],
+        "facets": []
+      },
+      "indexedAt": "2024-06-01T12:01:00.000Z",
+      "labels": [],
+      "likeCount": 1,
+      "repostCount": 0,
+      "replyCount": 0,
+      "quoteCount": 0
+    }
+  ],
+  "cursor": "search-next-cursor"
+}

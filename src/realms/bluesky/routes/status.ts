@@ -6,7 +6,7 @@ import { Experiment, experimentCheck } from '../../../experiments';
 import { Strings } from '../../../strings';
 import { InputFlags } from '../../../types/types';
 
-export const bskyStatusRequest = async (c: Context) => {
+export const blueskyStatusRequest = async (c: Context) => {
   console.log('bluesky status request!!!');
   const { handle, id, language } = c.req.param();
   const actualId = id.match(/\w+/g)?.[0] ?? '';
@@ -70,7 +70,7 @@ export const bskyStatusRequest = async (c: Context) => {
       userAgent,
       flags,
       language,
-      DataProvider.Bsky
+      DataProvider.Bluesky
     );
 
     if (statusResponse) {
@@ -80,7 +80,7 @@ export const bskyStatusRequest = async (c: Context) => {
         Since we obviously have no media to give the user, we'll just redirect to the status.
         Embeds will return as usual to bots as if direct media was never specified. */
       if (!isBotUA && !flags.api && !flags.direct) {
-        const url = `${Constants.BSKY_ROOT}/profile/${handle}/post/${actualId}`;
+        const url = `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`;
         return c.redirect(url, 302);
       }
 
@@ -96,6 +96,6 @@ export const bskyStatusRequest = async (c: Context) => {
       Obviously we just need to redirect to the status directly.*/
     console.log('Matched human UA', userAgent);
 
-    return c.redirect(`${Constants.BSKY_ROOT}/profile/${handle}/post/${actualId}`, 302);
+    return c.redirect(`${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`, 302);
   }
 };

@@ -1,0 +1,40 @@
+{
+  "thread": {
+    "$type": "app.bsky.feed.defs#threadViewPost",
+    "post": {
+      "uri": "at://did:plc:test111/app.bsky.feed.post/rkeyquotehost",
+      "cid": "bafycidhost",
+      "author": {
+        "did": "did:plc:test111",
+        "handle": "author.test",
+        "displayName": "Author",
+        "avatar": "https://cdn.bsky.app/img/avatar.png",
+        "createdAt": "2023-01-01T00:00:00.000Z",
+        "associated": { "chat": { "allowIncoming": "all" } },
+        "labels": []
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Quoting missing",
+        "createdAt": "2024-06-02T12:00:00.000Z",
+        "langs": ["en"],
+        "facets": []
+      },
+      "embed": {
+        "$type": "app.bsky.embed.record#view",
+        "record": {
+          "$type": "app.bsky.embed.record#viewRecord",
+          "uri": "at://did:plc:other/app.bsky.feed.post/rkeygone",
+          "cid": "bafycidgone",
+          "notFound": true
+        }
+      },
+      "indexedAt": "2024-06-02T12:01:00.000Z",
+      "labels": [],
+      "likeCount": 0,
+      "repostCount": 0,
+      "replyCount": 0,
+      "quoteCount": 0
+    }
+  }
+}

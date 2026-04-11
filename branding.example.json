@@ -53,12 +53,7 @@
     },
     {
       "name": "FixTok (beta)",
-      "domains": [
-        "fixtok.wuff.gay",
-        "dxtiktok.com",
-        "wuff.gay",
-        "cocktiktok.com"
-      ],
+      "domains": ["fixtok.wuff.gay", "dxtiktok.com", "wuff.gay", "cocktiktok.com"],
       "provider": "tiktok",
       "redirect": "https://tiktok.com",
       "color": "#6363ff",

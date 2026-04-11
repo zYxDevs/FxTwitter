@@ -1,0 +1,26 @@
+{
+  "profiles": [
+    {
+      "did": "did:plc:followerone",
+      "handle": "follower.one",
+      "displayName": "Follower One",
+      "description": "First follower bio",
+      "followersCount": 10,
+      "followsCount": 5,
+      "postsCount": 3,
+      "indexedAt": "2024-01-01T00:00:00.000Z",
+      "labels": []
+    },
+    {
+      "did": "did:plc:followertwo",
+      "handle": "follower.two",
+      "displayName": "Follower Two",
+      "description": "Second follower bio",
+      "followersCount": 20,
+      "followsCount": 15,
+      "postsCount": 8,
+      "indexedAt": "2024-01-02T00:00:00.000Z",
+      "labels": []
+    }
+  ]
+}

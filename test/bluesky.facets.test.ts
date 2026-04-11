@@ -16,6 +16,6 @@ test('blueskyFacetsToApiFacets maps link facets to UTF-16 indices', () => {
   ];
   const api = blueskyFacetsToApiFacets(text, facets);
   expect(api.length).toBe(1);
-  expect(api[0].type).toBe('link');
+  expect(api[0].type).toBe('url');
   expect(text.slice(api[0].indices[0], api[0].indices[1])).toMatch(/https:\/\/ex\.com/);
 });

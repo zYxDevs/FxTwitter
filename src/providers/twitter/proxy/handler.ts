@@ -78,15 +78,18 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
     headers.set('Cookie', cookies);
     headers.delete('Accept-Encoding');
 
+    headers.delete('x-client-transaction-id');
     if (needsTransactionId(apiUrl)) {
+      headers.delete('x-client-transaction-id');
       try {
         const transaction = await ClientTransaction.create(attempts > 1).catch(err => {
           throw err;
         });
-        const transactionId = await transaction.generateTransactionId('GET', requestPath);
+        const transactionId = await transaction.generateTransactionId(request.method, requestPath);
         console.log('Generated transaction ID:', transactionId);
         headers.set('x-client-transaction-id', transactionId);
       } catch (e) {
+        headers.delete('x-client-transaction-id');
         console.log('Error generating transaction ID:', e);
       }
     }

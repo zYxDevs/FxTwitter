@@ -1,7 +1,7 @@
 import type { RouteHandler } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Constants } from '../../constants';
+import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
 import type { APISearchResultsMastodon } from '../api/schemas';
 import { isParamTruthy } from '../../helpers/utils';
 import {
@@ -20,7 +20,7 @@ import {
 import { mastodonSearchAPI } from '../../providers/mastodon/search';
 import { mastodonStatusLikesAPI } from '../../providers/mastodon/statusLikes';
 import { mastodonStatusRepostsAPI } from '../../providers/mastodon/statusReposts';
-import type {
+import {
   mastodonConversationV2Route,
   mastodonProfileFollowersV2Route,
   mastodonProfileFollowingV2Route,
@@ -47,9 +47,14 @@ export const mastodonStatusAPIRequest: RouteHandler<typeof mastodonStatusV2Route
   const { domain, id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
   const processedResponse = await constructMastodonThread(id, domain, false, c, lang);
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'mastodonStatusAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonStatusV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonStatusRepostsAPIRequest: RouteHandler<
@@ -66,9 +71,14 @@ export const mastodonStatusRepostsAPIRequest: RouteHandler<
     },
     c
   );
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 401, 404, 500] as const,
+    'mastodonStatusRepostsAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(response, response.code as 200 | 401 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonStatusRepostsV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonStatusLikesAPIRequest: RouteHandler<
@@ -85,18 +95,28 @@ export const mastodonStatusLikesAPIRequest: RouteHandler<
     },
     c
   );
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 401, 404, 500] as const,
+    'mastodonStatusLikesAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(response, response.code as 200 | 401 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonStatusLikesV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonThreadAPIRequest: RouteHandler<typeof mastodonThreadV2Route> = async c => {
   const { domain, id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
   const processedResponse = await constructMastodonThread(id, domain, true, c, lang);
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'mastodonThreadAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonThreadV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonConversationAPIRequest: RouteHandler<
@@ -115,9 +135,14 @@ export const mastodonConversationAPIRequest: RouteHandler<
     return c.json({ code: 400 as const, message: result.message }, 400);
   }
   const processedResponse = result.data;
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'mastodonConversationAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonConversationV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonSearchAPIRequest: RouteHandler<typeof mastodonSearchV2Route> = async c => {
@@ -130,17 +155,27 @@ export const mastodonSearchAPIRequest: RouteHandler<typeof mastodonSearchV2Route
     cursor: query.cursor ?? null,
     language: query.lang
   });
-  c.status(searchResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    searchResponse,
+    [200, 400, 401, 404, 500] as const,
+    'mastodonSearchAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(searchResponse, searchResponse.code as 200 | 401 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonSearchV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonProfileAPIRequest: RouteHandler<typeof mastodonProfileV2Route> = async c => {
   const { domain, handle } = c.req.valid('param');
   const processedResponse = await mastodonUserProfileAPI(handle, domain, c);
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'mastodonProfileAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(processedResponse, processedResponse.code as 200 | 404);
+  return jsonAfterNormalize<typeof mastodonProfileV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonProfileFollowersAPIRequest: RouteHandler<
@@ -157,9 +192,14 @@ export const mastodonProfileFollowersAPIRequest: RouteHandler<
     },
     c
   );
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'mastodonProfileFollowersAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonProfileFollowersV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonProfileFollowingAPIRequest: RouteHandler<
@@ -176,9 +216,14 @@ export const mastodonProfileFollowingAPIRequest: RouteHandler<
     },
     c
   );
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'mastodonProfileFollowingAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonProfileFollowingV2Route>(c, payload, httpStatus);
 };
 
 export const mastodonProfileMediaAPIRequest: RouteHandler<
@@ -196,14 +241,23 @@ export const mastodonProfileMediaAPIRequest: RouteHandler<
     },
     c
   );
-  c.status(mediaResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    mediaResponse,
+    [200, 400, 404, 500] as const,
+    'mastodonProfileMediaAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(mediaResponse, mediaResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof mastodonProfileMediaV2Route>(c, payload, httpStatus);
 };
 
-export const mastodonProfileStatusesAPIRequest: RouteHandler<
-  typeof mastodonProfileStatusesV2Route
-> = async c => {
+type MastodonProfileStatusesResult = Awaited<
+  ReturnType<RouteHandler<typeof mastodonProfileStatusesV2Route>>
+>;
+
+export const mastodonProfileStatusesAPIRequest = (async (
+  c
+): Promise<MastodonProfileStatusesResult> => {
   const { domain, handle } = c.req.valid('param');
   const query = c.req.valid('query');
   const withReplies = isParamTruthy(query.with_replies ?? c.req.query('withReplies'));
@@ -224,11 +278,16 @@ export const mastodonProfileStatusesAPIRequest: RouteHandler<
   if ('noContent' in statusesResponse && statusesResponse.noContent) {
     c.status(204);
     setApiHeaders(c, { skipContentType: true });
-    return c.body(null, 204);
+    return c.body(null, 204) as MastodonProfileStatusesResult;
   }
 
   const body = statusesResponse as APISearchResultsMastodon;
-  c.status(body.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    body,
+    [200, 400, 404, 500] as const,
+    'mastodonProfileStatusesAPIRequest'
+  );
+  c.status(httpStatus);
   setApiHeaders(c);
-  return c.json(body, body.code as 200 | 404 | 500);
-};
+  return jsonAfterNormalize<typeof mastodonProfileStatusesV2Route>(c, payload, httpStatus);
+}) as RouteHandler<typeof mastodonProfileStatusesV2Route>;

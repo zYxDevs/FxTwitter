@@ -18,8 +18,11 @@ export function isOdd(num: number): number {
 }
 
 export function floatToHex(xInput: number): string {
+  const sign = xInput < 0 ? '-' : '';
+  let x = Math.abs(xInput);
+  if (x === 0) return '0';
+
   const result: string[] = [];
-  let x = xInput;
   let quotient = Math.floor(x);
   const fraction = x - quotient;
   while (quotient > 0) {
@@ -30,8 +33,11 @@ export function floatToHex(xInput: number): string {
     x = q;
     quotient = Math.floor(x);
   }
+  if (result.length === 0) {
+    result.push('0');
+  }
   if (fraction === 0) {
-    return result.join('');
+    return sign + result.join('');
   }
   result.push('.');
   let frac = fraction;
@@ -42,5 +48,5 @@ export function floatToHex(xInput: number): string {
     if (integer > 9) result.push(String.fromCharCode(integer + 55));
     else result.push(integer.toString());
   }
-  return result.join('');
+  return sign + result.join('');
 }

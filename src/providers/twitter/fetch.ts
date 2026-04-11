@@ -8,7 +8,6 @@ import { initCredentials } from './proxy/credentials';
 import { proxyTwitterRequest } from './proxy/handler';
 
 const API_ATTEMPTS = 3;
-let wasAccountProxyDisabled = false;
 
 interface TwitterFetchOptions {
   url: string;
@@ -25,6 +24,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
   let useElongator = options.useElongator ?? hasTwitterAccountProxy(c.env);
   let apiAttempts = 0;
   let newTokenGenerated = false;
+  let wasAccountProxyDisabled = false;
 
   const [userAgent, secChUa] = generateUserAgent();
   // console.log(`Outgoing useragent for this request:`, userAgent);

@@ -5,6 +5,7 @@ import { Constants } from '../../../constants';
 import { Experiment, experimentCheck } from '../../../experiments';
 import { Strings } from '../../../strings';
 import { InputFlags } from '../../../types/types';
+import { isHorizonEmbedParam } from '../../twitter/router';
 
 export const blueskyStatusRequest = async (c: Context) => {
   console.log('bluesky status request!!!');
@@ -56,6 +57,12 @@ export const blueskyStatusRequest = async (c: Context) => {
     flags.noActivity = true;
   }
 
+  if (isHorizonEmbedParam(url)) {
+    flags.horizon = true;
+  }
+
+  const horizonBskyStatusUrl = `${Constants.HORIZON_WEB_ROOT}/profile/${handle}/post/${actualId}`;
+
   if (isBotUA || flags.direct || flags.api) {
     if (isBotUA) {
       console.log(`Matched bot UA ${userAgent}`);
@@ -80,8 +87,10 @@ export const blueskyStatusRequest = async (c: Context) => {
         Since we obviously have no media to give the user, we'll just redirect to the status.
         Embeds will return as usual to bots as if direct media was never specified. */
       if (!isBotUA && !flags.api && !flags.direct) {
-        const url = `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`;
-        return c.redirect(url, 302);
+        return c.redirect(
+          flags.horizon ? horizonBskyStatusUrl : `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`,
+          302
+        );
       }
 
       c.status(200);
@@ -96,6 +105,11 @@ export const blueskyStatusRequest = async (c: Context) => {
       Obviously we just need to redirect to the status directly.*/
     console.log('Matched human UA', userAgent);
 
-    return c.redirect(`${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`, 302);
+    return c.redirect(
+      flags.horizon
+        ? horizonBskyStatusUrl
+        : `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`,
+      302
+    );
   }
 };

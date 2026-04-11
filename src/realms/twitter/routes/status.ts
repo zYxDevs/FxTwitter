@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
-import { getBaseRedirectUrl } from '../router';
+import { getBaseRedirectUrl, isHorizonEmbedParam } from '../router';
 import { DataProvider, handleStatus } from '../../../embed/status';
 import { Strings } from '../../../strings';
 import { Experiment, experimentCheck } from '../../../experiments';
@@ -106,6 +106,13 @@ export const statusRequest = async (c: Context) => {
     flags.api = true;
   }
 
+  if (isHorizonEmbedParam(url)) {
+    flags.horizon = true;
+  }
+
+  const statusIdForRedirect = id?.match(/\d{2,20}/)?.[0] ?? id;
+  const horizonTwitterStatusUrl = `${Constants.HORIZON_WEB_ROOT}/${handle || 'i'}/status/${statusIdForRedirect}`;
+
   /* Direct media or API access bypasses bot check, returning same response regardless of UA */
   if (isBotUA || flags.direct || flags.api) {
     if (isBotUA) {
@@ -125,8 +132,9 @@ export const statusRequest = async (c: Context) => {
       language,
       DataProvider.Twitter
     );
-    /* Do not cache if using a custom redirect */
-    const cacheControl = baseUrl !== Constants.TWITTER_ROOT ? 'max-age=0' : undefined;
+    /* Do not cache if using a custom redirect or Horizon test URLs */
+    const cacheControl =
+      baseUrl !== Constants.TWITTER_ROOT || flags.horizon ? 'max-age=0' : undefined;
 
     if (cacheControl) {
       c.header('cache-control', cacheControl);
@@ -140,6 +148,10 @@ export const statusRequest = async (c: Context) => {
          Embeds will return as usual to bots as if direct media was never specified. */
       if (!isBotUA && !flags.api && !flags.direct) {
         const baseUrl = getBaseRedirectUrl(c);
+
+        if (flags.horizon) {
+          return c.redirect(horizonTwitterStatusUrl, 302);
+        }
 
         if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
           const app = await fetch(`https://app.fxtwitter.com/${handle}/status/${id}`);
@@ -176,6 +188,10 @@ export const statusRequest = async (c: Context) => {
     /* A human has clicked a fxtwitter.com/:screen_name/status/:id link!
        Obviously we just need to redirect to the status directly.*/
     console.log('Matched human UA', userAgent);
+
+    if (flags.horizon) {
+      return c.redirect(horizonTwitterStatusUrl, 302);
+    }
 
     if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
       const app = await fetch(`https://app.fxtwitter.com/${handle}/status/${id}`);

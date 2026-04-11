@@ -17,6 +17,8 @@ export type InputFlags = {
   forceMosaic?: boolean;
   name?: string;
   noActivity?: boolean;
+  /** Set when `?horizon` is present; public links use Constants.HORIZON_WEB_ROOT (apap.fxtwitter.com) */
+  horizon?: boolean;
 };
 
 declare global {

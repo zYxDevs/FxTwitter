@@ -20,6 +20,14 @@ import {
 
 export const twitter = new Hono();
 
+/** `?horizon` (empty,1, true, yes, or any value except 0/false/no) uses Horizon web instead of x.com / bsky.app */
+export const isHorizonEmbedParam = (url: URL): boolean => {
+  if (!url.searchParams.has('horizon')) return false;
+  const v = (url.searchParams.get('horizon') ?? '').toLowerCase();
+  if (v === '0' || v === 'false' || v === 'no') return false;
+  return true;
+};
+
 export const getBaseRedirectUrl = (c: Context) => {
   const baseRedirect = c.req.header('cookie')?.match(/(?<=base_redirect=)(.*?)(?=;|$)/)?.[0];
 

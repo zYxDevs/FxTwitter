@@ -43,6 +43,7 @@ export const Constants = {
   VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: VIDEO_TRANSCODE_BSKY_DOMAIN_LIST.split(','),
   API_DOCS_URL: `https://github.com/FxEmbed/FxEmbed/wiki/API-Home`,
   TWITTER_ROOT: TWITTER_ROOT || 'https://x.com',
+  HORIZON_WEB_ROOT: 'https://app.fxtwitter.com',
   TWITTER_API_ROOT: 'https://api.x.com',
   TWITTER_VIDEO_BASE: 'https://video.twimg.com',
   BLUESKY_ROOT: 'https://bsky.app',

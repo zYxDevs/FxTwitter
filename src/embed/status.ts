@@ -337,17 +337,24 @@ export const handleStatus = async (
   /* Base headers included in all responses */
   const headers = [];
 
+  const twitterPublicStatusUrl = flags?.horizon
+    ? `${Constants.HORIZON_WEB_ROOT}/${status.author.screen_name}/status/${status.id}`
+    : `${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}`;
+  const bskyPublicStatusUrl = flags?.horizon
+    ? `${Constants.HORIZON_WEB_ROOT}/profile/${status.author.screen_name}/post/${status.id}`
+    : `${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}`;
+
   if (status.provider === DataProvider.Twitter) {
     headers.push(
-      `<link rel="canonical" href="${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}"/>`,
-      `<meta property="og:url" content="${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}"/>`,
+      `<link rel="canonical" href="${twitterPublicStatusUrl}"/>`,
+      `<meta property="og:url" content="${twitterPublicStatusUrl}"/>`,
       `<meta property="twitter:site" content="@${status.author.screen_name}"/>`,
       `<meta property="twitter:creator" content="@${status.author.screen_name}"/>`
     );
   } else if (status.provider === DataProvider.Bluesky) {
     headers.push(
-      `<link rel="canonical" href="${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`,
-      `<meta property="og:url" content="${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
+      `<link rel="canonical" href="${bskyPublicStatusUrl}"/>`,
+      `<meta property="og:url" content="${bskyPublicStatusUrl}"/>`
     );
   }
 
@@ -364,13 +371,9 @@ export const handleStatus = async (
      Telegram is dumb and it just gets stuck if this is included, so we never include it for Telegram UAs. */
   if (!isTelegram) {
     if (provider === DataProvider.Twitter) {
-      headers.push(
-        `<meta http-equiv="refresh" content="0;url=${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}"/>`
-      );
+      headers.push(`<meta http-equiv="refresh" content="0;url=${twitterPublicStatusUrl}"/>`);
     } else if (provider === DataProvider.Bluesky) {
-      headers.push(
-        `<meta http-equiv="refresh" content="0;url=${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}"/>`
-      );
+      headers.push(`<meta http-equiv="refresh" content="0;url=${bskyPublicStatusUrl}"/>`);
     }
   }
 

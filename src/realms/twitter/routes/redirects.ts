@@ -1,13 +1,17 @@
 import { Context } from 'hono';
 import { Strings } from '../../../strings';
 import { sanitizeText } from '../../../helpers/utils';
-import { getBaseRedirectUrl } from '../router';
+import { getBaseRedirectUrl, isHorizonEmbedParam } from '../router';
 import { Constants } from '../../../constants';
 import { getBranding } from '../../../helpers/branding';
 import { Experiment, experimentCheck } from '../../../experiments';
 
 export const genericTwitterRedirect = async (c: Context) => {
   const url = new URL(c.req.url);
+  if (isHorizonEmbedParam(url)) {
+    c.header('cache-control', 'max-age=0');
+    return c.redirect(`${Constants.HORIZON_WEB_ROOT}${url.pathname}`, 302);
+  }
   const baseUrl = getBaseRedirectUrl(c);
   /* Do not cache if using a custom redirect */
   const cacheControl = baseUrl !== Constants.TWITTER_ROOT ? 'max-age=0' : undefined;

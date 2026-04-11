@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { handleProfile } from '../../../user';
-import { getBaseRedirectUrl } from '../router';
+import { getBaseRedirectUrl, isHorizonEmbedParam } from '../router';
 import { Experiment, experimentCheck } from '../../../experiments';
 import { getBranding } from '../../../helpers/branding';
 import { InputFlags } from '../../../types/types';
@@ -41,10 +41,16 @@ export const profileRequest = async (c: Context) => {
     flags.api = true;
   }
 
+  if (isHorizonEmbedParam(url)) {
+    flags.horizon = true;
+  }
+
   const baseUrl = getBaseRedirectUrl(c);
+  const horizonProfileUrl = `${Constants.HORIZON_WEB_ROOT}/${username}`;
 
   /* Do not cache if using a custom redirect */
-  const cacheControl = baseUrl !== Constants.TWITTER_ROOT ? 'max-age=0' : undefined;
+  const cacheControl =
+    baseUrl !== Constants.TWITTER_ROOT || flags.horizon ? 'max-age=0' : undefined;
 
   if (cacheControl) {
     c.header('cache-control', cacheControl);
@@ -66,6 +72,9 @@ export const profileRequest = async (c: Context) => {
     /* Check for custom redirect */
 
     if (!isBotUA && !flags.api) {
+      if (flags.horizon) {
+        return c.redirect(horizonProfileUrl, 302);
+      }
       if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
         const app = await fetch(`https://app.fxtwitter.com/${handle}`);
         const appBody = await app.text();
@@ -85,6 +94,9 @@ export const profileRequest = async (c: Context) => {
     /* A human has clicked a fxtwitter.com/:screen_name link!
         Obviously we just need to redirect to the user directly.*/
     console.log('Matched human UA', userAgent);
+    if (flags.horizon) {
+      return c.redirect(horizonProfileUrl, 302);
+    }
     if (experimentCheck(Experiment.USE_HORIZON_WEB, baseUrl === Constants.TWITTER_ROOT)) {
       const app = await fetch(`https://app.fxtwitter.com/${handle}`);
       const appBody = await app.text();

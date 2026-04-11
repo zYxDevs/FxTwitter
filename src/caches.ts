@@ -36,12 +36,12 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
   }
 
   let cacheKey: Request;
-  const returnAsJson =
+  const apiRealmHost =
     Constants.API_HOST_LIST.includes(cacheUrl.hostname) ||
-    Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname);
-  const skipReadThroughCache =
-    Constants.API_HOST_LIST.includes(cacheUrl.hostname) ||
-    Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname);
+    Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname) ||
+    Constants.GENERIC_API_HOST_LIST.includes(cacheUrl.hostname);
+  const returnAsJson = apiRealmHost;
+  const skipReadThroughCache = apiRealmHost;
 
   /* If caching unavailable, ignore the rest of the cache middleware */
   if (typeof caches === 'undefined') {

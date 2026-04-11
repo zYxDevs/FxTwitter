@@ -30,6 +30,11 @@ jobs:
           curl --fail -fSL -o credentials.enc.json \
             -H "Authorization: Bearer ${{ secrets.R2_READ_TOKEN }}" \
             "${{ secrets.R2_CREDENTIALS_URL }}"
+          jq -e '
+            (.ciphertext | type == "string" and length > 0) and
+            (.iv | type == "string" and length > 0)
+          ' credentials.enc.json >/dev/null \
+            || { echo "::error::credentials.enc.json must contain non-empty ciphertext and iv strings"; exit 1; }
 
       - name: Create wrangler.toml
         run: |

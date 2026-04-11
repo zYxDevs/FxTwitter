@@ -205,9 +205,7 @@ type TwitterProfileStatusesResult = Awaited<
   ReturnType<RouteHandler<typeof profileStatusesV2Route>>
 >;
 
-export const profileStatusesAPIRequest = (async (
-  c
-): Promise<TwitterProfileStatusesResult> => {
+export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatusesResult> => {
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 

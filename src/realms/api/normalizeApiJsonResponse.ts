@@ -18,8 +18,7 @@ export function normalizeApiJsonResponse<
   T extends { code: number }
 >(body: T, allowed: A, context: string): { httpStatus: A[number]; payload: T } {
   const raw = body.code;
-  const code =
-    typeof raw === 'number' && Number.isFinite(raw) ? Math.trunc(raw) : Number.NaN;
+  const code = typeof raw === 'number' && Number.isFinite(raw) ? Math.trunc(raw) : Number.NaN;
   if (allowed.includes(code as A[number])) {
     return { httpStatus: code as A[number], payload: body };
   }

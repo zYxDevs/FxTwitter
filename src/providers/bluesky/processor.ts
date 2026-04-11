@@ -306,7 +306,7 @@ const resolveQuote = async (
   const { stubUri, stubReason } = cand;
 
   if (!post && stubUri && stubReason) {
-    return buildUnavailableQuote(stubUri, stubReason);
+    return undefined// buildUnavailableQuote(stubUri, stubReason);
   }
 
   if (!post && stubUri) {
@@ -315,7 +315,7 @@ const resolveQuote = async (
   }
 
   if (!post) {
-    if (stubUri) return buildUnavailableQuote(stubUri, 'not_found');
+    // if (stubUri) return buildUnavailableQuote(stubUri, 'not_found');
     return undefined;
   }
 

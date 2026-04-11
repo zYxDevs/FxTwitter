@@ -1,6 +1,7 @@
 import { Constants } from '../../constants';
 import { buildAPITwitterStatus } from './processor';
 import { Experiment, experimentCheck } from '../../experiments';
+import { hasTwitterAccountProxy } from './accountProxy';
 import { buildLanguageHeaders } from '../../helpers/language';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
@@ -147,10 +148,7 @@ export const fetchTweetDetail = async (
 export const fetchByRestId = async (
   status: string,
   c: Context,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  ),
+  useElongator = hasTwitterAccountProxy(c.env),
   language?: string
 ): Promise<TweetResultByRestIdResponse> => {
   return graphqlRequest(c, {
@@ -197,10 +195,7 @@ export const fetchByRestId = async (
 export const fetchByRestIds = async (
   statuses: string[],
   c: Context,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  ),
+  useElongator = hasTwitterAccountProxy(c.env),
   language?: string
 ): Promise<TweetResultsByRestIdsResponse> => {
   return graphqlRequest(c, {
@@ -247,10 +242,7 @@ export const fetchByRestIds = async (
 export const fetchByIds = async (
   statuses: string[],
   c: Context,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  ),
+  useElongator = hasTwitterAccountProxy(c.env),
   language?: string
 ): Promise<TweetResultsByIdsResponse> => {
   return graphqlRequest(c, {
@@ -297,10 +289,7 @@ export const fetchByIds = async (
 export const fetchById = async (
   status: string,
   c: Context,
-  useElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  ),
+  useElongator = hasTwitterAccountProxy(c.env),
   language?: string
 ): Promise<TweetResultByIdResponse> => {
   return graphqlRequest(c, {
@@ -575,14 +564,11 @@ const fetchSingleStatus = async (
     }
   })();
 
-  const hasElongator = experimentCheck(
-    Experiment.ELONGATOR_BY_DEFAULT,
-    typeof c.env?.TwitterProxy !== 'undefined'
-  );
+  const hasElongator = hasTwitterAccountProxy(c.env);
 
   const langHeaders = buildLanguageHeaders(language);
 
-  // If elongator is not enabled, only use TweetResultByRestId
+  // If account proxy is not available, only use TweetResultByRestId
   if (!hasElongator) {
     try {
       return await fetchByRestId(id, c, undefined, language);
@@ -766,7 +752,7 @@ export const constructTwitterThread = async (
       writeDataPoint(c, language, status.possibly_sensitive, '200');
       return { status: status, thread: null, author: status.author, code: 200 };
     } // If we need thread but have TweetResultByRestId response, try TweetDetail
-    else if (typeof c.env?.TwitterProxy !== 'undefined') {
+    else if (hasTwitterAccountProxy(c.env)) {
       console.log('Need thread data, trying TweetDetail...');
       if (experimentCheck(Experiment.TWEET_DETAIL_API)) {
         const threadResponse = await fetchTweetDetail(c, id, null, undefined, language);

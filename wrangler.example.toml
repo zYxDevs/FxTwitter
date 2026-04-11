@@ -9,10 +9,7 @@ analytics_engine_datasets = [
   { binding = "AnalyticsEngine" }
 ]
 
-# Remove this if not using elongator account proxying
-services = [
-  { binding = "TwitterProxy", service = "elongator" }
-]
+# Use .env to configure environment variables, not wrangler.toml.
 
 [build]
 command = "npm run build"

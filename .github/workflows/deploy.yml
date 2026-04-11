@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Fetch encrypted credentials from R2
+        run: |
+          curl --fail -fSL -o credentials.enc.json \
+            -H "Authorization: Bearer ${{ secrets.R2_READ_TOKEN }}" \
+            "${{ secrets.R2_CREDENTIALS_URL }}"
+
       - name: Create wrangler.toml
         run: |
           cat << EOF > wrangler.toml
@@ -36,10 +42,6 @@ jobs:
           no_bundle = true
           analytics_engine_datasets = [
             { binding = "AnalyticsEngine" }
-          ]
-
-          services = [
-            { binding = "TwitterProxy", service = "elongator" }
           ]
 
           [ai]

@@ -1,0 +1,69 @@
+import type { CredentialStore, TwitterCredentials } from './types';
+
+let credentialStore: CredentialStore | null = null;
+let initOnce: Promise<void> | null = null;
+
+function base64UrlToBytes(b64url: string): Uint8Array {
+  const pad = '='.repeat((4 - (b64url.length % 4)) % 4);
+  const b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    out[i] = binary.charCodeAt(i);
+  }
+  return out;
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    out[i] = binary.charCodeAt(i);
+  }
+  return out;
+}
+
+/**
+ * Decrypt and cache the credential store (idempotent). Safe to call multiple times.
+ */
+export async function initCredentials(credentialKey: string | undefined): Promise<void> {
+  if (!credentialKey || !ENCRYPTED_CREDENTIALS || !CREDENTIALS_IV) {
+    return;
+  }
+  if (credentialStore !== null) {
+    return;
+  }
+  if (!initOnce) {
+    initOnce = (async () => {
+      const keyBytes = base64UrlToBytes(credentialKey.trim());
+      if (keyBytes.byteLength !== 32) {
+        throw new Error('CREDENTIAL_KEY must decode to 32 bytes (AES-256, base64url)');
+      }
+      const iv = base64ToBytes(CREDENTIALS_IV);
+      const ciphertext = base64ToBytes(ENCRYPTED_CREDENTIALS);
+
+      const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+        'decrypt'
+      ]);
+
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ciphertext);
+
+      const text = new TextDecoder('utf-8').decode(decrypted);
+      credentialStore = JSON.parse(text) as CredentialStore;
+    })();
+  }
+  await initOnce;
+}
+
+export function getRandomTwitterAccount(): TwitterCredentials {
+  if (!credentialStore?.twitter?.accounts?.length) {
+    throw new Error('Twitter credentials not initialized or empty');
+  }
+  const accounts = credentialStore.twitter.accounts;
+  const randomIndex = Math.floor(Math.random() * accounts.length);
+  return accounts[randomIndex];
+}
+
+export function hasDecryptedCredentials(): boolean {
+  return credentialStore !== null && (credentialStore.twitter?.accounts?.length ?? 0) > 0;
+}

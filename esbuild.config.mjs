@@ -72,6 +72,18 @@ defines['GENERIC_API_HOST_LIST'] = JSON.stringify(process.env.GENERIC_API_HOST_L
 
 defines['RELEASE_NAME'] = `"${releaseName}"`;
 
+try {
+  const enc = JSON.parse(fs.readFileSync('credentials.enc.json', 'utf-8'));
+  defines['ENCRYPTED_CREDENTIALS'] = JSON.stringify(enc.ciphertext);
+  defines['CREDENTIALS_IV'] = JSON.stringify(enc.iv);
+} catch {
+  console.warn(
+    'No credentials.enc.json found; encrypted credential bundle will be empty (local: npm run credentials:encrypt, CI: fetch from R2 before build).'
+  );
+  defines['ENCRYPTED_CREDENTIALS'] = JSON.stringify('');
+  defines['CREDENTIALS_IV'] = JSON.stringify('');
+}
+
 const plugins = [];
 
 if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev && !workerName.includes('canary')) {

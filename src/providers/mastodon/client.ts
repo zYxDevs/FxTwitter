@@ -33,11 +33,11 @@ async function mastodonFetch<T>(
     if (v === undefined) continue;
     qs.set(k, String(v));
   }
-  const url = `${instanceBase(domain)}${path}${qs.size ? `?${qs.toString()}` : ''}`;
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), DEFAULT_TIMEOUT_MS);
   let res: Response;
   try {
+    const url = `${instanceBase(domain)}${path}${qs.size ? `?${qs.toString()}` : ''}`;
     res = await fetch(url, {
       signal: ac.signal,
       headers: {

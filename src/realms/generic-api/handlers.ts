@@ -34,8 +34,11 @@ import type {
   mastodonThreadV2Route
 } from './routes';
 
-const setApiHeaders = (c: Context) => {
+const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    if (options?.skipContentType && header.toLowerCase() === 'content-type') {
+      continue;
+    }
     c.header(header, value);
   }
 };
@@ -220,7 +223,7 @@ export const mastodonProfileStatusesAPIRequest: RouteHandler<
 
   if ('noContent' in statusesResponse && statusesResponse.noContent) {
     c.status(204);
-    setApiHeaders(c);
+    setApiHeaders(c, { skipContentType: true });
     return c.body(null, 204);
   }
 

@@ -40,6 +40,7 @@ async function mastodonFetch<T>(
     const url = `${instanceBase(domain)}${path}${qs.size ? `?${qs.toString()}` : ''}`;
     res = await fetch(url, {
       signal: ac.signal,
+      redirect: 'error',
       headers: {
         'Accept': 'application/json',
         'User-Agent': Constants.FRIENDLY_USER_AGENT

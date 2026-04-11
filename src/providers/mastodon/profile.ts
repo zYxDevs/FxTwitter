@@ -8,16 +8,17 @@ export const mastodonUserProfileAPI = async (
   domain: string,
   _c: Context
 ): Promise<UserAPIResponse> => {
+  let result: Awaited<ReturnType<typeof lookupAccount>>;
   try {
-    assertSafeMastodonDomain(domain);
-  } catch {
-    return { code: 400, message: 'Invalid instance domain' };
+    const safeDomain = assertSafeMastodonDomain(domain);
+    const acct = username.includes('@') ? username : `${username}@${safeDomain}`;
+    result = await lookupAccount(safeDomain, acct);
+  } catch (e) {
+    if (e instanceof Error && e.message === 'invalid_domain') {
+      return { code: 400, message: 'Invalid Mastodon domain' };
+    }
+    return { code: 500, message: 'Mastodon profile request failed' };
   }
-
-  const acct = username.includes('@')
-    ? username
-    : `${username}@${assertSafeMastodonDomain(domain)}`;
-  const result = await lookupAccount(domain, acct);
 
   if (!result.ok) {
     if (result.status === 404 || result.status === 400) {

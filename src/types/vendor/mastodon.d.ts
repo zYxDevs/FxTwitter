@@ -68,7 +68,7 @@ interface MastodonCard {
   provider_url?: string;
   html?: string;
   width?: number;
-  height?: string | number;
+  height?: number;
   image?: string | null;
   embed_url?: string;
   blurhash?: string | null;

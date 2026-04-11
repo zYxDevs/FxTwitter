@@ -14,17 +14,6 @@ export const assertSafeMastodonDomain = (domain: string): string => {
   if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/i.test(d) && !/^[a-z0-9]+$/i.test(d)) {
     throw new Error('invalid_domain');
   }
-  const blocked = new Set([
-    'localhost',
-    '0.0.0.0',
-    '127.0.0.1',
-    '[::1]',
-    'metadata.google.internal',
-    '169.254.169.254'
-  ]);
-  if (blocked.has(d) || d.endsWith('.localhost') || d.endsWith('.local')) {
-    throw new Error('invalid_domain');
-  }
   return d;
 };
 

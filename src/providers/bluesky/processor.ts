@@ -306,7 +306,7 @@ const resolveQuote = async (
   const { stubUri, stubReason } = cand;
 
   if (!post && stubUri && stubReason) {
-    return undefined// buildUnavailableQuote(stubUri, stubReason);
+    return undefined; // buildUnavailableQuote(stubUri, stubReason);
   }
 
   if (!post && stubUri) {
@@ -397,12 +397,15 @@ export const buildAPIBlueskyPost = async (
       const translatePolyglot = await translateStatus(apiStatus, language, c);
       if (translatePolyglot !== null) {
         apiStatus.translation = {
-          text: unescapeText(linkFixerBluesky(facets, translatePolyglot?.translated_text || '')),
-          source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
+          text: unescapeText(linkFixerBluesky([], translatePolyglot?.translated_text || '')),
+          source_lang: (translatePolyglot?.source_lang ?? 'en').toLowerCase(),
           target_lang: language.toLowerCase(),
-          source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
-            lng: 'en'
-          }),
+          source_lang_en: i18next.t(
+            `language_${(translatePolyglot?.source_lang ?? 'en').toLowerCase()}`,
+            {
+              lng: 'en'
+            }
+          ),
           provider: translatePolyglot?.provider ?? 'polyglot'
         };
         didTranslate = true;
@@ -412,10 +415,12 @@ export const buildAPIBlueskyPost = async (
       const translateAPI = await translateStatusAI(apiStatus, language, c);
       if (translateAPI !== null && translateAPI?.translated_text) {
         apiStatus.translation = {
-          text: unescapeText(linkFixerBluesky(facets, translateAPI.translated_text || '')),
-          source_lang: apiStatus.lang ?? 'en',
-          target_lang: language,
-          source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+          text: unescapeText(linkFixerBluesky([], translateAPI.translated_text || '')),
+          source_lang: (apiStatus.lang ?? 'en').toLowerCase(),
+          target_lang: language.toLowerCase(),
+          source_lang_en: i18next.t(`language_${(apiStatus.lang ?? 'en').toLowerCase()}`, {
+            lng: 'en'
+          }),
           provider: 'llm'
         };
       }

@@ -1,5 +1,6 @@
 export enum DataProvider {
   Twitter = 'twitter',
   Bluesky = 'bluesky',
-  TikTok = 'tiktok'
+  TikTok = 'tiktok',
+  Mastodon = 'mastodon'
 }

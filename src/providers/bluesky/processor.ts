@@ -32,7 +32,8 @@ const apiUserFromAuthor = (author: BlueskyAuthor): APIUser => ({
   statuses: 0,
   joined: author.createdAt,
   birthday: { day: 0, month: 0, year: 0 },
-  website: null
+  website: null,
+  profile_embed: true
 });
 
 const tombstoneAuthor = (handleOrDid: string): APIUser => ({
@@ -53,7 +54,8 @@ const tombstoneAuthor = (handleOrDid: string): APIUser => ({
   statuses: 0,
   joined: '',
   birthday: { day: 0, month: 0, year: 0 },
-  website: null
+  website: null,
+  profile_embed: true
 });
 
 /** Map a hydrated record embed view into the `BlueskyPost` shape our pipeline expects. */
@@ -122,38 +124,6 @@ const quoteCandidateFromEmbedRecord = (
     return { post: null, stubUri: embedRecord.uri, stubReason: null };
   }
   return { post: null, stubUri: embedRecord.uri ?? null, stubReason: null };
-};
-
-const buildUnavailableQuote = (uri: string, reason: 'not_found' | 'blocked'): APIStatus => {
-  const rkey = rkeyFromPostAtUri(uri) ?? '';
-  const did = didFromAtUri(uri);
-  const profileRef = did ?? 'unknown';
-  const label = reason === 'blocked' ? 'Unavailable (blocked)' : 'Deleted post';
-  const base: APIStatus = {
-    id: rkey || 'unavailable',
-    cid: undefined,
-    at_uri: uri,
-    url: rkey
-      ? blueskyWebPostUrl(profileRef, rkey)
-      : `${Constants.BLUESKY_ROOT}/profile/${profileRef}`,
-    text: label,
-    raw_text: { text: label, facets: [] },
-    created_at: new Date(0).toISOString(),
-    created_timestamp: 0,
-    likes: 0,
-    reposts: 0,
-    quotes: 0,
-    replies: 0,
-    author: tombstoneAuthor(profileRef),
-    media: {},
-    lang: null,
-    possibly_sensitive: false,
-    replying_to: null,
-    source: 'Bluesky Social',
-    embed_card: 'tweet',
-    provider: DataProvider.Bluesky
-  };
-  return base;
 };
 
 const resolveReplyingTo = async (

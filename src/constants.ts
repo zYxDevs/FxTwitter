@@ -26,6 +26,17 @@ export const Constants = {
       .filter(Boolean)[0];
     return h ? `https://${h}` : '';
   })(),
+  GENERIC_API_HOST_LIST: (GENERIC_API_HOST_LIST ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean),
+  GENERIC_API_HOST_ROOT: (() => {
+    const h = (GENERIC_API_HOST_LIST ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)[0];
+    return h ? `https://${h}` : '';
+  })(),
   RELEASE_NAME: RELEASE_NAME,
   GIF_TRANSCODE_DOMAIN_LIST: GIF_TRANSCODE_DOMAIN_LIST.split(','),
   VIDEO_TRANSCODE_DOMAIN_LIST: VIDEO_TRANSCODE_DOMAIN_LIST.split(','),

@@ -18,21 +18,323 @@ const decodeBasicEntities = (s: string): string =>
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, ' ');
 
-/** Strip HTML to plain text; preserve line breaks from `<br>` / `<p>` */
-const htmlToPlainText = (html: string): string => {
+/** HTML → plain without outer trim (for segment concatenation). */
+const htmlToPlainCore = (html: string): string => {
   let s = html.replace(/<br\s*\/?>/gi, '\n');
   s = s.replace(/<\/p>\s*<p[^>]*>/gi, '\n\n');
   s = s.replace(/<p[^>]*>/gi, '');
   s = s.replace(/<\/p>/gi, '\n');
   s = s.replace(/<[^>]+>/g, '');
-  return decodeBasicEntities(s)
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return decodeBasicEntities(s).replace(/\n{3,}/g, '\n\n');
 };
 
-const buildFacetsFromStatus = (plain: string, status: MastodonStatus): APIFacet[] => {
+/** Strip HTML to plain text; preserve line breaks from `<br>` / `<p>` */
+const htmlToPlainText = (html: string): string => htmlToPlainCore(html).trim();
+
+const extractAttr = (attrs: string, name: string): string => {
+  const reDouble = new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, 'i');
+  const reSingle = new RegExp(`\\b${name}\\s*=\\s*'([^']*)'`, 'i');
+  const dm = attrs.match(reDouble);
+  if (dm) return decodeBasicEntities(dm[1]);
+  const sm = attrs.match(reSingle);
+  return sm ? decodeBasicEntities(sm[1]) : '';
+};
+
+const mastodonCustomEmojiByShortcode = (
+  emojis: MastodonCustomEmoji[] | undefined
+): Map<string, MastodonCustomEmoji> => {
+  const m = new Map<string, MastodonCustomEmoji>();
+  for (const e of emojis ?? []) {
+    if (e?.shortcode && e?.url) m.set(e.shortcode, e);
+  }
+  return m;
+};
+
+/**
+ * Replace Mastodon inline custom-emoji `<img>` nodes with plain `:shortcode:` before tag stripping.
+ * Uses `class="custom-emoji"` / `emojione`, `alt`/`title`, and optional `emojis[]` URL matching.
+ */
+export const normalizeCustomEmojiImagesInHtml = (
+  html: string,
+  emojis?: MastodonCustomEmoji[]
+): string => {
+  const byShortcode = mastodonCustomEmojiByShortcode(emojis);
+  const urlToEmoji = new Map<string, MastodonCustomEmoji>();
+  for (const e of emojis ?? []) {
+    if (!e?.url) continue;
+    urlToEmoji.set(e.url, e);
+    if (e.static_url) urlToEmoji.set(e.static_url, e);
+  }
+
+  return html.replace(/<img\s+([^>]*?)>/gi, (full, attrs: string) => {
+    const cls = extractAttr(attrs, 'class');
+    const src = extractAttr(attrs, 'src');
+    const pick = extractAttr(attrs, 'alt') || extractAttr(attrs, 'title');
+    const altMatch = pick.match(/^:([^:\s]+):$/);
+    const isClass = /\bcustom-emoji\b/i.test(cls) || /\bemojione\b/i.test(cls);
+
+    let emoji: MastodonCustomEmoji | undefined;
+    if (src) emoji = urlToEmoji.get(src);
+    if (!emoji && altMatch) emoji = byShortcode.get(altMatch[1]);
+
+    if (emoji) return `:${emoji.shortcode}:`;
+    if (isClass && altMatch) return pick;
+    return full;
+  });
+};
+
+/** Scan plain text for `:shortcode:` tokens present in `emojis` (longest shortcode first). */
+export const buildCustomEmojiFacets = (
+  plain: string,
+  emojis: MastodonCustomEmoji[] | undefined,
+  avoid: APIFacet[]
+): APIFacet[] => {
+  if (!emojis?.length) return [];
+
+  const byShortcode = mastodonCustomEmojiByShortcode(emojis);
+  const shortcodes = [...byShortcode.keys()].sort((a, b) => b.length - a.length);
+
+  const occupied: [number, number][] = avoid.map(f => [f.indices[0], f.indices[1]]);
+  const rangeFree = (s: number, e: number): boolean =>
+    !occupied.some(([os, oe]) => os < e && oe > s);
+  const occupy = (s: number, e: number): void => {
+    occupied.push([s, e]);
+  };
+
+  const out: APIFacet[] = [];
+  for (let i = 0; i < plain.length; ) {
+    let advanced = false;
+    for (const sc of shortcodes) {
+      const token = `:${sc}:`;
+      if (!plain.startsWith(token, i)) continue;
+      const e = i + token.length;
+      if (!rangeFree(i, e)) continue;
+      const emoji = byShortcode.get(sc);
+      if (!emoji?.url) continue;
+      out.push({
+        type: 'custom_emoji',
+        indices: [i, e],
+        display: token,
+        original: sc,
+        replacement: emoji.url
+      });
+      occupy(i, e);
+      i = e;
+      advanced = true;
+      break;
+    }
+    if (!advanced) i += 1;
+  }
+
+  out.sort((a, b) => a.indices[0] - b.indices[0]);
+  return out;
+};
+
+const mergeMentionHashtagUrlAndEmojiFacets = (base: APIFacet[], emoji: APIFacet[]): APIFacet[] => {
+  const priority = (t: string): number => (t === 'custom_emoji' ? 1 : 0);
+  const combined = [...base, ...emoji].sort((a, b) => {
+    const d = a.indices[0] - b.indices[0];
+    if (d !== 0) return d;
+    const d2 = a.indices[1] - b.indices[1];
+    if (d2 !== 0) return d2;
+    return priority(a.type) - priority(b.type);
+  });
+
+  const out: APIFacet[] = [];
+  for (const f of combined) {
+    const [s, e] = f.indices;
+    if (s >= e) continue;
+    if (out.some(o => o.indices[0] < e && o.indices[1] > s)) continue;
+    out.push(f);
+  }
+  out.sort((a, b) => a.indices[0] - b.indices[0]);
+  return out;
+};
+
+/** `https://host/@user` → `user@host` (fediverse profile URLs in account `note` HTML). */
+const accountFromProfileHref = (href: string, instanceDomain: string): string | null => {
+  try {
+    const url = new URL(href, `https://${instanceDomain}`);
+    if (!/^https?:$/i.test(url.protocol)) return null;
+    const path = (url.pathname.replace(/\/+$/, '') || '/').replace(/^\/+/, '/');
+    const mm = path.match(/^\/@([^/@]+)$/);
+    if (!mm) return null;
+    return `${decodeBasicEntities(mm[1])}@${url.hostname.toLowerCase()}`;
+  } catch {
+    return null;
+  }
+};
+
+const guessAcctFromMentionPlain = (innerPlain: string, instanceDomain: string): string | null => {
+  const h = innerPlain.trim().replace(/^@+/, '');
+  if (!h) return null;
+  if (h.includes('@')) return h;
+  return `${h}@${instanceDomain}`;
+};
+
+const facetFromMastodonNoteAnchor = (
+  attrs: string,
+  hrefRaw: string,
+  innerPlain: string,
+  start: number,
+  end: number,
+  instanceDomain: string
+): APIFacet | null => {
+  if (!innerPlain) return null;
+
+  const cls = extractAttr(attrs, 'class');
+  const isHashtag = /\bhashtag\b/.test(cls) || /\brel\s*=\s*["']tag["']/i.test(attrs);
+
+  let absHref = '';
+  if (hrefRaw) {
+    if (/^https?:\/\//i.test(hrefRaw)) absHref = hrefRaw;
+    else if (hrefRaw.startsWith('/')) {
+      try {
+        absHref = new URL(hrefRaw, `https://${instanceDomain}`).href;
+      } catch {
+        absHref = hrefRaw;
+      }
+    } else {
+      absHref = hrefRaw;
+    }
+  }
+
+  if (isHashtag) {
+    const tagName = innerPlain.replace(/^#/u, '').trim() || innerPlain.trim();
+    return {
+      type: 'hashtag',
+      indices: [start, end],
+      display: innerPlain.startsWith('#') ? innerPlain : `#${tagName}`,
+      replacement: absHref || undefined,
+      original: tagName
+    };
+  }
+
+  const isMentionClass = /\bmention\b/.test(cls);
+  const acctFromUrl = absHref && /^https?:\/\//i.test(absHref) ? accountFromProfileHref(absHref, instanceDomain) : null;
+
+  if (isMentionClass || acctFromUrl) {
+    const acct = acctFromUrl ?? guessAcctFromMentionPlain(innerPlain, instanceDomain);
+    if (!acct) {
+      if (absHref && /^https?:\/\//i.test(absHref)) {
+        return {
+          type: 'url',
+          indices: [start, end],
+          display: innerPlain,
+          replacement: absHref,
+          original: absHref
+        };
+      }
+      return null;
+    }
+    return {
+      type: 'mention',
+      indices: [start, end],
+      display: innerPlain,
+      original: acct
+    };
+  }
+
+  if (absHref && /^https?:\/\//i.test(absHref)) {
+    return {
+      type: 'url',
+      indices: [start, end],
+      display: innerPlain,
+      replacement: absHref,
+      original: absHref
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Mastodon `account.note` is HTML with `<a>` for mentions, hashtags, and links.
+ * Build plain text (same rules as `htmlToPlainText` on interleaved segments) and API facets with UTF-16 indices.
+ */
+const plainTextAndFacetsFromMastodonNote = (
+  html: string,
+  instanceDomain: string,
+  emojis?: MastodonCustomEmoji[]
+): { text: string; facets: APIFacet[] } => {
+  const normalized = normalizeCustomEmojiImagesInHtml(html.trim(), emojis);
+  const trimmed = normalized;
+  if (!trimmed) return { text: '', facets: [] };
+
+  const facets: APIFacet[] = [];
+  const anchorRe = /<a\s+([^>]*)>([\s\S]*?)<\/a>/gi;
+  const parts: Array<{ kind: 'text'; html: string } | { kind: 'a'; attrs: string; inner: string }> = [];
+  let lastIdx = 0;
+  let m: RegExpExecArray | null;
+  while ((m = anchorRe.exec(normalized)) !== null) {
+    if (m.index > lastIdx) {
+      parts.push({ kind: 'text', html: normalized.slice(lastIdx, m.index) });
+    }
+    parts.push({ kind: 'a', attrs: m[1], inner: m[2] });
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < normalized.length) {
+    parts.push({ kind: 'text', html: normalized.slice(lastIdx) });
+  }
+
+  let text = '';
+  for (const p of parts) {
+    if (p.kind === 'text') {
+      text += htmlToPlainCore(p.html);
+      continue;
+    }
+    const innerPlain = htmlToPlainCore(p.inner);
+    const start = text.length;
+    text += innerPlain;
+    const end = text.length;
+    const href = extractAttr(p.attrs, 'href');
+    const facet = facetFromMastodonNoteAnchor(p.attrs, href, innerPlain, start, end, instanceDomain);
+    if (facet) facets.push(facet);
+  }
+
+  const lead = text.length - text.trimStart().length;
+  const afterLead = text.slice(lead);
+  const trimmedLen = afterLead.trimEnd().length;
+  const finalText = afterLead.slice(0, trimmedLen);
+  const trail = afterLead.length - trimmedLen;
+  const rightBound = text.length - trail;
+
+  const adjFacets: APIFacet[] = [];
+  for (const f of facets) {
+    const [s, e] = f.indices;
+    if (e <= lead || s >= rightBound) continue;
+    const ns = Math.max(s, lead) - lead;
+    const ne = Math.min(e, rightBound) - lead;
+    if (ns < ne) adjFacets.push({ ...f, indices: [ns, ne] });
+  }
+  adjFacets.sort((a, b) => a.indices[0] - b.indices[0]);
+  const emojiFacets = buildCustomEmojiFacets(finalText, emojis, adjFacets);
+  const merged = mergeMentionHashtagUrlAndEmojiFacets(adjFacets, emojiFacets);
+  return { text: finalText, facets: merged };
+};
+
+/**
+ * Mastodon uses a bare local username in `acct` for accounts on the requesting instance.
+ * Horizon and the generic API contract treat `screen_name` as full fediverse acct (`user@host`).
+ */
+const mastodonFullAcct = (
+  account: Pick<MastodonAccount, 'acct' | 'username'>,
+  instanceDomain: string
+): string => {
+  const safe = assertSafeMastodonDomain(instanceDomain);
+  const a = (account.acct ?? '').trim();
+  if (a.includes('@')) return a;
+  return `${account.username}@${safe}`;
+};
+
+const buildFacetsFromStatus = (
+  plain: string,
+  status: MastodonStatus,
+  instanceDomain: string
+): APIFacet[] => {
   const facets: APIFacet[] = [];
   for (const m of status.mentions ?? []) {
+    const fullMentionAcct = mastodonFullAcct(m, instanceDomain);
     const needle = `@${m.acct}`;
     let from = 0;
     while (from < plain.length) {
@@ -42,6 +344,7 @@ const buildFacetsFromStatus = (plain: string, status: MastodonStatus): APIFacet[
         type: 'mention',
         indices: [i, i + needle.length],
         display: needle,
+        original: fullMentionAcct,
         id: m.id
       });
       from = i + needle.length;
@@ -60,6 +363,7 @@ const buildFacetsFromStatus = (plain: string, status: MastodonStatus): APIFacet[
           type: 'mention',
           indices: [i, i + shortNeedle.length],
           display: shortNeedle,
+          original: fullMentionAcct,
           id: m.id
         });
         from = i + shortNeedle.length;
@@ -87,16 +391,18 @@ const buildFacetsFromStatus = (plain: string, status: MastodonStatus): APIFacet[
 
 export const mastodonAccountToApiUser = (account: MastodonAccount, domain: string): APIUser => {
   const safe = assertSafeMastodonDomain(domain);
-  const rawNote = account.note ? htmlToPlainText(account.note) : '';
+  const { text: rawNote, facets: noteFacets } = account.note
+    ? plainTextAndFacetsFromMastodonNote(account.note, safe, account.emojis)
+    : { text: '', facets: [] };
   const webUrl = account.url || `https://${safe}/@${account.username}`;
   return {
     id: account.id,
     name: (account.display_name || account.username).trim() || account.username,
-    screen_name: account.acct,
+    screen_name: mastodonFullAcct(account, domain),
     avatar_url: account.avatar_static || account.avatar || null,
     banner_url: account.header_static || account.header || null,
     description: rawNote,
-    raw_description: { text: rawNote, facets: [] },
+    raw_description: { text: rawNote, facets: noteFacets },
     location: '',
     url: webUrl,
     protected: account.locked,
@@ -208,21 +514,25 @@ export const buildAPIMastodonPost = async (
     core = status.reblog;
   }
 
-  const rawHtml = core.content ?? '';
-  const rawText = core.text ?? htmlToPlainText(rawHtml);
-  const text = htmlToPlainText(rawHtml) || rawText;
-  const facets = buildFacetsFromStatus(text, core);
+  const rawHtmlNorm = normalizeCustomEmojiImagesInHtml(core.content ?? '', core.emojis);
+  const rawText = core.text ?? htmlToPlainText(rawHtmlNorm);
+  const text = htmlToPlainText(rawHtmlNorm) || rawText;
+  const baseFacets = buildFacetsFromStatus(text, core, domain);
+  const emojiFacets = buildCustomEmojiFacets(text, core.emojis, baseFacets);
+  const facets = mergeMentionHashtagUrlAndEmojiFacets(baseFacets, emojiFacets);
 
   const created = Date.parse(core.created_at);
   const createdTs = Number.isFinite(created) ? created / 1000 : 0;
 
   let replying_to: APIMastodonStatus['replying_to'] = null;
   if (core.in_reply_to_id && core.in_reply_to_account_id) {
-    const uname =
-      core.mentions?.find(m => m.id === core.in_reply_to_account_id)?.acct ||
-      core.mentions?.find(m => m.id === core.in_reply_to_account_id)?.username ||
-      core.in_reply_to_account_id;
-    replying_to = { screen_name: uname, status: core.in_reply_to_id };
+    const mention = core.mentions?.find(m => m.id === core.in_reply_to_account_id);
+    if (mention) {
+      replying_to = {
+        screen_name: mastodonFullAcct(mention, domain),
+        status: core.in_reply_to_id
+      };
+    }
   }
 
   const author = mastodonAccountToApiUser(core.account, domain);

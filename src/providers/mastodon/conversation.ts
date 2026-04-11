@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type {
   APIMastodonStatus,
   SocialConversationMastodon,
+  SocialStatusMastodon,
   SocialThreadMastodon
 } from '../../realms/api/schemas';
 import { fetchStatus, fetchStatusContext } from './client';
@@ -122,10 +123,13 @@ export const constructMastodonThread = async (
   processThread: boolean,
   c: Context,
   language: string | undefined
-): Promise<SocialThreadMastodon> => {
+): Promise<SocialStatusMastodon | SocialThreadMastodon> => {
   const st = await fetchStatus(domain, id);
   if (!st.ok || !st.data) {
-    return { code: 404, status: null, thread: [], author: null };
+    if (!processThread) {
+      return { code: 404, status: null, author: null };
+    }
+    return { code: 404, status: null, thread: null, author: null };
   }
 
   const focal = st.data;
@@ -136,7 +140,6 @@ export const constructMastodonThread = async (
     return {
       code: 200,
       status: consumed,
-      thread: [consumed],
       author: consumed.author
     };
   }

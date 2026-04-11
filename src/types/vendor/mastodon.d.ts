@@ -3,6 +3,14 @@
  * @see https://docs.joinmastodon.org/entities/Status/
  */
 
+/** @see https://docs.joinmastodon.org/entities/CustomEmoji/ */
+interface MastodonCustomEmoji {
+  shortcode: string;
+  url: string;
+  static_url: string;
+  visible_in_picker?: boolean;
+}
+
 interface MastodonAccount {
   id: string;
   username: string;
@@ -23,7 +31,7 @@ interface MastodonAccount {
   following_count: number;
   statuses_count: number;
   last_status_at?: string | null;
-  emojis?: unknown[];
+  emojis?: MastodonCustomEmoji[];
   fields?: { name: string; value: string; verified_at?: string | null }[];
   noindex?: boolean;
   /** Some instances / forks */
@@ -88,7 +96,7 @@ interface MastodonStatus {
   application?: { name: string; website: string | null };
   mentions: MastodonMention[];
   tags: MastodonStatusTag[];
-  emojis: unknown[];
+  emojis?: MastodonCustomEmoji[];
   reblogs_count: number;
   favourites_count: number;
   replies_count: number;

@@ -9,7 +9,12 @@ const indicesTuple = z
   .openapi({ description: 'Start and end UTF-16 indices' });
 
 export const APIFacetSchema = z.object({
-  type: z.string(),
+  type: z
+    .string()
+    .openapi({
+      description:
+        'Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)'
+    }),
   indices: indicesTuple,
   original: z.string().optional(),
   replacement: z.string().optional(),
@@ -761,6 +766,17 @@ export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
     })
   )
   .openapi('APIMastodonStatus');
+
+/** Mastodon `GET /2/mastodon/{domain}/status/{id}` — matches FxTwitter `GET /2/status/{id}` (no `thread`). */
+export const SocialStatusMastodonSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIMastodonStatusSchema.nullable(),
+    author: APIUserSchema.nullable()
+  })
+  .openapi('SocialStatusMastodon');
+
+export type SocialStatusMastodon = z.infer<typeof SocialStatusMastodonSchema>;
 
 export const SocialThreadMastodonSchema = z
   .object({

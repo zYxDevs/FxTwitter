@@ -5,6 +5,7 @@ import {
   ApiQueryErrorSchema,
   APISearchResultsMastodonSchema,
   SocialConversationMastodonSchema,
+  SocialStatusMastodonSchema,
   SocialThreadMastodonSchema,
   UserAPIResponseSchema
 } from '../api/schemas';
@@ -39,7 +40,7 @@ export const mastodonStatusV2Route = createRoute({
   path: '/2/mastodon/{domain}/status/{id}',
   summary: 'Get a single Mastodon status',
   description:
-    'Returns one public status by numeric id on the given instance, in the same envelope as FxTwitter/FxBluesky API v2 (`code`, `status`, `thread`, `author`).',
+    'Returns one public status by numeric id on the given instance (`code`, `status`, `author` only — no `thread`, matching FxTwitter `GET /2/status/{id}`). Use `GET /2/mastodon/{domain}/thread/{id}` for the focal status plus ancestor/self-reply chain.',
   request: {
     params: domainParam.extend({
       id: z.string().openapi({ description: 'Mastodon status id', example: '109327927044751780' })
@@ -48,8 +49,8 @@ export const mastodonStatusV2Route = createRoute({
   },
   responses: {
     200: {
-      description: 'Thread payload',
-      content: { 'application/json': { schema: SocialThreadMastodonSchema } }
+      description: 'Single status',
+      content: { 'application/json': { schema: SocialStatusMastodonSchema } }
     },
     400: {
       description: 'Invalid parameters',
@@ -57,11 +58,11 @@ export const mastodonStatusV2Route = createRoute({
     },
     404: {
       description: 'Not found',
-      content: { 'application/json': { schema: SocialThreadMastodonSchema } }
+      content: { 'application/json': { schema: SocialStatusMastodonSchema } }
     },
     500: {
       description: 'Server or upstream failure',
-      content: { 'application/json': { schema: SocialThreadMastodonSchema } }
+      content: { 'application/json': { schema: SocialStatusMastodonSchema } }
     }
   }
 });

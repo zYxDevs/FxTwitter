@@ -23,6 +23,7 @@ test('GET /2/openapi.json returns OpenAPI 3 document with v2 paths', async () =>
   expect(doc.info.title).toBe('FxTwitter API');
   expect(doc.paths['/2/status/{id}']).toBeDefined();
   expect(doc.paths['/2/status/{id}/reposts']).toBeDefined();
+  expect(doc.paths['/2/status/{id}/quotes']).toBeDefined();
   expect(doc.paths['/2/openapi.json']).toBeUndefined();
   expect(doc.paths['/2/owoembed']).toBeUndefined();
   expect(doc.paths['/2/hit']).toBeUndefined();

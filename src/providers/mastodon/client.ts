@@ -51,18 +51,20 @@ async function mastodonFetch<T>(
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, status: 504, body: msg };
   }
-  clearTimeout(t);
-
-  const link = res.headers.get('Link');
-  if (!res.ok) {
-    const body = await res.text();
-    return { ok: false, status: res.status, body };
-  }
   try {
-    const data = (await res.json()) as T;
-    return { ok: true, data, link };
-  } catch {
-    return { ok: false, status: 502, body: 'invalid JSON from Mastodon' };
+    const link = res.headers.get('Link');
+    if (!res.ok) {
+      const body = await res.text();
+      return { ok: false, status: res.status, body };
+    }
+    try {
+      const data = (await res.json()) as T;
+      return { ok: true, data, link };
+    } catch {
+      return { ok: false, status: 502, body: 'invalid JSON from Mastodon' };
+    }
+  } finally {
+    clearTimeout(t);
   }
 }
 

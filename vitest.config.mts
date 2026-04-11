@@ -1,18 +1,11 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
-
-const configDir = path.dirname(fileURLToPath(import.meta.url));
-/** Always use this config so local gitignored wrangler.toml (with legacy service bindings) does not break Miniflare. */
-const wranglerConfigPath = path.join(configDir, 'wrangler.vitest.toml');
 
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: wranglerConfigPath },
-      // Disable remote bindings so tests don't require Cloudflare login (AI binding
-      // in wrangler.toml would otherwise trigger a remote proxy session in CI).
+      // Auto-discovers wrangler.toml. Disable remote bindings so CI does not need
+      // Cloudflare login (e.g. AI binding remote proxy).
       remoteBindings: false,
       miniflare: {}
     })

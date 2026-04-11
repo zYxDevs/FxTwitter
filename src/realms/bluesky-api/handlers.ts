@@ -1,6 +1,6 @@
 import type { RouteHandler } from '@hono/zod-openapi';
-import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { Constants } from '../../constants';
+import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
 import { isParamTruthy } from '../../helpers/utils';
 import {
   constructBlueskyConversation,
@@ -19,7 +19,7 @@ import {
 import { blueskySearchAPI } from '../../providers/bluesky/search';
 import { blueskyStatusLikesAPI } from '../../providers/bluesky/statusLikes';
 import { blueskyStatusRepostsAPI } from '../../providers/bluesky/statusReposts';
-import type {
+import {
   blueskyConversationV2Route,
   blueskyProfileFollowersV2Route,
   blueskyProfileFollowingV2Route,
@@ -41,12 +41,16 @@ export const blueskyStatusAPIRequest: RouteHandler<typeof blueskyStatusV2Route> 
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
   const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang);
-
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyStatusAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyStatusV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyStatusRepostsAPIRequest: RouteHandler<
@@ -58,12 +62,16 @@ export const blueskyStatusRepostsAPIRequest: RouteHandler<
   const cursor = query.cursor ?? null;
 
   const response = await blueskyStatusRepostsAPI(handle, rkey, { count, cursor }, c);
-
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'blueskyStatusRepostsAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyStatusRepostsV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyStatusLikesAPIRequest: RouteHandler<
@@ -75,24 +83,32 @@ export const blueskyStatusLikesAPIRequest: RouteHandler<
   const cursor = query.cursor ?? null;
 
   const response = await blueskyStatusLikesAPI(handle, rkey, { count, cursor }, c);
-
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'blueskyStatusLikesAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyStatusLikesV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyThreadAPIRequest: RouteHandler<typeof blueskyThreadV2Route> = async c => {
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
   const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang);
-
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyThreadAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyThreadV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyConversationAPIRequest: RouteHandler<
@@ -116,22 +132,31 @@ export const blueskyConversationAPIRequest: RouteHandler<
   }
 
   const processedResponse = result.data;
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyConversationAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyConversationV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileAPIRequest: RouteHandler<typeof blueskyProfileV2Route> = async c => {
   const { handle } = c.req.valid('param');
   const processedResponse = await blueskyUserProfileAPI(handle, c);
-
-  c.status(processedResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    processedResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyProfileAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(processedResponse, processedResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyProfileV2Route>(c, payload, httpStatus);
 };
 
 export const blueskySearchAPIRequest: RouteHandler<typeof blueskySearchV2Route> = async c => {
@@ -144,11 +169,16 @@ export const blueskySearchAPIRequest: RouteHandler<typeof blueskySearchV2Route> 
     language: query.lang
   });
 
-  c.status(searchResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    searchResponse,
+    [200, 400, 404, 500] as const,
+    'blueskySearchAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(searchResponse, searchResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskySearchV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileFollowersAPIRequest: RouteHandler<
@@ -160,12 +190,16 @@ export const blueskyProfileFollowersAPIRequest: RouteHandler<
   const cursor = query.cursor ?? null;
 
   const response = await blueskyProfileFollowersAPI(handle, { count, cursor }, c);
-
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'blueskyProfileFollowersAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyProfileFollowersV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileFollowingAPIRequest: RouteHandler<
@@ -177,12 +211,16 @@ export const blueskyProfileFollowingAPIRequest: RouteHandler<
   const cursor = query.cursor ?? null;
 
   const response = await blueskyProfileFollowingAPI(handle, { count, cursor }, c);
-
-  c.status(response.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    response,
+    [200, 400, 404, 500] as const,
+    'blueskyProfileFollowingAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(response, response.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyProfileFollowingV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileMediaAPIRequest: RouteHandler<
@@ -201,11 +239,16 @@ export const blueskyProfileMediaAPIRequest: RouteHandler<
     c
   );
 
-  c.status(mediaResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    mediaResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyProfileMediaAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(mediaResponse, mediaResponse.code as 200 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyProfileMediaV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileLikesAPIRequest: RouteHandler<
@@ -224,16 +267,25 @@ export const blueskyProfileLikesAPIRequest: RouteHandler<
     c
   );
 
-  c.status(likesResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    likesResponse,
+    [200, 400, 401, 404, 500] as const,
+    'blueskyProfileLikesAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(likesResponse, likesResponse.code as 200 | 401 | 404 | 500);
+  return jsonAfterNormalize<typeof blueskyProfileLikesV2Route>(c, payload, httpStatus);
 };
 
-export const blueskyProfileStatusesAPIRequest: RouteHandler<
-  typeof blueskyProfileStatusesV2Route
-> = async c => {
+type BlueskyProfileStatusesResult = Awaited<
+  ReturnType<RouteHandler<typeof blueskyProfileStatusesV2Route>>
+>;
+
+export const blueskyProfileStatusesAPIRequest = (async (
+  c
+): Promise<BlueskyProfileStatusesResult> => {
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
@@ -267,13 +319,18 @@ export const blueskyProfileStatusesAPIRequest: RouteHandler<
       for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
         c.header(header, value);
       }
-      return c.body(null, 204);
+      return c.body(null, 204) as BlueskyProfileStatusesResult;
     }
   }
 
-  c.status(statusesResponse.code as ContentfulStatusCode);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    statusesResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyProfileStatusesAPIRequest'
+  );
+  c.status(httpStatus);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
     c.header(header, value);
   }
-  return c.json(statusesResponse, statusesResponse.code as 200 | 404 | 500);
-};
+  return jsonAfterNormalize<typeof blueskyProfileStatusesV2Route>(c, payload, httpStatus);
+}) as RouteHandler<typeof blueskyProfileStatusesV2Route>;

@@ -19,6 +19,7 @@
       "./src/types/vendor/twitter.d.ts",
       "./src/types/vendor/tiktok.d.ts",
       "./src/types/vendor/bluesky.d.ts",
+      "./src/types/vendor/mastodon.d.ts",
       "./src/types/env.d.ts"
     ]
   },

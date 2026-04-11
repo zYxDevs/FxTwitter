@@ -12,6 +12,7 @@ import { twitter } from './realms/twitter/router';
 import { cacheMiddleware } from './caches';
 import { bluesky } from './realms/bluesky/router';
 import { blueskyApi } from './realms/bluesky-api/router';
+import { genericApi } from './realms/generic-api/router';
 import { getBranding } from './helpers/branding';
 import { tiktok } from './realms/tiktok/router';
 
@@ -49,6 +50,9 @@ export const app = new Hono<{
     } else if (Constants.BLUESKY_API_HOST_LIST.includes(url.hostname)) {
       realm = 'blueskyapi';
       console.log('Bluesky API realm');
+    } else if (Constants.GENERIC_API_HOST_LIST.includes(url.hostname)) {
+      realm = 'genericapi';
+      console.log('Generic API realm');
     } else if (Constants.STANDARD_DOMAIN_LIST.includes(baseHostName)) {
       realm = 'twitter';
       console.log('Twitter realm');
@@ -165,6 +169,7 @@ app.use('*', timing({ enabled: false }));
 
 app.route(`/api`, api);
 app.route(`/blueskyapi`, blueskyApi);
+app.route(`/genericapi`, genericApi);
 app.route(`/twitter`, twitter);
 app.route(`/bluesky`, bluesky);
 app.route(`/tiktok`, tiktok);

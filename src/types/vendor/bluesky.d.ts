@@ -150,6 +150,9 @@ declare type BlueskyFacetFeature = {
   $type: string;
   uri?: string;
   did?: string;
+  tag?: string;
+  /** Synthetic mention handle when DID is unknown (detected profile description). */
+  handle?: string;
 };
 
 declare type BlueskyFacet = {

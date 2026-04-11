@@ -3,13 +3,16 @@ import { Constants } from '../../constants';
 import { linkFixerBluesky } from '../../helpers/linkFixer';
 import type { APIUser, UserAPIResponse } from '../../realms/api/schemas';
 import { blueskyFacetsToApiFacets } from './facets';
+import { detectBlueskyDescriptionFacets } from './detectDescriptionFacets';
 import { fetchActorProfile } from './client';
 
 export const blueskyProfileToApiUser = (profile: BlueskyProfileViewDetailed): APIUser => {
   const handle = profile.handle;
   const rawText = profile.description ?? '';
-  const facets = profile.descriptionFacets;
-  const description = linkFixerBluesky(facets ?? [], rawText);
+  const facets = profile.descriptionFacets?.length
+    ? profile.descriptionFacets
+    : detectBlueskyDescriptionFacets(rawText);
+  const description = linkFixerBluesky(facets, rawText);
   const joined = profile.createdAt ?? profile.indexedAt ?? '';
 
   const apiUser: APIUser = {

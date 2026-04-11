@@ -24,18 +24,25 @@ export const blueskyFacetsToApiFacets = (
     for (const feature of facet.features) {
       if (feature.$type === 'app.bsky.richtext.facet#link' && feature.uri) {
         out.push({
-          type: 'link',
+          type: 'url',
           indices: [start, end],
           display: text.slice(start, end),
           replacement: feature.uri
         });
       }
-      if (feature.$type === 'app.bsky.richtext.facet#mention' && feature.did) {
+      if (feature.$type === 'app.bsky.richtext.facet#mention' && (feature.did || feature.handle)) {
         out.push({
           type: 'mention',
           indices: [start, end],
           display: text.slice(start, end),
-          id: feature.did
+          id: feature.did ?? feature.handle
+        });
+      }
+      if (feature.$type === 'app.bsky.richtext.facet#tag' && feature.tag != null) {
+        out.push({
+          type: 'hashtag',
+          indices: [start, end],
+          display: text.slice(start, end)
         });
       }
     }

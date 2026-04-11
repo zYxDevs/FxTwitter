@@ -27,9 +27,7 @@ export const linkFixer = (entities: TcoExpansion[] | undefined, text: string): s
 export const linkFixerBluesky = (facets: BlueskyFacet[], text: string): string => {
   let offset = 0;
   if (Array.isArray(facets) && facets.length) {
-    console.log('facets', facets);
     facets.forEach((facet: BlueskyFacet) => {
-      console.log('facet', facet);
       for (const feature of facet.features) {
         if (feature.$type === 'app.bsky.richtext.facet#link' && feature.uri) {
           const pos = [facet.index.byteStart, facet.index.byteEnd];

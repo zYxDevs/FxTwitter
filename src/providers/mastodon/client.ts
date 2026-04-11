@@ -23,6 +23,53 @@ export type MastodonFetchOk<T> = { ok: true; data: T; link: string | null };
 export type MastodonFetchErr = { ok: false; status: number; body: string };
 export type MastodonFetchResult<T> = MastodonFetchOk<T> | MastodonFetchErr;
 
+const mastodonFetchInit = (signal: AbortSignal): RequestInit => ({
+  signal,
+  /** Workers do not support `error`; use `manual` and handle redirects (see below). */
+  redirect: 'manual',
+  headers: {
+    'Accept': 'application/json',
+    'User-Agent': Constants.FRIENDLY_USER_AGENT
+  }
+});
+
+const isRedirectStatus = (s: number): boolean =>
+  s === 301 || s === 302 || s === 303 || s === 307 || s === 308;
+
+/** Single same-host hop (e.g. trailing slash / canonical URL) without following cross-origin redirects. */
+async function resolveMastodonRedirectIfNeeded(
+  initialUrl: string,
+  res: Response,
+  expectedHost: string,
+  signal: AbortSignal
+): Promise<Response | MastodonFetchErr> {
+  if (!isRedirectStatus(res.status)) {
+    return res;
+  }
+  const loc = res.headers.get('Location');
+  if (!loc) {
+    return { ok: false, status: 502, body: 'Mastodon redirect missing Location' };
+  }
+  let resolved: URL;
+  try {
+    resolved = new URL(loc, initialUrl);
+  } catch {
+    return { ok: false, status: 502, body: 'Mastodon redirect invalid Location' };
+  }
+  if (resolved.hostname.toLowerCase() !== expectedHost) {
+    return {
+      ok: false,
+      status: 502,
+      body: `Mastodon redirect to different host rejected (${resolved.hostname})`
+    };
+  }
+  return fetch(resolved.href, mastodonFetchInit(signal));
+}
+
+function isMastodonFetchErr(x: Response | MastodonFetchErr): x is MastodonFetchErr {
+  return !(x instanceof Response);
+}
+
 async function mastodonFetch<T>(
   domain: string,
   path: string,
@@ -35,17 +82,17 @@ async function mastodonFetch<T>(
   }
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), DEFAULT_TIMEOUT_MS);
+  const expectedHost = assertSafeMastodonDomain(domain).toLowerCase();
   let res: Response;
   try {
     const url = `${instanceBase(domain)}${path}${qs.size ? `?${qs.toString()}` : ''}`;
-    res = await fetch(url, {
-      signal: ac.signal,
-      redirect: 'error',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': Constants.FRIENDLY_USER_AGENT
-      }
-    });
+    res = await fetch(url, mastodonFetchInit(ac.signal));
+    const afterRedirect = await resolveMastodonRedirectIfNeeded(url, res, expectedHost, ac.signal);
+    if (isMastodonFetchErr(afterRedirect)) {
+      clearTimeout(t);
+      return afterRedirect;
+    }
+    res = afterRedirect;
   } catch (e) {
     clearTimeout(t);
     const msg = e instanceof Error ? e.message : String(e);

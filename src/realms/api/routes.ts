@@ -123,6 +123,48 @@ export const statusRepostsV2Route = createRoute({
   }
 });
 
+export const statusQuotesV2Route = createRoute({
+  method: 'get',
+  path: '/2/status/{id}/quotes',
+  summary: 'List posts that quote this post',
+  description:
+    'Returns posts whose text quotes the given post (X search operator `quoted_tweet_id`). Uses the Latest search tab. Use `cursor.bottom` from the prior response to fetch the next page.',
+  request: {
+    params: z.object({
+      id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
+    }),
+    query: z.object({
+      count: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: 'Page size (default 20)',
+        default: 20
+      }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({ description: 'Pagination cursor from prior response' }),
+      ...langQuery.shape
+    })
+  },
+  responses: {
+    200: {
+      description: 'Quote posts page (same shape as `/2/search`)',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    },
+    400: {
+      description: 'Invalid path or query parameters',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'No results or timeline unavailable',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APISearchResultsSchema } }
+    }
+  }
+});
+
 export const threadV2Route = createRoute({
   method: 'get',
   path: '/2/thread/{id}',

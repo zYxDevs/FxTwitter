@@ -20,6 +20,7 @@ import {
   profileStatusesAPI
 } from '../../../providers/twitter/userStatuses';
 import { statusRepostsAPI } from '../../../providers/twitter/statusReposts';
+import { statusQuotesAPI } from '../../../providers/twitter/statusQuotes';
 import { trendsAPI } from '../../../providers/twitter/trends';
 import { typeaheadAPI } from '../../../providers/twitter/typeahead';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -38,6 +39,7 @@ import {
   searchV2Route,
   statusV2Route,
   statusRepostsV2Route,
+  statusQuotesV2Route,
   threadV2Route,
   trendsV2Route,
   typeaheadV2Route
@@ -71,6 +73,22 @@ export const statusRepostsAPIRequest: RouteHandler<typeof statusRepostsV2Route> 
   const cursor = query.cursor ?? null;
 
   const response = await statusRepostsAPI(id, count, cursor, c);
+
+  c.status(response.code as ContentfulStatusCode);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return c.json(response, response.code as 200 | 404 | 500);
+};
+
+export const statusQuotesAPIRequest: RouteHandler<typeof statusQuotesV2Route> = async c => {
+  const { id } = c.req.valid('param');
+  const query = c.req.valid('query');
+
+  const count = query.count ?? 20;
+  const cursor = query.cursor ?? null;
+
+  const response = await statusQuotesAPI(id, count, cursor, c, query.lang);
 
   c.status(response.code as ContentfulStatusCode);
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

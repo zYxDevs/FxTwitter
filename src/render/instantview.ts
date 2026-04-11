@@ -49,15 +49,15 @@ const populateUserLinks = (text: string, status: APIStatus): string => {
   /* TODO: Maybe we can add username splices to our API so only genuinely valid users are linked? */
   let usernamePattern = /@(\w{1,15})/g;
 
-  if (status.provider === DataProvider.Bsky) {
+  if (status.provider === DataProvider.Bluesky) {
     usernamePattern = /@(?!-)([\w.-]+(?<!-))/g;
   }
 
   text.match(usernamePattern)?.forEach(match => {
     const username = match.replace('@', '');
     let url = `${Constants.TWITTER_ROOT}/${username}`;
-    if (status.provider === DataProvider.Bsky) {
-      url = `${Constants.BSKY_ROOT}/profile/${username}`;
+    if (status.provider === DataProvider.Bluesky) {
+      url = `${Constants.BLUESKY_ROOT}/profile/${username}`;
     }
     text = text.replace(
       match,
@@ -136,7 +136,7 @@ const htmlifyHashtags = (input: string, status: APIStatus): string => {
   const hashtagPattern = /#([a-zA-Z_]\w*)/g;
   return input.replace(hashtagPattern, (match, hashtag) => {
     const encodedHashtag = encodeURIComponent(hashtag);
-    const url = `${status.provider === DataProvider.Twitter ? Constants.TWITTER_ROOT : Constants.BSKY_ROOT}/hashtag/${encodedHashtag}`;
+    const url = `${status.provider === DataProvider.Twitter ? Constants.TWITTER_ROOT : Constants.BLUESKY_ROOT}/hashtag/${encodedHashtag}`;
     return `  <a href="${url}">${match}</a>  `;
   });
 };
@@ -239,11 +239,11 @@ const generateStatusFooter = (
     `.format({
     socialText: getSocialTextIV(status as APITwitterStatus) || '',
     viewOriginal:
-      !isQuote && status.provider !== DataProvider.Bsky
+      !isQuote && status.provider !== DataProvider.Bluesky
         ? `<a href="${status.url}">${i18next.t('ivViewOriginal')}</a>`
         : notApplicableComment,
     aboutSection:
-      isQuote || status.provider === DataProvider.Bsky
+      isQuote || status.provider === DataProvider.Bluesky
         ? ''
         : `<h2>${i18next.t('ivAboutAuthor')}</h2>
         {pfp}

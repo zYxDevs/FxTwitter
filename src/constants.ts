@@ -15,6 +15,17 @@ export const Constants = {
   POLYGLOT_ACCESS_TOKEN: POLYGLOT_ACCESS_TOKEN,
   API_HOST_LIST: API_HOST_LIST.split(','),
   API_HOST_ROOT: `https://${API_HOST_LIST.split(',')[0]}`,
+  BLUESKY_API_HOST_LIST: (BLUESKY_API_HOST_LIST ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean),
+  BLUESKY_API_HOST_ROOT: (() => {
+    const h = (BLUESKY_API_HOST_LIST ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)[0];
+    return h ? `https://${h}` : '';
+  })(),
   RELEASE_NAME: RELEASE_NAME,
   GIF_TRANSCODE_DOMAIN_LIST: GIF_TRANSCODE_DOMAIN_LIST.split(','),
   VIDEO_TRANSCODE_DOMAIN_LIST: VIDEO_TRANSCODE_DOMAIN_LIST.split(','),
@@ -23,9 +34,9 @@ export const Constants = {
   TWITTER_ROOT: TWITTER_ROOT || 'https://x.com',
   TWITTER_API_ROOT: 'https://api.x.com',
   TWITTER_VIDEO_BASE: 'https://video.twimg.com',
-  BSKY_ROOT: 'https://bsky.app',
-  BSKY_VIDEO_BASE: 'https://video.bsky.app',
-  BSKY_API_ROOT: 'https://public.api.bsky.app',
+  BLUESKY_ROOT: 'https://bsky.app',
+  BLUESKY_VIDEO_BASE: 'https://video.bsky.app',
+  BLUESKY_API_ROOT: 'https://public.api.bsky.app',
   TIKTOK_ROOT: 'https://www.tiktok.com',
   TIKTOK_API_HOST: 'https://api16-normal-c-useast1a.tiktokv.com',
   NATIVE_MULTI_IMAGE_UA_REGEX: /discordbot\/|matrixpreviewbot/gi,

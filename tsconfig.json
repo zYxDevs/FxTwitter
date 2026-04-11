@@ -18,7 +18,7 @@
       "./src/types/types.d.ts",
       "./src/types/vendor/twitter.d.ts",
       "./src/types/vendor/tiktok.d.ts",
-      "./src/types/vendor/bsky.d.ts",
+      "./src/types/vendor/bluesky.d.ts",
       "./src/types/env.d.ts"
     ]
   },

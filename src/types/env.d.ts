@@ -12,6 +12,7 @@ declare const MOSAIC_BSKY_DOMAIN_LIST: string;
 declare const POLYGLOT_DOMAIN_LIST: string;
 declare const POLYGLOT_ACCESS_TOKEN: string;
 declare const API_HOST_LIST: string;
+declare const BLUESKY_API_HOST_LIST: string;
 declare const GIF_TRANSCODE_DOMAIN_LIST: string;
 declare const VIDEO_TRANSCODE_DOMAIN_LIST: string;
 declare const VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: string;

@@ -1,0 +1,25 @@
+{
+  "uri": "at://author.test/app.bsky.feed.post/rkeylikes",
+  "cid": "bafylikefixture",
+  "likes": [
+    {
+      "indexedAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "actor": {
+        "did": "did:plc:likerone",
+        "handle": "liker.one",
+        "displayName": "Liker One"
+      }
+    },
+    {
+      "indexedAt": "2024-01-02T00:00:00.000Z",
+      "createdAt": "2024-01-02T00:00:00.000Z",
+      "actor": {
+        "did": "did:plc:likertwo",
+        "handle": "liker.two",
+        "displayName": "Liker Two"
+      }
+    }
+  ],
+  "cursor": "next-likes-cursor"
+}

@@ -10,7 +10,8 @@ import { Constants } from './constants';
 import { api } from './realms/api/router';
 import { twitter } from './realms/twitter/router';
 import { cacheMiddleware } from './caches';
-import { bsky } from './realms/bluesky/router';
+import { bluesky } from './realms/bluesky/router';
+import { blueskyApi } from './realms/bluesky-api/router';
 import { getBranding } from './helpers/branding';
 import { tiktok } from './realms/tiktok/router';
 
@@ -45,11 +46,14 @@ export const app = new Hono<{
     if (Constants.API_HOST_LIST.includes(url.hostname)) {
       realm = 'api';
       console.log('API realm');
+    } else if (Constants.BLUESKY_API_HOST_LIST.includes(url.hostname)) {
+      realm = 'blueskyapi';
+      console.log('Bluesky API realm');
     } else if (Constants.STANDARD_DOMAIN_LIST.includes(baseHostName)) {
       realm = 'twitter';
       console.log('Twitter realm');
     } else if (Constants.STANDARD_BSKY_DOMAIN_LIST.includes(baseHostName)) {
-      realm = 'bsky';
+      realm = 'bluesky';
       console.log('Bluesky realm');
     } else if (Constants.STANDARD_TIKTOK_DOMAIN_LIST.includes(baseHostName)) {
       realm = 'tiktok';
@@ -160,8 +164,9 @@ app.use('*', cacheMiddleware());
 app.use('*', timing({ enabled: false }));
 
 app.route(`/api`, api);
+app.route(`/blueskyapi`, blueskyApi);
 app.route(`/twitter`, twitter);
-app.route(`/bsky`, bsky);
+app.route(`/bluesky`, bluesky);
 app.route(`/tiktok`, tiktok);
 
 app.all('/error', async c => {

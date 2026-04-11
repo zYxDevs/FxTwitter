@@ -2,7 +2,6 @@ import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { Strings } from '../../../strings';
 import { getBranding } from '../../../helpers/branding';
-import { OEmbed } from '../../../types/types';
 
 export const oembed = async (c: Context) => {
   console.log('oembed hit!');
@@ -13,7 +12,7 @@ export const oembed = async (c: Context) => {
   const author = searchParams.get('author') ?? '';
   const status = searchParams.get('status') ?? '';
 
-  const statusUrl = `${Constants.BSKY_ROOT}/profile/${encodeURIComponent(author)}/post/${status}`;
+  const statusUrl = `${Constants.BLUESKY_ROOT}/profile/${encodeURIComponent(author)}/post/${status}`;
   const branding = getBranding(c);
 
   const data: OEmbed = {

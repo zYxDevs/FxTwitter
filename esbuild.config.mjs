@@ -52,6 +52,7 @@ let envVariables = [
   'POLYGLOT_ACCESS_TOKEN',
   'API_HOST_LIST',
   'BLUESKY_API_HOST_LIST',
+  'GENERIC_API_HOST_LIST',
   'SENTRY_DSN',
   'GIF_TRANSCODE_DOMAIN_LIST',
   'VIDEO_TRANSCODE_DOMAIN_LIST',
@@ -67,6 +68,7 @@ for (let envVar of envVariables) {
 }
 
 defines['BLUESKY_API_HOST_LIST'] = JSON.stringify(process.env.BLUESKY_API_HOST_LIST ?? '');
+defines['GENERIC_API_HOST_LIST'] = JSON.stringify(process.env.GENERIC_API_HOST_LIST ?? '');
 
 defines['RELEASE_NAME'] = `"${releaseName}"`;
 

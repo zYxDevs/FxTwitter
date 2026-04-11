@@ -134,7 +134,9 @@ export const APIUserSchema = z
         identity_verified: z.boolean().optional()
       })
       .optional(),
-    about_account: APIAboutAccountSchema.optional()
+    about_account: APIAboutAccountSchema.optional(),
+    /** True when this user object came from a post/thread author stub (no full counts, banner, or bio). Clients should fetch `/profile` for rich UI. */
+    profile_embed: z.boolean().optional()
   })
   .openapi('APIUser');
 
@@ -691,6 +693,111 @@ export const APISearchResultsBlueskySchema = z
   })
   .openapi('APISearchResultsBluesky');
 
+/** Mastodon / ActivityPub normalized post (same baseline as Bluesky API v2). */
+export type APIMastodonStatus = {
+  id: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  quotes?: number;
+  replies: number;
+  quote?: APIMastodonStatus;
+  poll?: z.infer<typeof APIPollSchema>;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  translation?: z.infer<typeof APITranslateSchema>;
+  possibly_sensitive: boolean;
+  replying_to: {
+    screen_name: string;
+    status: string;
+  } | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'mastodon';
+  reposted_by?: z.infer<typeof APIRepostedBySchema>;
+};
+
+export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
+  .lazy(() =>
+    z.object({
+      id: z.string(),
+      url: z.string(),
+      text: z.string(),
+      created_at: z.string(),
+      created_timestamp: z.number(),
+      likes: z.number(),
+      reposts: z.number(),
+      quotes: z.number().optional(),
+      replies: z.number(),
+      quote: APIMastodonStatusSchema.optional(),
+      poll: APIPollSchema.optional(),
+      author: APIUserSchema,
+      media: APIMediaContainerSchema,
+      raw_text: z.object({
+        text: z.string(),
+        facets: z.array(APIFacetSchema)
+      }),
+      lang: z.string().nullable(),
+      translation: APITranslateSchema.optional(),
+      possibly_sensitive: z.boolean(),
+      replying_to: z
+        .object({
+          screen_name: z.string(),
+          status: z.string()
+        })
+        .nullable(),
+      source: z.string().nullable(),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      provider: z.literal('mastodon'),
+      reposted_by: APIRepostedBySchema.optional()
+    })
+  )
+  .openapi('APIMastodonStatus');
+
+export const SocialThreadMastodonSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIMastodonStatusSchema.nullable(),
+    thread: z.array(APIMastodonStatusSchema).nullable(),
+    author: APIUserSchema.nullable()
+  })
+  .openapi('SocialThreadMastodon');
+
+export type SocialThreadMastodon = z.infer<typeof SocialThreadMastodonSchema>;
+
+export const SocialConversationMastodonSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIMastodonStatusSchema.nullable(),
+    thread: z.array(APIMastodonStatusSchema).nullable(),
+    replies: z.array(APIMastodonStatusSchema).nullable(),
+    author: APIUserSchema.nullable(),
+    cursor: z
+      .object({
+        bottom: z.string().nullable()
+      })
+      .nullable()
+  })
+  .openapi('SocialConversationMastodon');
+
+export type SocialConversationMastodon = z.infer<typeof SocialConversationMastodonSchema>;
+
+export const APISearchResultsMastodonSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIMastodonStatusSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APISearchResultsMastodon');
+
 export const APIUserListResultsSchema = z
   .object({
     code: z.number(),
@@ -799,6 +906,7 @@ export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSche
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APISearchResultsBluesky = z.infer<typeof APISearchResultsBlueskySchema>;
+export type APISearchResultsMastodon = z.infer<typeof APISearchResultsMastodonSchema>;
 export type APIProfileRelationshipList = z.infer<typeof APIProfileRelationshipListSchema>;
 export type APIUserListResults = z.infer<typeof APIUserListResultsSchema>;
 export type APITrendGroupedTopic = z.infer<typeof APITrendGroupedTopicSchema>;

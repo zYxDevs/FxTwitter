@@ -73,6 +73,11 @@ export interface APIBlueskyStatus extends APIStatus {
   reposted_by?: APIRepostedBy;
 }
 
+export interface APIMastodonStatus extends APIStatus {
+  provider: DataProvider.Mastodon;
+  reposted_by?: APIRepostedBy;
+}
+
 export interface APITikTokStatus extends APIStatus {
   provider: DataProvider.TikTok;
   views?: number | null;

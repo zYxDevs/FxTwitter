@@ -36,7 +36,8 @@ export const blueskyProfileToApiUser = (profile: BlueskyProfileViewDetailed): AP
     likes: 0,
     joined,
     birthday: { day: 0, month: 0, year: 0 },
-    website: null
+    website: null,
+    profile_embed: false
   };
 
   if (profile.verification?.verifiedStatus === 'valid') {

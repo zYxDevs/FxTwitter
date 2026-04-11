@@ -3,7 +3,7 @@ import { DataProvider } from '../enum';
 
 const getDomain = (twitterId: string, provider: DataProvider): string | null => {
   let mosaicDomains: string[] = [];
-  if (provider === DataProvider.Twitter) {
+  if (provider === DataProvider.Twitter || provider === DataProvider.Mastodon) {
     mosaicDomains = Constants.MOSAIC_DOMAIN_LIST;
   } else if (provider === DataProvider.Bluesky) {
     mosaicDomains = Constants.MOSAIC_BSKY_DOMAIN_LIST;
@@ -42,6 +42,15 @@ export const handleMosaic = async (
       mosaicMedia = mediaList.map(media =>
         (media.url?.match(/did:plc:[\w/]+/g)?.[0] || '').replace('/', '_')
       );
+    } else if (provider === DataProvider.Mastodon) {
+      mosaicMedia = mediaList.map(media => {
+        const u = media.url || '';
+        let h = 0;
+        for (let i = 0; i < u.length; i++) {
+          h = (h << 5) - h + u.charCodeAt(i);
+        }
+        return `m${Math.abs(h).toString(36)}`;
+      });
     }
     const baseUrl = `https://${selectedDomain}/`;
     let path = '';

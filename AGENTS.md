@@ -4,7 +4,7 @@ This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky
 
 ## Environment variables
 
-Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When ading an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
+Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When adding an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
 - `.env.example` (for documentation)
 - `esbuild.config.mjs` (so it's passed to the worker during build)
 - `viest.config.mts` (for tests)

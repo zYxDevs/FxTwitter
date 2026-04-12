@@ -35,22 +35,35 @@ export async function initCredentials(credentialKey: string | undefined): Promis
   }
   if (!initOnce) {
     initOnce = (async () => {
-      const keyBytes = base64UrlToBytes(credentialKey.trim());
-      if (keyBytes.byteLength !== 32) {
-        throw new Error('CREDENTIAL_KEY must decode to 32 bytes (AES-256, base64url)');
+      try {
+        const keyBytes = base64UrlToBytes(credentialKey.trim());
+        if (keyBytes.byteLength !== 32) {
+          throw new Error('CREDENTIAL_KEY must decode to 32 bytes (AES-256, base64url)');
+        }
+        const iv = base64ToBytes(CREDENTIALS_IV);
+        const ciphertext = base64ToBytes(ENCRYPTED_CREDENTIALS);
+
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          keyBytes,
+          { name: 'AES-GCM' },
+          false,
+          ['decrypt']
+        );
+
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv },
+          cryptoKey,
+          ciphertext
+        );
+
+        const text = new TextDecoder('utf-8').decode(decrypted);
+        console.log(`Successfully decrypted credentials (${text.length} bytes)`);
+        credentialStore = JSON.parse(text) as CredentialStore;
+      } catch (err) {
+        initOnce = null;
+        throw err;
       }
-      const iv = base64ToBytes(CREDENTIALS_IV);
-      const ciphertext = base64ToBytes(ENCRYPTED_CREDENTIALS);
-
-      const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
-        'decrypt'
-      ]);
-
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ciphertext);
-
-      const text = new TextDecoder('utf-8').decode(decrypted);
-      console.log(`Successfully decrypted credentials (${text.length} bytes)`);
-      credentialStore = JSON.parse(text) as CredentialStore;
     })();
   }
   await initOnce;

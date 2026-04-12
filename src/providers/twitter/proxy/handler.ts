@@ -141,7 +141,15 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
       }
 
       if (env.EXCEPTION_DISCORD_WEBHOOK && errors) {
-        await sendDiscordAlert(env, username, requestPath, asRecord(json)?.['errors'], variables);
+        try {
+          await sendDiscordAlert(env, username, requestPath, asRecord(json)?.['errors'], variables);
+        } catch (alertErr) {
+          console.error('Discord exception alert failed', {
+            username: redactUsername ? '[REDACTED]' : username,
+            requestPath,
+            error: alertErr
+          });
+        }
       }
 
       if (twitterResponseLooksEmpty(json)) {

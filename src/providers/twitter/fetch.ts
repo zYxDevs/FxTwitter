@@ -4,7 +4,7 @@ import { generateUserAgent } from '../../helpers/useragent';
 import { generateSnowflake, withTimeout } from '../../helpers/utils';
 import { detokenize } from '../../helpers/detokenize';
 import { hasTwitterAccountProxy } from './accountProxy';
-import { initCredentials } from './proxy/credentials';
+import { hasDecryptedCredentials, initCredentials } from './proxy/credentials';
 import { proxyTwitterRequest } from './proxy/handler';
 
 const API_ATTEMPTS = 3;
@@ -161,22 +161,38 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         const headers2 = { ...headers };
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
         await initCredentials(c.env.CREDENTIAL_KEY);
-        apiRequest = await withTimeout((signal: AbortSignal) =>
-          proxyTwitterRequest(
-            new Request(url, {
-              method: method ?? 'GET',
-              headers: headers2,
-              signal,
-              body
-            }),
-            {
-              CREDENTIAL_KEY: c.env.CREDENTIAL_KEY,
-              EXCEPTION_DISCORD_WEBHOOK: c.env.EXCEPTION_DISCORD_WEBHOOK
-            }
-          )
-        );
+        let usedInProcessAccountProxy = false;
+        if (hasDecryptedCredentials()) {
+          usedInProcessAccountProxy = true;
+          apiRequest = await withTimeout((signal: AbortSignal) =>
+            proxyTwitterRequest(
+              new Request(url, {
+                method: method ?? 'GET',
+                headers: headers2,
+                signal,
+                body
+              }),
+              {
+                CREDENTIAL_KEY: c.env.CREDENTIAL_KEY,
+                EXCEPTION_DISCORD_WEBHOOK: c.env.EXCEPTION_DISCORD_WEBHOOK
+              }
+            )
+          );
+        } else {
+          console.log('CREDENTIAL_KEY set but no bundled accounts; using guest API');
+          apiRequest = await withTimeout((signal: AbortSignal) =>
+            fetch(url, {
+              method: method,
+              headers: headers,
+              signal: signal,
+              body: body
+            })
+          );
+        }
         const performanceEnd = performance.now();
-        console.log(`Account proxy request finished after ${performanceEnd - performanceStart}ms`);
+        console.log(
+          `${usedInProcessAccountProxy ? 'Account proxy' : 'Guest API'} request finished after ${performanceEnd - performanceStart}ms`
+        );
       } else {
         const performanceStart = performance.now();
         apiRequest = await withTimeout((signal: AbortSignal) =>

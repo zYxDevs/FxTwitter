@@ -21,11 +21,21 @@ function base64ToBytes(b64: string): Uint8Array {
   return binaryStringToBytes(atob(b64));
 }
 
+/** True when the worker bundle includes an encrypted credential payload (from credentials.enc.json at build time). */
+export function hasBundledEncryptedCredentials(): boolean {
+  return (
+    typeof ENCRYPTED_CREDENTIALS === 'string' &&
+    ENCRYPTED_CREDENTIALS.length > 0 &&
+    typeof CREDENTIALS_IV === 'string' &&
+    CREDENTIALS_IV.length > 0
+  );
+}
+
 /**
  * Decrypt and cache the credential store (idempotent). Safe to call multiple times.
  */
 export async function initCredentials(credentialKey: string | undefined): Promise<void> {
-  if (!credentialKey || !ENCRYPTED_CREDENTIALS || !CREDENTIALS_IV) {
+  if (!credentialKey || !hasBundledEncryptedCredentials()) {
     return;
   }
   if (credentialStore !== null) {

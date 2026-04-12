@@ -177,14 +177,14 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
           );
           errors = true;
         }
+
+        if (rawBody.includes(username)) {
+          console.log('Username is leaking, vaporizing object...');
+          decodedBody = JSON.stringify(filterObject(json, username));
+        }
       } catch (e) {
         console.log('Error parsing JSON:', e);
         errors = true;
-      }
-
-      if (rawBody.includes(username)) {
-        console.log('Username is leaking, vaporizing object...');
-        decodedBody = JSON.stringify(filterObject(JSON.parse(decodedBody), username));
       }
 
       if (apiUrl.includes('translation.json') || apiUrl.includes('live_video_stream')) {

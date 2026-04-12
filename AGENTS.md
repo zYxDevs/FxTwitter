@@ -7,7 +7,7 @@ This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky
 Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When adding an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
 - `.env.example` (for documentation)
 - `esbuild.config.mjs` (so it's passed to the worker during build)
-- `viest.config.mts` (for tests)
+- `vitest.config.mts` (for tests)
 - `.github/workflows/deploy.yml` (So GitHub Actions variables/secrets are given to it during deployment)
 - `src/types/env.d.ts` (for type documentation)
 - `src/constants.ts` (We typically load all environment variables under the Constants object)

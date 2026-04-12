@@ -155,9 +155,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
           })
         );
         const performanceEnd = performance.now();
-        console.log(
-          `Account proxy (test binding) finished after ${performanceEnd - performanceStart}ms`
-        );
+        console.log(`Account proxy request finished after ${performanceEnd - performanceStart}ms`);
       } else if (useElongator && c.env?.CREDENTIAL_KEY) {
         const performanceStart = performance.now();
         const headers2 = { ...headers };
@@ -178,9 +176,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
           )
         );
         const performanceEnd = performance.now();
-        console.log(
-          `Account proxy (in-process) finished after ${performanceEnd - performanceStart}ms`
-        );
+        console.log(`Account proxy request finished after ${performanceEnd - performanceStart}ms`);
       } else {
         const performanceStart = performance.now();
         apiRequest = await withTimeout((signal: AbortSignal) =>
@@ -294,7 +290,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
-    console.log('response', JSON.stringify(response));
+    // console.log('response', JSON.stringify(response));
     return response;
   }
 

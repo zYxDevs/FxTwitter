@@ -12,11 +12,20 @@
     "reload": "wrangler deploy --no-bundle && wrangler tail",
     "prettier": "prettier --write .",
     "lint:eslint": "eslint --max-warnings=0 src",
-    "test": "vitest"
+    "test": "vitest",
+    "credentials:strip": "node tools/stripcredentials.mjs",
+    "credentials:add-csrf": "node tools/add_csrf.mjs",
+    "credentials:encrypt": "node tools/credential-tools.mjs encrypt",
+    "credentials:push": "node tools/credential-tools.mjs push",
+    "credentials:encrypt-push": "node tools/credential-tools.mjs encrypt-push",
+    "credentials:presign": "node tools/credential-tools.mjs presign",
+    "credentials:change-country": "tsx tools/change_country.ts"
   },
   "author": "dangered wolf",
   "license": "MIT",
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
+    "@aws-sdk/s3-request-presigner": "^3.1029.0",
     "@cloudflare/vitest-pool-workers": "^0.14.3",
     "@cloudflare/workers-types": "^4.20260411.1",
     "@eslint/js": "^10.0.1",
@@ -33,6 +42,7 @@
     "globals": "^17.4.0",
     "prettier": "^3.8.2",
     "ts-loader": "^9.5.7",
+    "tsx": "^4.19.3",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4",
@@ -42,8 +52,8 @@
     "@hono/sentry": "^1.2.2",
     "@hono/zod-openapi": "^1.2.4",
     "hono": "^4.12.12",
-    "zod": "^4.3.6",
     "i18next": "^26.0.4",
-    "i18next-icu": "^2.4.3"
+    "i18next-icu": "^2.4.3",
+    "zod": "^4.3.6"
   }
 }

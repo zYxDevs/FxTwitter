@@ -1,5 +1,5 @@
 /* eslint-disable no-case-declarations */
-// Test harness for elongator TwitterProxy to handle mock requests for testing
+// Test harness: optional TwitterProxy Fetcher mocks X API responses (in-process proxy uses CREDENTIAL_KEY in prod).
 export default {
   TwitterProxy: {
     fetch: async (request: string) => {

@@ -12,7 +12,13 @@
     "reload": "wrangler deploy --no-bundle && wrangler tail",
     "prettier": "prettier --write .",
     "lint:eslint": "eslint --max-warnings=0 src",
-    "test": "vitest"
+    "test": "vitest",
+    "credentials:strip": "node tools/stripcredentials.mjs",
+    "credentials:add-csrf": "node tools/add_csrf.mjs",
+    "credentials:encrypt": "node tools/credential-tools.mjs encrypt",
+    "credentials:push": "node tools/credential-tools.mjs push",
+    "credentials:encrypt-push": "node tools/credential-tools.mjs encrypt-push",
+    "credentials:change-country": "tsx tools/change_country.ts"
   },
   "author": "dangered wolf",
   "license": "MIT",
@@ -32,6 +38,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.4.0",
     "prettier": "^3.8.2",
+    "tsx": "^4.19.3",
     "ts-loader": "^9.5.7",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
@@ -41,6 +48,7 @@
   "dependencies": {
     "@hono/sentry": "^1.2.2",
     "@hono/zod-openapi": "^1.2.4",
+    "cheerio": "^1.0.0",
     "hono": "^4.12.12",
     "zod": "^4.3.6",
     "i18next": "^26.0.4",

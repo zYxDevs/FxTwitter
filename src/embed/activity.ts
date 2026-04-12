@@ -384,6 +384,8 @@ export const handleActivity = async (
     mediaNumber = decoded.n;
   }
 
+  console.log('snowcode params', JSON.stringify(decoded));
+
   let thread: SocialThread;
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(statusId, false, c, language ?? undefined, false);
@@ -473,9 +475,6 @@ export const handleActivity = async (
     poll: null
   };
 
-  console.log('regular media', thread.status.media?.all);
-  console.log('quote media', thread.status.quote?.media?.all);
-
   // Convert article media to attachments format
   const articleAttachments = articleMedia
     .map((media: TwitterApiMedia) => convertArticleMediaToAttachment(media))
@@ -486,8 +485,6 @@ export const handleActivity = async (
       ? thread.status.media?.all
       : (thread.status.quote?.media?.all ?? []);
   let mediaList = rawMediaList;
-
-  console.log('mediaList', mediaList);
 
   if (!textOnly) {
     if (mediaNumber) {

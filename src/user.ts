@@ -26,8 +26,7 @@ export const handleProfile = async (
   username: string,
   flags: InputFlags
 ): Promise<Response> => {
-  console.log('Direct?', flags?.direct);
-
+  console.log('flags', JSON.stringify(flags));
   const api = await userAPI(username, c, true);
   const user = api?.user as APIUser;
 

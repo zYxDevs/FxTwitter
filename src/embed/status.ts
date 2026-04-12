@@ -84,7 +84,7 @@ export const handleStatus = async (
   language: string | undefined,
   provider: DataProvider
 ): Promise<Response> => {
-  console.log('Direct?', flags?.direct);
+  console.log('flags', JSON.stringify(flags));
 
   const isTelegram = (userAgent || '').indexOf('TelegramBot') > -1;
   const isDiscord = (userAgent || '').indexOf('Discordbot') > -1;

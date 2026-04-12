@@ -1,4 +1,4 @@
-const TRANSACTION_ID_QUERIES: string[] = ['TweetDetail', 'SearchTimeline'];
+const TRANSACTION_ID_QUERIES: string[] = ['SearchTimeline'];
 
 export function needsTransactionId(apiUrl: string): boolean {
   const url = new URL(apiUrl);

@@ -1,12 +1,13 @@
 import { Context } from 'hono';
 import { Constants } from '../../constants';
-import { Experiment, experimentCheck } from '../../experiments';
 import { generateUserAgent } from '../../helpers/useragent';
 import { generateSnowflake, withTimeout } from '../../helpers/utils';
 import { detokenize } from '../../helpers/detokenize';
+import { hasTwitterAccountProxy } from './accountProxy';
+import { hasDecryptedCredentials, initCredentials } from './proxy/credentials';
+import { proxyTwitterRequest } from './proxy/handler';
 
 const API_ATTEMPTS = 3;
-let wasElongatorDisabled = false;
 
 interface TwitterFetchOptions {
   url: string;
@@ -20,11 +21,10 @@ interface TwitterFetchOptions {
 
 export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Promise<unknown> => {
   const { url, method, headers: _headers, body, validateFunction, elongatorRequired } = options;
-  let useElongator =
-    options.useElongator ??
-    experimentCheck(Experiment.ELONGATOR_BY_DEFAULT, typeof c.env?.TwitterProxy !== 'undefined');
+  let useElongator = options.useElongator ?? hasTwitterAccountProxy(c.env);
   let apiAttempts = 0;
   let newTokenGenerated = false;
+  let wasAccountProxyDisabled = false;
 
   const [userAgent, secChUa] = generateUserAgent();
   // console.log(`Outgoing useragent for this request:`, userAgent);
@@ -147,7 +147,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         const headers2 = headers;
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
         apiRequest = await withTimeout((signal: AbortSignal) =>
-          c.env?.TwitterProxy.fetch(url, {
+          c.env?.TwitterProxy!.fetch(url, {
             method: method,
             headers: headers2,
             signal: signal,
@@ -155,7 +155,44 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
           })
         );
         const performanceEnd = performance.now();
-        console.log(`Elongator request finished after ${performanceEnd - performanceStart}ms`);
+        console.log(`Account proxy request finished after ${performanceEnd - performanceStart}ms`);
+      } else if (useElongator && c.env?.CREDENTIAL_KEY) {
+        const performanceStart = performance.now();
+        const headers2 = { ...headers };
+        headers2['x-twitter-auth-type'] = 'OAuth2Session';
+        await initCredentials(c.env.CREDENTIAL_KEY);
+        let usedInProcessAccountProxy = false;
+        if (hasDecryptedCredentials()) {
+          usedInProcessAccountProxy = true;
+          apiRequest = await withTimeout((signal: AbortSignal) =>
+            proxyTwitterRequest(
+              new Request(url, {
+                method: method ?? 'GET',
+                headers: headers2,
+                signal,
+                body
+              }),
+              {
+                CREDENTIAL_KEY: c.env.CREDENTIAL_KEY,
+                EXCEPTION_DISCORD_WEBHOOK: c.env.EXCEPTION_DISCORD_WEBHOOK
+              }
+            )
+          );
+        } else {
+          console.log('CREDENTIAL_KEY set but no bundled accounts; using guest API');
+          apiRequest = await withTimeout((signal: AbortSignal) =>
+            fetch(url, {
+              method: method,
+              headers: headers,
+              signal: signal,
+              body: body
+            })
+          );
+        }
+        const performanceEnd = performance.now();
+        console.log(
+          `${usedInProcessAccountProxy ? 'Account proxy' : 'Guest API'} request finished after ${performanceEnd - performanceStart}ms`
+        );
       } else {
         const performanceStart = performance.now();
         apiRequest = await withTimeout((signal: AbortSignal) =>
@@ -184,7 +221,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       /* We'll usually only hit this if we get an invalid response from Twitter.
          It's uncommon, but it happens */
       console.error('Unknown error while fetching from API', e);
-      /* Elongator returns strings to communicate downstream errors */
+      /* Account proxy may surface downstream errors as thrown strings */
       if (String(e).indexOf('Status not found') !== -1) {
         console.log('Tweet was not found');
         return null;
@@ -200,11 +237,11 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       }
       if (useElongator) {
         if (elongatorRequired) {
-          console.log('Elongator was required, but we failed to fetch a valid response');
+          console.log('Account proxy was required, but we failed to fetch a valid response');
           return {};
         }
-        console.log('Elongator request failed, trying again without it');
-        wasElongatorDisabled = true;
+        console.log('Account proxy request failed, trying again without it');
+        wasAccountProxyDisabled = true;
       }
       newTokenGenerated = true;
       useElongator = false;
@@ -212,13 +249,13 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     }
 
     if (
-      !wasElongatorDisabled &&
+      !wasAccountProxyDisabled &&
       !useElongator &&
-      typeof c.env?.TwitterProxy !== 'undefined' &&
+      hasTwitterAccountProxy(c.env) &&
       (response as TweetResultByRestIdResponse)?.data?.tweetResult?.result?.reason ===
         'NsfwLoggedOut'
     ) {
-      console.log(`nsfw tweet detected, it's elongator time`);
+      console.log(`nsfw tweet detected, retrying with account proxy`);
       useElongator = true;
       continue;
     }
@@ -242,12 +279,12 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     if (validateFunction && !validateFunction(response)) {
       console.log('Failed to fetch response, got', JSON.stringify(response));
       if (elongatorRequired) {
-        console.log('Elongator was required, but we failed to fetch a valid response');
+        console.log('Account proxy was required, but we failed to fetch a valid response');
         return {};
       }
       if (useElongator) {
-        console.log('Elongator request failed to validate, trying again without it');
-        wasElongatorDisabled = true;
+        console.log('Account proxy request failed to validate, trying again without it');
+        wasAccountProxyDisabled = true;
       }
       useElongator = false;
       newTokenGenerated = true;
@@ -269,7 +306,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
-    console.log('response', JSON.stringify(response));
+    // console.log('response', JSON.stringify(response));
     return response;
   }
 

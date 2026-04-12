@@ -55,10 +55,6 @@ jobs:
             { binding = "AnalyticsEngine" }
           ]
 
-          services = [
-            { binding = "TwitterProxy", service = "elongator" }
-          ]
-
           [ai]
           binding = "AI"
 

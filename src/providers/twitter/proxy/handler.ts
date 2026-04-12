@@ -112,9 +112,10 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
     console.log(`Rate limit reset for account: ${rateLimitResetDate}`);
 
     try {
-      attempts++;
       console.log('---------------------------------------------');
-      console.log(`Attempt #${attempts} with account ${redactUsername ? '[REDACTED]' : username}`);
+      console.log(
+        `Attempt #${attempts + 1} with account ${redactUsername ? '[REDACTED]' : username}`
+      );
       json = JSON.parse(decodedBody) as unknown;
 
       if (
@@ -155,10 +156,6 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
       errors = true;
     }
 
-    if (errors) {
-      console.log(`Account is not working, trying another one...`);
-    }
-
     if (rawBody.includes(username)) {
       console.log('Username is leaking, vaporizing object...');
       decodedBody = JSON.stringify(filterObject(JSON.parse(decodedBody), username));
@@ -168,9 +165,13 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
       decodedBody = rawBody;
     }
 
-    if (attempts > 4) {
-      console.log('Maximum failed attempts reached');
-      return jsonError('Maximum failed attempts reached', 502);
+    if (errors) {
+      console.log(`Account is not working, trying another one...`);
+      attempts++;
+      if (attempts > 4) {
+        console.log('Maximum failed attempts reached');
+        return jsonError('Maximum failed attempts reached', 502);
+      }
     }
   } while (errors);
 

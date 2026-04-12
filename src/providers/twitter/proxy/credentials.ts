@@ -49,6 +49,7 @@ export async function initCredentials(credentialKey: string | undefined): Promis
       const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ciphertext);
 
       const text = new TextDecoder('utf-8').decode(decrypted);
+      console.log(`Successfully decrypted credentials (${text.length} bytes)`);
       credentialStore = JSON.parse(text) as CredentialStore;
     })();
   }

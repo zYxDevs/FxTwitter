@@ -668,8 +668,6 @@ export const constructTwitterThread = async (
   language: string | undefined,
   legacyAPI = false
 ): Promise<SocialThread> => {
-  console.log('language', language);
-
   // Fetch status using orchestrator with appropriate method prioritization
   let response:
     | TweetDetailResponse

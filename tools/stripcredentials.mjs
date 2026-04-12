@@ -21,9 +21,9 @@ const accounts = Array.isArray(raw.twitter?.accounts)
     ? raw.accounts
     : null;
 
-if (!accounts) {
+if (!Array.isArray(accounts) || accounts.length === 0) {
   console.error(
-    'credentials.complete.json must have twitter.accounts[] or legacy top-level accounts[]'
+    'credentials.complete.json must have twitter.accounts or legacy top-level accounts as a non-empty array'
   );
   process.exit(1);
 }

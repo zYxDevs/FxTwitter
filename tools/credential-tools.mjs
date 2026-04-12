@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Encrypt multi-provider credentials for FixTweet worker bundle (AES-256-GCM).
- * Subcommands: encrypt | push | encrypt-push | presign
+ * Subcommands: encrypt | push | encrypt-push | presign | pull
  */
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -12,13 +12,42 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 
-config();
+config({ quiet: true });
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const KEY_PATH = join(repoRoot, '.credential-key');
 const PLAINTEXT_PATH = join(repoRoot, 'credentials.json');
 const ENCRYPTED_PATH = join(repoRoot, 'credentials.enc.json');
 const R2_OBJECT_KEY = process.env.R2_OBJECT_KEY || 'credentials.enc.json';
+
+function getR2Env() {
+  const accountId = process.env.R2_ACCOUNT_ID ?? process.env.CF_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET_NAME;
+  const key = process.env.R2_OBJECT_KEY || R2_OBJECT_KEY;
+  return { accountId, accessKeyId, secretAccessKey, bucket, key };
+}
+
+function requireR2S3Credentials(label) {
+  const env = getR2Env();
+  if (!env.accountId || !env.accessKeyId || !env.secretAccessKey || !env.bucket) {
+    console.error(
+      `${label} requires R2_ACCOUNT_ID (or CF_ACCOUNT_ID), R2_ACCESS_KEY_ID (or AWS_ACCESS_KEY_ID),\n` +
+        'R2_SECRET_ACCESS_KEY (or AWS_SECRET_ACCESS_KEY), and R2_BUCKET_NAME.'
+    );
+    process.exit(1);
+  }
+  return env;
+}
+
+function createR2S3Client(env) {
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${env.accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId: env.accessKeyId, secretAccessKey: env.secretAccessKey }
+  });
+}
 
 function base64UrlToBuffer(b64url) {
   const pad = '='.repeat((4 - (b64url.length % 4)) % 4);
@@ -124,11 +153,7 @@ function push() {
 }
 
 async function presign() {
-  const accountId = process.env.R2_ACCOUNT_ID ?? process.env.CF_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET_NAME;
-  const key = process.env.R2_OBJECT_KEY || R2_OBJECT_KEY;
+  const env = requireR2S3Credentials('presign');
   const rawExpires = process.env.R2_PRESIGN_EXPIRES_IN ?? '3600';
   const expiresIn = Number(rawExpires);
 
@@ -139,23 +164,26 @@ async function presign() {
     process.exit(1);
   }
 
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    console.error(
-      'presign requires R2_ACCOUNT_ID (or CF_ACCOUNT_ID), R2_ACCESS_KEY_ID (or AWS_ACCESS_KEY_ID),\n' +
-        'R2_SECRET_ACCESS_KEY (or AWS_SECRET_ACCESS_KEY), and R2_BUCKET_NAME.'
-    );
+  const client = createR2S3Client(env);
+  const url = await getSignedUrl(
+    client,
+    new GetObjectCommand({ Bucket: env.bucket, Key: env.key }),
+    { expiresIn }
+  );
+  process.stdout.write(`${url}\n`);
+}
+
+async function pull() {
+  const env = requireR2S3Credentials('pull');
+  const client = createR2S3Client(env);
+  const out = await client.send(new GetObjectCommand({ Bucket: env.bucket, Key: env.key }));
+  if (!out.Body) {
+    console.error('R2 GetObject returned an empty body.');
     process.exit(1);
   }
-
-  const client = new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey }
-  });
-  const url = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), {
-    expiresIn
-  });
-  process.stdout.write(`${url}\n`);
+  const buf = Buffer.from(await out.Body.transformToByteArray());
+  writeFileSync(ENCRYPTED_PATH, buf);
+  console.error(`Wrote ${ENCRYPTED_PATH}`);
 }
 
 const cmd = process.argv[2];
@@ -171,7 +199,12 @@ if (cmd === 'encrypt') {
     console.error(err);
     process.exit(1);
   });
+} else if (cmd === 'pull') {
+  pull().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
 } else {
-  console.error('Usage: node credential-tools.mjs <encrypt|push|encrypt-push|presign>');
+  console.error('Usage: node credential-tools.mjs <encrypt|push|encrypt-push|presign|pull>');
   process.exit(1);
 }

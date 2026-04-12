@@ -19,6 +19,7 @@
     "credentials:push": "node tools/credential-tools.mjs push",
     "credentials:encrypt-push": "node tools/credential-tools.mjs encrypt-push",
     "credentials:presign": "node tools/credential-tools.mjs presign",
+    "credentials:pull": "node tools/credential-tools.mjs pull",
     "credentials:change-country": "tsx tools/change_country.ts"
   },
   "author": "dangered wolf",

@@ -9,7 +9,8 @@ analytics_engine_datasets = [
   { binding = "AnalyticsEngine" }
 ]
 
-# Use .env to configure environment variables, not wrangler.toml.
+# Use .env to configure environment variables, not wrangler.toml
+# except CREDENTIAL_KEY and EXCEPTION_DISCORD_WEBHOOK, which should be set using `wrangler secret put CREDENTIAL_KEY`
 
 [build]
 command = "npm run build"

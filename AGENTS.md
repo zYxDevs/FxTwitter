@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This is the source code for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation. 
+This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation. 
 
 ## Environment variables
 

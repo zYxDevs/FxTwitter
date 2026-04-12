@@ -1,12 +1,22 @@
 # AGENTS.md
 
-## Cursor Cloud specific instructions
+This is the source code for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. Cloudflare Workers deployment, Hono router, single serverless app.
 
-**Product**: FxEmbed — a Cloudflare Worker that generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok, Mastodon) for chat platforms like Discord and Telegram. Single serverless app, not a multi-service architecture.
+## Environment variables
+
+Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When ading an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
+- `.env.example` (for documentation)
+- `esbuild.config.mjs` (so it's passed to the worker during build)
+- `viest.config.mts` (for tests)
+- `.github/workflows/deploy.yml` (So GitHub Actions variables/secrets are given to it during deployment)
+- `src/types/env.d.ts` (for type documentation)
+- `src/constants.ts` (We typically load all environment variables under the Constants object)
+
+## Cursor Cloud specific instructions
 
 ### Prerequisites
 
-- **Node.js 24.x** (CI uses `24.14.1`). The VM uses nvm; run `source ~/.nvm/nvm.sh && nvm use 24.14.1` before any npm commands.
+- **Node.js Latest LTS (Currently 24.14.x)** (CI uses `24.14.1`). The VM uses nvm; run `source ~/.nvm/nvm.sh && nvm use 24.14.1` before any npm commands.
 - Config files must exist before build/test: copy `wrangler.example.toml` → `wrangler.toml` and `.env.example` → `.env` if they don't already exist. `branding.json` is auto-copied from `branding.example.json` during build if missing.
 
 ### Key commands
@@ -29,6 +39,5 @@
 
 ### Gotchas
 
-- The repo has 8 pre-existing Prettier formatting errors in `src/` that cause `npm run lint:eslint` to exit non-zero. These are in the existing codebase, not introduced by changes.
 - `credentials.enc.json` is optional; build gracefully falls back to empty strings if missing.
 - `wrangler dev` triggers a build automatically (via the `[build]` section in `wrangler.toml`).

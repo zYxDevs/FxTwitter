@@ -71,7 +71,7 @@ function encrypt() {
     ciphertext: ciphertext.toString('base64'),
     iv: iv.toString('base64')
   };
-  writeFileSync(ENCRYPTED_PATH, JSON.stringify(out, null, 2) + '\n', 'utf-8');
+  writeFileSync(ENCRYPTED_PATH, JSON.stringify(out) + '\n', 'utf-8');
   console.log(`Wrote ${ENCRYPTED_PATH}`);
 }
 

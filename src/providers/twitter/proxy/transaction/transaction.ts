@@ -162,6 +162,7 @@ export class ClientTransaction {
     const text = await resp.text();
     const indices: number[] = [];
     let match: RegExpExecArray | null;
+    INDICES_REGEX.lastIndex = 0;
     while ((match = INDICES_REGEX.exec(text)) !== null) {
       indices.push(parseInt(match[1], 10));
     }

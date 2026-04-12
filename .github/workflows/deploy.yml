@@ -25,6 +25,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Fetch encrypted credentials from R2
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ vars.R2_CREDENTIALS_BUCKET }}
+          R2_PRESIGN_EXPIRES_IN: '900'
+        run: |
+          set -euo pipefail
+          R2_URL="$(node tools/credential-tools.mjs presign)"
+          curl --fail -fSL -o credentials.enc.json "$R2_URL"
+          jq -e '
+            (.ciphertext | type == "string" and length > 0) and
+            (.iv | type == "string" and length > 0)
+          ' credentials.enc.json >/dev/null \
+            || { echo "::error::credentials.enc.json must contain non-empty ciphertext and iv strings"; exit 1; }
+
       - name: Create wrangler.toml
         run: |
           cat << EOF > wrangler.toml

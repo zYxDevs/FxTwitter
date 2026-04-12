@@ -3,10 +3,7 @@ import type { CredentialStore, TwitterCredentials } from './types';
 let credentialStore: CredentialStore | null = null;
 let initOnce: Promise<void> | null = null;
 
-function base64UrlToBytes(b64url: string): Uint8Array {
-  const pad = '='.repeat((4 - (b64url.length % 4)) % 4);
-  const b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
-  const binary = atob(b64);
+function binaryStringToBytes(binary: string): Uint8Array {
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     out[i] = binary.charCodeAt(i);
@@ -14,13 +11,14 @@ function base64UrlToBytes(b64url: string): Uint8Array {
   return out;
 }
 
+function base64UrlToBytes(b64url: string): Uint8Array {
+  const pad = '='.repeat((4 - (b64url.length % 4)) % 4);
+  const b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+  return binaryStringToBytes(atob(b64));
+}
+
 function base64ToBytes(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const out = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    out[i] = binary.charCodeAt(i);
-  }
-  return out;
+  return binaryStringToBytes(atob(b64));
 }
 
 /**

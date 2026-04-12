@@ -92,11 +92,8 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
 
       headers.delete('x-client-transaction-id');
       if (needsTransactionId(apiUrl)) {
-        headers.delete('x-client-transaction-id');
         try {
-          const transaction = await ClientTransaction.create(attempts > 1).catch(err => {
-            throw err;
-          });
+          const transaction = await ClientTransaction.create(attempts > 1);
           const transactionId = await transaction.generateTransactionId(
             request.method,
             requestPath

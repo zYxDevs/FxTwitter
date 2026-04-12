@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This is the source code for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. Cloudflare Workers deployment, Hono router, single serverless app.
+This is the source code for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation. 
 
 ## Environment variables
 
@@ -27,7 +27,7 @@ Environment variables are generally set in .env, not in Wrangler, except for cer
 | Lint | `npm run lint:eslint` |
 | Format | `npm run prettier` |
 | Build (local) | `npm run build-local` |
-| Test | `npx vitest run` |
+| Test | `npm run test` |
 | Dev server | `npx wrangler dev --local` (serves on `http://localhost:8787`) |
 
 ### Dev server testing notes

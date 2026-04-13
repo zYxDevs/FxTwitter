@@ -31,7 +31,13 @@ const embeddingClientRegex =
 
    * Under the old system with itty-router, this was not the case, but it is since adopting Hono. This will be necessary for FxTwitter API v2. */
 export const app = new Hono<{
-  Bindings: { TwitterProxy: Fetcher; AnalyticsEngine: AnalyticsEngineDataset };
+  Bindings: {
+    /** Optional: tests use a Fetcher mock; production uses in-process proxy + CREDENTIAL_KEY. */
+    TwitterProxy?: Fetcher;
+    CREDENTIAL_KEY?: string;
+    EXCEPTION_DISCORD_WEBHOOK?: string;
+    AnalyticsEngine: AnalyticsEngineDataset;
+  };
 }>({
   getPath: req => {
     let url: URL;

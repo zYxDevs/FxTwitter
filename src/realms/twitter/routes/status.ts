@@ -92,10 +92,8 @@ export const statusRequest = async (c: Context) => {
   }
 
   if (/twitt/g.test(url.href)) {
-    console.log(`We're using twitter domain`);
     flags.isXDomain = false;
   } else {
-    console.log(`We're using x domain`);
     flags.isXDomain = true;
   }
 

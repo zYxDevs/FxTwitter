@@ -72,6 +72,42 @@ defines['GENERIC_API_HOST_LIST'] = JSON.stringify(process.env.GENERIC_API_HOST_L
 
 defines['RELEASE_NAME'] = `"${releaseName}"`;
 
+try {
+  const raw = fs.readFileSync('credentials.enc.json', 'utf-8');
+  let enc;
+  try {
+    enc = JSON.parse(raw);
+  } catch (parseErr) {
+    const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+    throw new Error(`credentials.enc.json: invalid JSON (${msg})`);
+  }
+  if (
+    enc == null ||
+    typeof enc !== 'object' ||
+    Array.isArray(enc) ||
+    typeof enc.ciphertext !== 'string' ||
+    typeof enc.iv !== 'string' ||
+    enc.ciphertext.length === 0 ||
+    enc.iv.length === 0
+  ) {
+    throw new Error(
+      'credentials.enc.json: expected object with non-empty string ciphertext and iv'
+    );
+  }
+  defines['ENCRYPTED_CREDENTIALS'] = JSON.stringify(enc.ciphertext);
+  defines['CREDENTIALS_IV'] = JSON.stringify(enc.iv);
+} catch (err) {
+  if (err && typeof err === 'object' && err.code === 'ENOENT') {
+    console.warn(
+      'No credentials.enc.json found; encrypted credential bundle will be empty (local: npm run credentials:encrypt, CI: fetch from R2 before build).'
+    );
+    defines['ENCRYPTED_CREDENTIALS'] = JSON.stringify('');
+    defines['CREDENTIALS_IV'] = JSON.stringify('');
+  } else {
+    throw err;
+  }
+}
+
 const plugins = [];
 
 if (process.env.SENTRY_DSN && !noSentryUpload && !isWranglerDev && !workerName.includes('canary')) {

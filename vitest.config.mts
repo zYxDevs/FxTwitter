@@ -1,30 +1,13 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
-
-const configDir = path.dirname(fileURLToPath(import.meta.url));
-const localWranglerToml = path.join(configDir, 'wrangler.toml');
-const wranglerConfigPath = existsSync(localWranglerToml)
-  ? localWranglerToml
-  : path.join(configDir, 'wrangler.example.toml');
 
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: wranglerConfigPath },
-      // Disable remote bindings so tests don't require Cloudflare login (AI binding
-      // in wrangler.toml would otherwise trigger a remote proxy session in CI).
+      // Auto-discovers wrangler.toml. Disable remote bindings so CI does not need
+      // Cloudflare login (e.g. AI binding remote proxy).
       remoteBindings: false,
-      miniflare: {
-        // Override the TwitterProxy service binding from wrangler.toml since the
-        // real elongator-canary service doesn't exist locally. Tests inject their
-        // own mock via the harness argument passed to app.request().
-        serviceBindings: {
-          TwitterProxy: async () => new Response('{}')
-        }
-      }
+      miniflare: {}
     })
   ],
   define: {
@@ -52,7 +35,9 @@ export default defineConfig({
     VIDEO_TRANSCODE_DOMAIN_LIST: JSON.stringify('video.fxtwitter.com'),
     VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: JSON.stringify('video.fxbsky.app'),
     SENTRY_DSN: null,
-    TWITTER_ROOT: JSON.stringify('https://x.com')
+    TWITTER_ROOT: JSON.stringify('https://x.com'),
+    ENCRYPTED_CREDENTIALS: JSON.stringify(''),
+    CREDENTIALS_IV: JSON.stringify('')
   },
   test: {
     include: ['test/*.ts'],

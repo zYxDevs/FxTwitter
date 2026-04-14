@@ -1,4 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
+import { TWITTER_NUMERIC_STATUS_ID_PATTERN } from '../../helpers/utils';
 import {
   PUBLIC_EXPLORE_TIMELINE_KINDS,
   type PublicExploreTimelineKind
@@ -46,6 +47,11 @@ const langQuery = z.object({
   })
 });
 
+const twitterStatusIdParam = z
+  .string()
+  .regex(TWITTER_NUMERIC_STATUS_ID_PATTERN, 'tweet ID must be a numeric snowflake')
+  .openapi({ description: 'Tweet/post snowflake ID (numeric string)', example: '20' });
+
 export const statusV2Route = createRoute({
   method: 'get',
   path: '/2/status/{id}',
@@ -54,7 +60,7 @@ export const statusV2Route = createRoute({
     'Returns one X/Twitter post by snowflake ID. Optional `about_account` / `aboutAccount` adds account metadata when present.',
   request: {
     params: z.object({
-      id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
+      id: twitterStatusIdParam
     }),
     query: aboutAccountQuery.merge(langQuery)
   },
@@ -90,7 +96,7 @@ export const statusRepostsV2Route = createRoute({
     'Returns users who reposted the given post. Use `cursor.bottom` from the prior response to fetch the next page.',
   request: {
     params: z.object({
-      id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
+      id: twitterStatusIdParam
     }),
     query: z.object({
       count: z.coerce.number().int().min(1).max(100).optional().openapi({
@@ -131,7 +137,7 @@ export const statusQuotesV2Route = createRoute({
     'Returns posts whose text quotes the given post (X search operator `quoted_tweet_id`). Uses the Latest search tab. Use `cursor.bottom` from the prior response to fetch the next page.',
   request: {
     params: z.object({
-      id: z.string().openapi({ description: 'Tweet/post snowflake ID', example: '20' })
+      id: twitterStatusIdParam
     }),
     query: z.object({
       count: z.coerce.number().int().min(1).max(100).optional().openapi({
@@ -173,7 +179,7 @@ export const threadV2Route = createRoute({
     'Same as `/2/status/{id}` but includes the conversation thread when available. Supports `about_account` / `aboutAccount`.',
   request: {
     params: z.object({
-      id: z.string().openapi({ description: 'Root tweet/post snowflake ID' })
+      id: twitterStatusIdParam
     }),
     query: aboutAccountQuery.merge(langQuery)
   },
@@ -209,7 +215,7 @@ export const conversationV2Route = createRoute({
     'Returns a post, its full thread chain (walking all the way to the root), and replies from other users. Replies are sorted by the chosen ranking mode (default: Likes). Use the returned bottom cursor to paginate through more replies.',
   request: {
     params: z.object({
-      id: z.string().openapi({ description: 'Focal tweet/post snowflake ID' })
+      id: twitterStatusIdParam
     }),
     query: z.object({
       ranking_mode: z.enum(['likes', 'recency']).optional().openapi({

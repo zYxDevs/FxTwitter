@@ -17,6 +17,7 @@ import {
 } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
 import { graphQLOrchestrator } from './graphql/orchestrator';
+import { isTwitterNumericStatusId } from '../../helpers/utils';
 
 const writeDataPoint = (
   c: Context,
@@ -668,6 +669,11 @@ export const constructTwitterThread = async (
   language: string | undefined,
   legacyAPI = false
 ): Promise<SocialThread> => {
+  if (!isTwitterNumericStatusId(id)) {
+    writeDataPoint(c, language, null, '404');
+    return { status: null, thread: null, author: null, code: 404 };
+  }
+
   // Fetch status using orchestrator with appropriate method prioritization
   let response:
     | TweetDetailResponse
@@ -992,6 +998,10 @@ export const constructTwitterConversation = async (
   cursor: string | null = null,
   language?: string
 ): Promise<SocialConversation> => {
+  if (!isTwitterNumericStatusId(id)) {
+    return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
+  }
+
   const response = await fetchTweetDetail(c, id, cursor, rankingMode, language);
 
   if (!response?.data?.threaded_conversation_with_injections_v2?.instructions) {

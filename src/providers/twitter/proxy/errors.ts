@@ -23,13 +23,6 @@ function firstErrorMessageIncludes(json: unknown, substr: string): boolean {
   return typeof m === 'string' && m.includes(substr);
 }
 
-/** GraphQL errors use `path` (e.g. tweetResult → result → birdwatch_pivot); REST errors do not. */
-function firstGraphQLErrorPathEndsWith(json: unknown, segment: string): boolean {
-  const path = firstErrorEntry(json)?.['path'];
-  if (!Array.isArray(path) || path.length === 0) return false;
-  return path[path.length - 1] === segment;
-}
-
 /** `json.errors` truthy (including empty array), matching prior `if (json.errors)` checks. */
 export function jsonHasTruthyErrorsProperty(json: unknown): boolean {
   const rec = asRecord(json);
@@ -54,6 +47,7 @@ type RuleContext = { json: unknown; body: string; httpStatus: number };
 
 type ErrorRule =
   | { match: (ctx: RuleContext) => boolean; log: string; disposition: 'ignore' }
+  | { match: (ctx: RuleContext) => boolean; log: string; disposition: 'retry' }
   | {
       match: (ctx: RuleContext) => boolean;
       log: string;
@@ -149,14 +143,12 @@ const ERROR_RULES: ErrorRule[] = [
     disposition: 'respond',
     errorMessage: 'Status not found',
     status: 404,
-    log: 'Invalid status ID, ingoring error (strconv.ParseInt: value out of range.)'
+    log: 'Invalid status ID, ignoring error (strconv.ParseInt: value out of range.)'
   },
   {
-    match: ({ json }) =>
-      firstErrorEntry(json)?.['message'] === 'Internal server error' &&
-      firstGraphQLErrorPathEndsWith(json, 'birdwatch_pivot'),
-    disposition: 'ignore',
-    log: 'GraphQL partial failure (birdwatch_pivot). X sometimes errors on Community Notes field; tweet data is still returned.'
+    match: ({ json }) => firstErrorMessageIncludes(json, 'Internal server error'),
+    disposition: 'retry',
+    log: 'Downstream fetch problem (Internal server error); retrying with another account.'
   }
 ];
 
@@ -201,6 +193,9 @@ export function classifyAPIErrors(
           action: 'respond',
           response: jsonError(rule.errorMessage, rule.status)
         };
+      }
+      if (rule.disposition === 'retry') {
+        return { action: 'retry' };
       }
       return { action: 'ignore' };
     }

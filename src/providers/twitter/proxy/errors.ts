@@ -183,8 +183,10 @@ const ERROR_RULES: ErrorRule[] = [
     log: 'Invalid status ID'
   },
   {
-    match: ({ json }) => firstErrorMessageIncludes(json, 'Internal server error'),
-    disposition: 'retry',
+    match: ignoreOnlyWithPayload(({ json }) =>
+      firstErrorMessageIncludes(json, 'Internal server error')
+    ),
+    disposition: 'ignore',
     log: 'Downstream fetch problem (Internal server error); retrying with another account.'
   }
 ];

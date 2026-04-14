@@ -1,5 +1,22 @@
 import type { ProxyEnv } from './types';
 
+/** Discord embed field values max out at 1024 chars. */
+const DISCORD_FIELD_TRUNCATE = 1000;
+
+function truncateForDiscordField(s: string): string {
+  if (s.length <= DISCORD_FIELD_TRUNCATE) return s;
+  return s.slice(0, DISCORD_FIELD_TRUNCATE) + '…';
+}
+
+function variablesCodeBlock(variablesDisplay: string): string {
+  const trimmed = variablesDisplay.trim();
+  if (trimmed.length === 0) {
+    return '_(no GraphQL `variables` param and empty query string)_';
+  }
+  const lang = trimmed.startsWith('{') || trimmed.startsWith('[') ? 'json' : '';
+  return '```' + lang + (lang ? '\n' : '') + variablesDisplay + '\n```';
+}
+
 export async function sendDiscordAlert(
   env: ProxyEnv,
   username: string,
@@ -10,6 +27,7 @@ export async function sendDiscordAlert(
   if (!env.EXCEPTION_DISCORD_WEBHOOK) return;
 
   console.log('Sending Discord webhook');
+  const endpointDisplay = truncateForDiscordField((requestPath ?? '').replace(/^\//, '') || 'idk');
   const body = JSON.stringify({
     content: `@everyone`,
     embeds: [
@@ -24,7 +42,7 @@ export async function sendDiscordAlert(
           },
           {
             name: 'Endpoint',
-            value: (requestPath ?? '').match(/\w+$/g)?.[0] ?? 'idk',
+            value: endpointDisplay,
             inline: true
           },
           {
@@ -34,7 +52,7 @@ export async function sendDiscordAlert(
           },
           {
             name: 'Variables',
-            value: '```json\n' + variablesDisplay + '\n```',
+            value: variablesCodeBlock(variablesDisplay),
             inline: false
           }
         ]

@@ -132,11 +132,16 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
           }
         }
 
-        let variables = url.searchParams.get('variables') ?? '';
+        let variablesDisplay = url.searchParams.get('variables') ?? '';
         try {
-          variables = JSON.stringify(JSON.parse(variables), null, 2);
+          if (variablesDisplay) {
+            variablesDisplay = JSON.stringify(JSON.parse(variablesDisplay), null, 2);
+          }
         } catch {
-          variables = url.search;
+          variablesDisplay = url.search;
+        }
+        if (!variablesDisplay) {
+          variablesDisplay = url.search;
         }
 
         if (env.EXCEPTION_DISCORD_WEBHOOK && errors) {
@@ -146,7 +151,7 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
               username,
               requestPath,
               asRecord(json)?.['errors'],
-              variables
+              variablesDisplay
             );
           } catch (alertErr) {
             console.error('Discord exception alert failed', {

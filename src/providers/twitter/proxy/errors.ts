@@ -180,7 +180,7 @@ const ERROR_RULES: ErrorRule[] = [
     disposition: 'respond',
     errorMessage: 'Status not found',
     status: 404,
-    log: 'Invalid status ID, ignoring error (strconv.ParseInt: value out of range.)'
+    log: 'Invalid status ID'
   },
   {
     match: ({ json }) => firstErrorMessageIncludes(json, 'Internal server error'),

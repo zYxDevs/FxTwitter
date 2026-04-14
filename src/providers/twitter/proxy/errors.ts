@@ -23,6 +23,32 @@ function firstErrorMessageIncludes(json: unknown, substr: string): boolean {
   return typeof m === 'string' && m.includes(substr);
 }
 
+/**
+ * True when none of the usual success payload fields are present (same checks as the proxy handler).
+ * Used so we do not `ignore` API errors when no tweet/user/data was returned.
+ */
+export function twitterResponseLooksEmpty(json: unknown): boolean {
+  const o = asRecord(json);
+  if (!o) return true;
+  const result = asRecord(o['result']);
+  return (
+    typeof o['data'] === 'undefined' &&
+    typeof o['translation'] === 'undefined' &&
+    typeof o['source'] === 'undefined' &&
+    typeof result?.['text'] === 'undefined' &&
+    typeof o['num_results'] === 'undefined' &&
+    typeof o['status'] === 'undefined' &&
+    typeof o['user'] === 'undefined' &&
+    typeof o['user_results'] === 'undefined' &&
+    typeof o['user_result'] === 'undefined'
+  );
+}
+
+/** True when the JSON includes tweet/user/graphql success fields; safe to treat NonFatal etc. as ignorable. */
+export function responseHasTweetData(json: unknown): boolean {
+  return !twitterResponseLooksEmpty(json);
+}
+
 /** `json.errors` truthy (including empty array), matching prior `if (json.errors)` checks. */
 export function jsonHasTruthyErrorsProperty(json: unknown): boolean {
   const rec = asRecord(json);
@@ -55,6 +81,12 @@ type ErrorRule =
       errorMessage: string;
       status: number;
     };
+
+function ignoreOnlyWithPayload(
+  match: (ctx: RuleContext) => boolean
+): (ctx: RuleContext) => boolean {
+  return ctx => match(ctx) && responseHasTweetData(ctx.json);
+}
 
 const NSFW_UNDERAGE_LOG = 'NsfwViewerIsUnderage: Account country may be set to UK or EU';
 
@@ -89,22 +121,22 @@ const ERROR_RULES: ErrorRule[] = [
     log: 'Status not found'
   },
   {
-    match: ({ json }) => firstErrorEntry(json)?.code === 29,
+    match: ignoreOnlyWithPayload(({ json }) => firstErrorEntry(json)?.code === 29),
     disposition: 'ignore',
     log: 'Downstream fetch problem (Timeout: Unspecified). Ignore this as this is usually not an issue.'
   },
   {
-    match: ({ json }) => firstErrorEntry(json)?.code === 88,
+    match: ignoreOnlyWithPayload(({ json }) => firstErrorEntry(json)?.code === 88),
     disposition: 'ignore',
     log: 'Downstream fetch problem (Rate limit exceeded). Ignore this as this is usually not an issue.'
   },
   {
-    match: ({ json }) => firstErrorEntry(json)?.name === 'DependencyError',
+    match: ignoreOnlyWithPayload(({ json }) => firstErrorEntry(json)?.name === 'DependencyError'),
     disposition: 'ignore',
     log: 'Downstream fetch problem (DependencyError). Ignore this as this is usually not an issue.'
   },
   {
-    match: ({ json }) => firstErrorEntry(json)?.kind === 'NonFatal',
+    match: ignoreOnlyWithPayload(({ json }) => firstErrorEntry(json)?.kind === 'NonFatal'),
     disposition: 'ignore',
     log: 'Non-Fatal Error reported by server, continuing...'
   },
@@ -123,18 +155,23 @@ const ERROR_RULES: ErrorRule[] = [
     log: 'Downstream fetch problem (DownstreamOverCapacityError), use fallback methods'
   },
   {
-    match: ({ json }) => firstErrorEntry(json)?.message === 'Internal: Unspecified',
+    match: ignoreOnlyWithPayload(
+      ({ json }) => firstErrorEntry(json)?.message === 'Internal: Unspecified'
+    ),
     disposition: 'ignore',
     log: 'Downstream fetch problem (Internal: Unspecified). Ignore this as this is usually not an issue.'
   },
   {
-    match: ({ json }) =>
-      firstErrorMessageIncludes(json, 'Denied by access control: Missing LdapGroup'),
+    match: ignoreOnlyWithPayload(({ json }) =>
+      firstErrorMessageIncludes(json, 'Denied by access control: Missing LdapGroup')
+    ),
     disposition: 'ignore',
     log: 'Downstream fetch problem (Authorization: Denied by access control: Missing LdapGroup). Ignore this as this is usually not an issue.'
   },
   {
-    match: ({ json }) => firstErrorMessageIncludes(json, 'Query: Unspecified'),
+    match: ignoreOnlyWithPayload(({ json }) =>
+      firstErrorMessageIncludes(json, 'Query: Unspecified')
+    ),
     disposition: 'ignore',
     log: 'Downstream fetch problem (Query: Unspecified). Ignore this as this is usually not an issue.'
   },

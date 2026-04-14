@@ -3,7 +3,12 @@ import { ClientTransaction } from './transaction/transaction';
 import { getRandomTwitterAccount } from './credentials';
 import { mergeCookies } from './cookies';
 import { needsTransactionId } from './allowlist';
-import { classifyAPIErrors, jsonError, jsonHasTruthyErrorsProperty } from './errors';
+import {
+  classifyAPIErrors,
+  jsonError,
+  jsonHasTruthyErrorsProperty,
+  twitterResponseLooksEmpty
+} from './errors';
 import { sendDiscordAlert } from './discord';
 import type { ProxyEnv } from './types';
 
@@ -14,24 +19,6 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
     return value as Record<string, unknown>;
   }
   return undefined;
-}
-
-/** True when none of the usual success payload fields are present (same checks as original). */
-function twitterResponseLooksEmpty(json: unknown): boolean {
-  const o = asRecord(json);
-  if (!o) return true;
-  const result = asRecord(o['result']);
-  return (
-    typeof o['data'] === 'undefined' &&
-    typeof o['translation'] === 'undefined' &&
-    typeof o['source'] === 'undefined' &&
-    typeof result?.['text'] === 'undefined' &&
-    typeof o['num_results'] === 'undefined' &&
-    typeof o['status'] === 'undefined' &&
-    typeof o['user'] === 'undefined' &&
-    typeof o['user_results'] === 'undefined' &&
-    typeof o['user_result'] === 'undefined'
-  );
 }
 
 /**

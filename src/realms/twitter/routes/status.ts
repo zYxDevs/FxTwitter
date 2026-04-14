@@ -1,14 +1,16 @@
 import { Context } from 'hono';
 import { Constants } from '../../../constants';
 import { getBaseRedirectUrl, isHorizonEmbedParam } from '../router';
-import { DataProvider, handleStatus } from '../../../embed/status';
+import { DataProvider, handleStatus, returnError } from '../../../embed/status';
 import { Strings } from '../../../strings';
 import { Experiment, experimentCheck } from '../../../experiments';
 import { InputFlags } from '../../../types/types';
+import { isTwitterNumericStatusId } from '../../../helpers/utils';
 
 /* Handler for status request */
 export const statusRequest = async (c: Context) => {
   const { handle, id, mediaNumber, language } = c.req.param();
+  const numericStatusId = id?.match(/\d{2,20}/)?.[0];
   const url = new URL(c.req.url);
   const flags: InputFlags = {};
 
@@ -108,7 +110,7 @@ export const statusRequest = async (c: Context) => {
     flags.horizon = true;
   }
 
-  const statusIdForRedirect = id?.match(/\d{2,20}/)?.[0] ?? id;
+  const statusIdForRedirect = numericStatusId ?? id;
   const horizonTwitterStatusUrl = `${Constants.HORIZON_WEB_ROOT}/${handle || 'i'}/status/${statusIdForRedirect}`;
 
   /* Direct media or API access bypasses bot check, returning same response regardless of UA */
@@ -119,10 +121,14 @@ export const statusRequest = async (c: Context) => {
       console.log(`Bypass bot check (Presented user-agent ${userAgent})`);
     }
 
+    if (!numericStatusId || !isTwitterNumericStatusId(numericStatusId)) {
+      return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+    }
+
     /* This throws the necessary data to handleStatus (in status.ts) */
     const statusResponse = await handleStatus(
       c,
-      id?.match(/\d{2,20}/)?.[0] || '0',
+      numericStatusId,
       null,
       mediaNumber ? parseInt(mediaNumber) : undefined,
       userAgent,

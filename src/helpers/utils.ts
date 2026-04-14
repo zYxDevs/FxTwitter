@@ -126,3 +126,9 @@ export const isParamTruthy = (param: string | undefined) => {
   const value = param.trim().toLowerCase();
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
 };
+
+/** X/Twitter status snowflake as a string of digits; bounds match URL parsing in embed routes. */
+export const TWITTER_NUMERIC_STATUS_ID_PATTERN = /^\d{2,20}$/;
+
+export const isTwitterNumericStatusId = (id: string): boolean =>
+  TWITTER_NUMERIC_STATUS_ID_PATTERN.test(id);

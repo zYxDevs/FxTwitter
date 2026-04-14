@@ -109,6 +109,22 @@ test('API v2 /2/status includes quote count', async () => {
   expect(body.status?.quotes).toEqual(2886);
 });
 
+test('API v2 /2/status rejects non-numeric id with 400', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/status/abc', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(400);
+  const body = (await result.json()) as { code?: number; message?: string };
+  expect(body.code).toEqual(400);
+  expect(typeof body.message).toBe('string');
+  expect(body.message?.length).toBeGreaterThan(0);
+});
+
 test('API v2 /2/thread includes quote count on focal status', async () => {
   const result = await app.request(
     new Request('https://api.fxtwitter.com/2/thread/20', {

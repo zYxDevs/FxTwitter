@@ -21,14 +21,18 @@ export const blueskyStatusLikesAPI = async (
   handle: string,
   rkey: string,
   options: { count: number; cursor: string | null },
-  _c: Context
+  c: Context
 ): Promise<APIUserListResults> => {
+  const fetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
   const uri = atUriForFeedPost(handle, rkey);
-  const result = await fetchGetLikes({
-    uri,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const result = await fetchGetLikes(
+    {
+      uri,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    fetchOpts
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
@@ -41,7 +45,7 @@ export const blueskyStatusLikesAPI = async (
   const nextCursor = result.data.cursor ?? null;
 
   const dids = likes.map(l => l.actor.did);
-  const detailedByDid = await fetchProfilesDetailedBatched(dids);
+  const detailedByDid = await fetchProfilesDetailedBatched(dids, fetchOpts);
 
   const results = likes.map(l => {
     const detailed = detailedByDid.get(l.actor.did);

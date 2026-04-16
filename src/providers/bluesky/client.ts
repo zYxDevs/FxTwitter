@@ -7,8 +7,10 @@ import {
 } from '../twitter/proxy/credentials';
 import { getBlueskyAccessJwt, invalidateBlueskySession } from './session';
 
-/** Per-upstream request cap during partial outages (public first, then proxy PDS). */
-export const BLUESKY_UPSTREAM_TIMEOUT_MS = 4_000;
+/** Per-upstream request cap for public AppView (fail fast, then try proxy PDS). */
+export const BLUESKY_UPSTREAM_TIMEOUT_MS = 3_000;
+/** Authenticated PDS calls are often slower than bsky.app; use a higher cap so backup can succeed. */
+export const BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS = 15_000;
 
 export type BlueskyFetchOpts = {
   credentialKey?: string;
@@ -76,7 +78,9 @@ async function fetchXrpcOnce<T>(
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const aborted = e instanceof Error && e.name === 'AbortError';
+    const aborted =
+      (e instanceof Error && e.name === 'AbortError') ||
+      (typeof DOMException !== 'undefined' && e instanceof DOMException && e.name === 'AbortError');
     return { ok: false, status: 504, body: msg, aborted };
   } finally {
     clearTimeout(t);
@@ -109,9 +113,10 @@ async function executeBlueskyXrpc<T>(
   credentialKey: string | undefined
 ): Promise<{ ok: true; data: T } | { ok: false; status: number; body: string }> {
   const publicBase = Constants.BLUESKY_API_ROOT;
-  const timeoutMs = BLUESKY_UPSTREAM_TIMEOUT_MS;
+  const publicTimeoutMs = BLUESKY_UPSTREAM_TIMEOUT_MS;
+  const proxyTimeoutMs = BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS;
 
-  const first = await fetchXrpcOnce<T>(publicBase, path, params, { timeoutMs });
+  const first = await fetchXrpcOnce<T>(publicBase, path, params, { timeoutMs: publicTimeoutMs });
   if (first.ok) {
     return { ok: true, data: first.data };
   }
@@ -137,6 +142,7 @@ async function executeBlueskyXrpc<T>(
     );
   }
   if (!hasBlueskyProxyAccounts()) {
+    console.log('Bluesky XRPC proxy fallback skipped: credentials have no bluesky.accounts');
     return { ok: false, status: first.status, body: first.body };
   }
 
@@ -146,7 +152,7 @@ async function executeBlueskyXrpc<T>(
 
     let attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
       authorization: `Bearer ${accessJwt}`,
-      timeoutMs
+      timeoutMs: proxyTimeoutMs
     });
 
     if (attempt.ok) {
@@ -165,7 +171,7 @@ async function executeBlueskyXrpc<T>(
       if (freshJwt) {
         attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
           authorization: `Bearer ${freshJwt}`,
-          timeoutMs
+          timeoutMs: proxyTimeoutMs
         });
         if (attempt.ok) {
           return { ok: true, data: attempt.data };

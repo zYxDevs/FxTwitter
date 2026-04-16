@@ -153,8 +153,10 @@ async function executeBlueskyXrpc<T>(
       return { ok: true, data: attempt.data };
     }
 
+    // Public already failed with a non-NotFound error (outage, timeout, etc.); do not let a
+    // proxy NotFound override that — it can be a false negative while the record exists.
     if (isNotFoundError(attempt.status, attempt.body)) {
-      return { ok: false, status: attempt.status, body: attempt.body };
+      continue;
     }
 
     if (attempt.status === 401) {
@@ -169,7 +171,7 @@ async function executeBlueskyXrpc<T>(
           return { ok: true, data: attempt.data };
         }
         if (isNotFoundError(attempt.status, attempt.body)) {
-          return { ok: false, status: attempt.status, body: attempt.body };
+          continue;
         }
       }
       continue;

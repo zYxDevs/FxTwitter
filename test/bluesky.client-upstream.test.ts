@@ -27,7 +27,7 @@ vi.mock('../src/providers/twitter/proxy/credentials', async importOriginal => {
 
 vi.mock('../src/providers/bluesky/session', () => sessionMocks);
 
-import { fetchPostThread } from '../src/providers/bluesky/client';
+import { fetchActorProfile, fetchPostThread } from '../src/providers/bluesky/client';
 
 beforeEach(() => {
   credMocks.initCredentials.mockClear();
@@ -96,4 +96,28 @@ test('fetchPostThread does not call proxy when public returns NotFound', async (
   expect(calls.length).toBe(1);
   expect(calls[0]).toContain('public.api.bsky.app');
   expect(credMocks.initCredentials).not.toHaveBeenCalled();
+});
+
+test('fetchActorProfile preserves public outage when proxy returns NotFound', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if (url.includes('public.api.bsky.app')) {
+      return new Response('upstream overloaded', { status: 503 });
+    }
+    if (url.includes('pds.example')) {
+      return new Response(JSON.stringify({ error: 'NotFound', message: 'Record not found' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  });
+
+  const result = await fetchActorProfile('did:plc:test', { credentialKey: 'dummy-key' });
+
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.status).toBe(503);
+    expect(result.body).toContain('overloaded');
+  }
 });

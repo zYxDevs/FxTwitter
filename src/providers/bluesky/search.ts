@@ -55,12 +55,15 @@ export const blueskySearchAPI = async (
   }
 ): Promise<APISearchResultsBluesky> => {
   const sort = feedToSort(options.feed);
-  const result = await fetchSearchPosts({
-    q: options.q,
-    sort,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const result = await fetchSearchPosts(
+    {
+      q: options.q,
+      sort,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    { credentialKey: c.env?.CREDENTIAL_KEY }
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {

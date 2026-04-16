@@ -8,7 +8,7 @@ import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import { unescapeText } from '../../helpers/utils';
 import { blueskyFacetsToApiFacets } from './facets';
-import { fetchPostsByUris, fetchProfilesByActors } from './client';
+import { type BlueskyFetchOpts, fetchPostsByUris, fetchProfilesByActors } from './client';
 import { blueskyWebPostUrl, didFromAtUri, rkeyFromPostAtUri } from './uris';
 
 const isPossiblySensitive = (labels: ATProtoLabel[] | undefined | null): boolean =>
@@ -127,14 +127,15 @@ const quoteCandidateFromEmbedRecord = (
 };
 
 const resolveReplyingTo = async (
-  status: BlueskyPost
+  status: BlueskyPost,
+  opts?: BlueskyFetchOpts
 ): Promise<{ screen_name: string; status: string } | null> => {
   const parentUri = status.record?.reply?.parent?.uri;
   if (!parentUri) return null;
   const parentRkey = rkeyFromPostAtUri(parentUri);
   const parentDid = didFromAtUri(parentUri);
   if (!parentRkey || !parentDid) return null;
-  const profiles = await fetchProfilesByActors([parentDid]);
+  const profiles = await fetchProfilesByActors([parentDid], opts);
   const handle = profiles.get(parentDid)?.handle ?? parentDid;
   return { screen_name: handle, status: parentRkey };
 };
@@ -265,7 +266,8 @@ const resolveQuote = async (
   c: Context,
   status: BlueskyPost,
   language: string | undefined,
-  quoteDepth: number
+  quoteDepth: number,
+  fetchOpts?: BlueskyFetchOpts
 ): Promise<APIStatus | undefined> => {
   if (quoteDepth > 10) return undefined;
   const embedRecord = status.embed?.record ?? status.embeds?.find(e => e.record)?.record;
@@ -280,7 +282,7 @@ const resolveQuote = async (
   }
 
   if (!post && stubUri) {
-    const fetched = await fetchPostsByUris([stubUri]);
+    const fetched = await fetchPostsByUris([stubUri], fetchOpts);
     post = fetched[0] ?? null;
   }
 
@@ -299,6 +301,7 @@ export const buildAPIBlueskyPost = async (
   language: string | undefined,
   quoteDepth = 0
 ): Promise<APIStatus> => {
+  const bskyFetchOpts: BlueskyFetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
   const rkey = rkeyFromPostAtUri(status.uri) ?? status.cid;
   const record = status.record ?? status.value;
   const rawText = record?.text ?? '';
@@ -331,7 +334,7 @@ export const buildAPIBlueskyPost = async (
     media: {},
     lang: record?.langs?.[0] ?? null,
     possibly_sensitive: isPossiblySensitive(status.labels),
-    replying_to: await resolveReplyingTo(status),
+    replying_to: await resolveReplyingTo(status, bskyFetchOpts),
     source: 'Bluesky Social',
     embed_card: 'tweet',
     provider: DataProvider.Bluesky
@@ -339,7 +342,7 @@ export const buildAPIBlueskyPost = async (
 
   await applyEmbedsToStatus(apiStatus, status);
 
-  const quote = await resolveQuote(c, status, language, quoteDepth);
+  const quote = await resolveQuote(c, status, language, quoteDepth, bskyFetchOpts);
   if (quote) {
     apiStatus.quote = quote;
     if (quote.embed_card && quote.embed_card !== 'tweet') {

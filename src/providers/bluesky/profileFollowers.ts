@@ -62,13 +62,17 @@ export const blueskyProfileViewToApiUser = (view: BlueskyProfileView): APIUser =
 export const blueskyProfileFollowersAPI = async (
   actor: string,
   options: { count: number; cursor: string | null },
-  _c: Context
+  c: Context
 ): Promise<APIProfileRelationshipList> => {
-  const result = await fetchFollowers({
-    actor,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const fetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
+  const result = await fetchFollowers(
+    {
+      actor,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    fetchOpts
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
@@ -81,7 +85,7 @@ export const blueskyProfileFollowersAPI = async (
   const nextCursor = result.data.cursor ?? null;
 
   const dids = followers.map(f => f.did);
-  const detailedByDid = await fetchProfilesDetailedBatched(dids);
+  const detailedByDid = await fetchProfilesDetailedBatched(dids, fetchOpts);
 
   const results: APIUser[] = followers.map(f => {
     const detailed = detailedByDid.get(f.did);
@@ -101,13 +105,17 @@ export const blueskyProfileFollowersAPI = async (
 export const blueskyProfileFollowingAPI = async (
   actor: string,
   options: { count: number; cursor: string | null },
-  _c: Context
+  c: Context
 ): Promise<APIProfileRelationshipList> => {
-  const result = await fetchFollows({
-    actor,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const fetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
+  const result = await fetchFollows(
+    {
+      actor,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    fetchOpts
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
@@ -120,7 +128,7 @@ export const blueskyProfileFollowingAPI = async (
   const nextCursor = result.data.cursor ?? null;
 
   const dids = follows.map(f => f.did);
-  const detailedByDid = await fetchProfilesDetailedBatched(dids);
+  const detailedByDid = await fetchProfilesDetailedBatched(dids, fetchOpts);
 
   const results: APIUser[] = follows.map(f => {
     const detailed = detailedByDid.get(f.did);

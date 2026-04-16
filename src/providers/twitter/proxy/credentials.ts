@@ -1,4 +1,4 @@
-import type { CredentialStore, TwitterCredentials } from './types';
+import type { BlueskyProxyCredentials, CredentialStore, TwitterCredentials } from './types';
 
 let credentialStore: CredentialStore | null = null;
 let initOnce: Promise<void> | null = null;
@@ -78,14 +78,32 @@ export async function initCredentials(credentialKey: string | undefined): Promis
 }
 
 export function getRandomTwitterAccount(): TwitterCredentials {
-  if (!credentialStore?.twitter?.accounts?.length) {
+  const accounts = credentialStore?.twitter?.accounts;
+  if (!accounts?.length) {
     throw new Error('Twitter credentials not initialized or empty');
   }
-  const accounts = credentialStore.twitter.accounts;
   const randomIndex = Math.floor(Math.random() * accounts.length);
   return accounts[randomIndex];
 }
 
 export function hasDecryptedCredentials(): boolean {
   return credentialStore !== null && (credentialStore.twitter?.accounts?.length ?? 0) > 0;
+}
+
+export function hasBlueskyProxyAccounts(): boolean {
+  return (credentialStore?.bluesky?.accounts?.length ?? 0) > 0;
+}
+
+/** Fisher–Yates shuffle copy for spreading load across PDS proxy accounts. */
+export function getShuffledBlueskyAccounts(): BlueskyProxyCredentials[] {
+  const acc = credentialStore?.bluesky?.accounts ?? [];
+  if (!acc.length) return [];
+  const copy = [...acc];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = copy[i]!;
+    copy[i] = copy[j]!;
+    copy[j] = t;
+  }
+  return copy;
 }

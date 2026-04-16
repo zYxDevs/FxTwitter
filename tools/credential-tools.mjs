@@ -65,11 +65,33 @@ function encrypt() {
 
   const plaintext = readFileSync(PLAINTEXT_PATH, 'utf-8');
   const parsed = JSON.parse(plaintext);
-  if (!parsed?.twitter?.accounts || !Array.isArray(parsed.twitter.accounts)) {
+  const hasTwitter =
+    Array.isArray(parsed?.twitter?.accounts) && parsed.twitter.accounts.length > 0;
+  const hasBluesky =
+    Array.isArray(parsed?.bluesky?.accounts) && parsed.bluesky.accounts.length > 0;
+  if (!hasTwitter && !hasBluesky) {
     console.error(
-      'credentials.json must use the multi-provider shape, e.g. { "twitter": { "accounts": [...] } } (see credentials.example.json).'
+      'credentials.json must include a non-empty twitter.accounts and/or bluesky.accounts array (see credentials.example.json).'
     );
     process.exit(1);
+  }
+  if (hasBluesky) {
+    const bskyFields = ['identifier', 'appPassword', 'service'];
+    for (let i = 0; i < parsed.bluesky.accounts.length; i++) {
+      const cred = parsed.bluesky.accounts[i];
+      const id = `bluesky.accounts[${i}]`;
+      if (cred === null || typeof cred !== 'object' || Array.isArray(cred)) {
+        console.error(`${id}: each account must be a plain object`);
+        process.exit(1);
+      }
+      for (const field of bskyFields) {
+        const v = cred[field];
+        if (typeof v !== 'string' || v.length === 0) {
+          console.error(`${id}: "${field}" must be a non-empty string`);
+          process.exit(1);
+        }
+      }
+    }
   }
 
   let keyB64url;

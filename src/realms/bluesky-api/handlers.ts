@@ -187,7 +187,7 @@ export const blueskyTrendsAPIRequest: RouteHandler<typeof blueskyTrendsV2Route> 
   const query = c.req.valid('query');
   const type = query.type ?? 'trending';
   const count = query.count ?? 20;
-  const trendsResponse = await blueskyTrendsAPI(type, count);
+  const trendsResponse = await blueskyTrendsAPI(type, count, c);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     trendsResponse,
     [200, 400, 404, 500] as const,

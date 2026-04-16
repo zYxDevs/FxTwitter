@@ -1,3 +1,4 @@
+import type { Context } from 'hono';
 import { fetchTrendingTopics } from './client';
 
 export type BlueskyTrendsFeedKind = 'trending' | 'suggested';
@@ -44,12 +45,16 @@ function rowToApiTrend(
  */
 export const blueskyTrendsAPI = async (
   kind: BlueskyTrendsFeedKind,
-  count: number
+  count: number,
+  c: Context
 ): Promise<APITrendsResponse> => {
   const cappedCount = Math.min(50, Math.max(1, count));
   const upstreamLimit = Math.min(25, Math.max(1, cappedCount));
 
-  const result = await fetchTrendingTopics({ limit: upstreamLimit });
+  const result = await fetchTrendingTopics(
+    { limit: upstreamLimit },
+    { credentialKey: c.env?.CREDENTIAL_KEY }
+  );
   if (!result.ok) {
     return {
       code: result.status === 404 ? 404 : 500,

@@ -65,7 +65,6 @@ async function fetchXrpcOnce<T>(
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (options.authorization) headers['Authorization'] = options.authorization;
     const res = await fetch(url, { signal: ac.signal, headers });
-    clearTimeout(t);
     const body = await res.text();
     if (!res.ok) {
       return { ok: false, status: res.status, body };
@@ -76,10 +75,11 @@ async function fetchXrpcOnce<T>(
       return { ok: false, status: 502, body: 'invalid JSON from Bluesky' };
     }
   } catch (e) {
-    clearTimeout(t);
     const msg = e instanceof Error ? e.message : String(e);
     const aborted = e instanceof Error && e.name === 'AbortError';
     return { ok: false, status: 504, body: msg, aborted };
+  } finally {
+    clearTimeout(t);
   }
 }
 
@@ -126,7 +126,16 @@ async function executeBlueskyXrpc<T>(
     return { ok: false, status: first.status, body: first.body };
   }
 
-  await initCredentials(credentialKey);
+  try {
+    await initCredentials(credentialKey);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(
+      'Bluesky proxy credentials init failed',
+      msg,
+      `(credentialKey length: ${credentialKey.trim().length})`
+    );
+  }
   if (!hasBlueskyProxyAccounts()) {
     return { ok: false, status: first.status, body: first.body };
   }

@@ -48,7 +48,6 @@ async function createSession(cred: BlueskyProxyCredentials): Promise<CachedBlues
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ identifier: cred.identifier, password: cred.appPassword })
     });
-    clearTimeout(t);
     const text = await res.text();
     if (!res.ok) return null;
     const j = JSON.parse(text) as { accessJwt?: string; refreshJwt?: string };
@@ -56,8 +55,9 @@ async function createSession(cred: BlueskyProxyCredentials): Promise<CachedBlues
     const accessExpiresAtMs = parseJwtExpMs(j.accessJwt) ?? Date.now() + 120_000;
     return { accessJwt: j.accessJwt, refreshJwt: j.refreshJwt, accessExpiresAtMs };
   } catch {
-    clearTimeout(t);
     return null;
+  } finally {
+    clearTimeout(t);
   }
 }
 
@@ -78,7 +78,6 @@ async function refreshSession(
         'Accept': 'application/json'
       }
     });
-    clearTimeout(t);
     const text = await res.text();
     if (!res.ok) return null;
     const j = JSON.parse(text) as { accessJwt?: string; refreshJwt?: string };
@@ -86,8 +85,9 @@ async function refreshSession(
     const accessExpiresAtMs = parseJwtExpMs(j.accessJwt) ?? Date.now() + 120_000;
     return { accessJwt: j.accessJwt, refreshJwt: j.refreshJwt, accessExpiresAtMs };
   } catch {
-    clearTimeout(t);
     return null;
+  } finally {
+    clearTimeout(t);
   }
 }
 

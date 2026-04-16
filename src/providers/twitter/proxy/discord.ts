@@ -18,7 +18,7 @@ function truncateForDiscordField(s: string): string {
  * Wraps a GraphQL variables string in a fenced code block or returns a placeholder when the input is empty.
  *
  * @param variablesDisplay - The raw variables text to format (may be empty or contain JSON/other text)
- * @returns The formatted string: a placeholder "_(no GraphQL `variables` param and empty query string)_" when the trimmed input is empty, otherwise a fenced code block containing the original `variablesDisplay`. If the trimmed input starts with `{` or `[` the code block is marked with the `json` language.
+ * @returns The formatted string: a placeholder "_(no GraphQL `variables` param and empty query string)_" when the trimmed input is empty, otherwise a fenced code block containing the trimmed variables (truncated for Discord field limits). If the trimmed input starts with `{` or `[` the code block is marked with the `json` language.
  */
 function variablesCodeBlock(variablesDisplay: string): string {
   const trimmed = variablesDisplay.trim();
@@ -26,7 +26,8 @@ function variablesCodeBlock(variablesDisplay: string): string {
     return '_(no GraphQL `variables` param and empty query string)_';
   }
   const lang = trimmed.startsWith('{') || trimmed.startsWith('[') ? 'json' : '';
-  return '```' + lang + (lang ? '\n' : '') + variablesDisplay + '\n```';
+  const bounded = truncateForDiscordField(trimmed);
+  return '```' + lang + (lang ? '\n' : '') + bounded + '\n```';
 }
 
 /**

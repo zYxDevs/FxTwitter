@@ -144,7 +144,7 @@ async function executeBlueskyXrpc<T>(
     const accessJwt = await getBlueskyAccessJwt(cred);
     if (!accessJwt) continue;
 
-    const attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
+    let attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
       authorization: `Bearer ${accessJwt}`,
       timeoutMs
     });
@@ -159,6 +159,19 @@ async function executeBlueskyXrpc<T>(
 
     if (attempt.status === 401) {
       invalidateBlueskySession(cred);
+      const freshJwt = await getBlueskyAccessJwt(cred);
+      if (freshJwt) {
+        attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
+          authorization: `Bearer ${freshJwt}`,
+          timeoutMs
+        });
+        if (attempt.ok) {
+          return { ok: true, data: attempt.data };
+        }
+        if (isNotFoundError(attempt.status, attempt.body)) {
+          return { ok: false, status: attempt.status, body: attempt.body };
+        }
+      }
       continue;
     }
   }

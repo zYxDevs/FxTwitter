@@ -22,7 +22,13 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 /**
- * Authenticated X API proxy (formerly elongator worker). Forwards to api.x.com with session cookies.
+ * Proxies an incoming request to api.x.com using session credentials, applying cookies, optional CSRF and x-client-transaction-id headers, and retrying with different accounts when upstream errors occur.
+ *
+ * May send a Discord alert if configured, strip leaked usernames from responses, and return a synthetic error response after repeated failures.
+ *
+ * @param request - The original incoming Request to forward
+ * @param env - Environment/configuration values used by the proxy (for example webhook and feature flags)
+ * @returns The response returned to the caller reflecting the proxied api.x.com response (status, headers, and possibly transformed body) or an error response when retries are exhausted
  */
 export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Promise<Response> {
   const url = new URL(request.url);
@@ -132,11 +138,16 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
           }
         }
 
-        let variables = url.searchParams.get('variables') ?? '';
+        let variablesDisplay = url.searchParams.get('variables') ?? '';
         try {
-          variables = JSON.stringify(JSON.parse(variables), null, 2);
+          if (variablesDisplay) {
+            variablesDisplay = JSON.stringify(JSON.parse(variablesDisplay), null, 2);
+          }
         } catch {
-          variables = url.search;
+          variablesDisplay = url.search;
+        }
+        if (!variablesDisplay) {
+          variablesDisplay = url.search;
         }
 
         if (env.EXCEPTION_DISCORD_WEBHOOK && errors) {
@@ -146,7 +157,7 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
               username,
               requestPath,
               asRecord(json)?.['errors'],
-              variables
+              variablesDisplay
             );
           } catch (alertErr) {
             console.error('Discord exception alert failed', {

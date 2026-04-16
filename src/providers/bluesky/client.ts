@@ -533,3 +533,21 @@ export const fetchGetLikes = async (
   }
   return result;
 };
+
+/** Public AppView (with optional proxy fallback); `limit` is typically 1–25 per upstream. */
+export const fetchTrendingTopics = async (
+  params: { limit: number },
+  opts?: BlueskyFetchOpts
+): Promise<
+  { ok: true; data: BlueskyGetTrendingTopicsResponse } | { ok: false; status: number; body: string }
+> => {
+  const result = await executeBlueskyXrpc<BlueskyGetTrendingTopicsResponse>(
+    'app.bsky.unspecced.getTrendingTopics',
+    { limit: params.limit },
+    opts?.credentialKey
+  );
+  if (!result.ok) {
+    console.log('Bluesky getTrendingTopics failed', result.status, result.body?.slice?.(0, 200));
+  }
+  return result;
+};

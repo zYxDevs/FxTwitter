@@ -1,0 +1,10 @@
+{
+  "topics": [
+    { "topic": "Topic One", "link": "/profile/trending.bsky.app/feed/1" },
+    { "topic": "Topic Two", "link": "/profile/trending.bsky.app/feed/2" }
+  ],
+  "suggested": [
+    { "topic": "Suggested A", "link": "/profile/bsky.app/feed/with-friends" },
+    { "topic": "Suggested B", "link": "/profile/example.com/feed/aa" }
+  ]
+}

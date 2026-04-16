@@ -15,6 +15,8 @@ import repostersProfilesBatch from './fixtures/bluesky/reposters-profiles-batch.
 import getLikes from './fixtures/bluesky/get-likes.json';
 import likersProfilesBatch from './fixtures/bluesky/likers-profiles-batch.json';
 import conversationThread from './fixtures/bluesky/conversation-thread.json';
+import getTrendingTopics from './fixtures/bluesky/get-trending-topics.json';
+import type { APITrendsResponse } from '../src/realms/api/schemas';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -129,6 +131,95 @@ test('GET /2/search returns results and cursor.bottom', async () => {
   expect(body.results.length).toBe(1);
   expect(body.results[0].id).toBe('rkeysearch');
   expect(body.results[0].text).toContain('Search hit fixture');
+});
+
+test('GET /2/trends maps Bluesky getTrendingTopics to APITrendsResponse', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.includes('app.bsky.unspecced.getTrendingTopics')) {
+      expect(u).toContain('limit=4');
+      return new Response(JSON.stringify(getTrendingTopics), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${u}`);
+  });
+
+  const res = await app.request('https://api.fxbsky.app/2/trends?count=4', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as APITrendsResponse;
+  expect(body.code).toBe(200);
+  expect(body.timeline_type).toBe('trending');
+  expect(body.trends).toHaveLength(4);
+  expect(body.trends[0].name).toBe('Topic One');
+  expect(body.trends[0].context).toBe('https://bsky.app/profile/trending.bsky.app/feed/1');
+  expect(body.trends[1].name).toBe('Topic Two');
+  expect(body.trends[2].name).toBe('Suggested A');
+  expect(body.trends[2].context).toContain('Suggested feed');
+  expect(body.trends[2].context).toContain('https://bsky.app/profile/bsky.app/feed/with-friends');
+  expect(body.cursor.top).toBeNull();
+  expect(body.cursor.bottom).toBeNull();
+});
+
+test('GET /2/trends?type=suggested returns only suggested rows', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.includes('app.bsky.unspecced.getTrendingTopics')) {
+      expect(u).toContain('limit=2');
+      return new Response(JSON.stringify(getTrendingTopics), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${u}`);
+  });
+
+  const res = await app.request('https://api.fxbsky.app/2/trends?type=suggested&count=2', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as APITrendsResponse;
+  expect(body.timeline_type).toBe('suggested');
+  expect(body.trends).toHaveLength(2);
+  expect(body.trends[0].name).toBe('Suggested A');
+  expect(body.trends[0].context).toContain('Suggested feed');
+  expect(body.trends[1].name).toBe('Suggested B');
+});
+
+test('GET /2/trends returns 404 when upstream topics are empty', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.includes('app.bsky.unspecced.getTrendingTopics')) {
+      return new Response(JSON.stringify({ topics: [], suggested: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${u}`);
+  });
+
+  const res = await app.request('https://api.fxbsky.app/2/trends', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
+  expect(res.status).toBe(404);
+});
+
+test('GET /2/trends returns 500 when upstream errors', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.includes('app.bsky.unspecced.getTrendingTopics')) {
+      return new Response('upstream', { status: 502 });
+    }
+    throw new Error(`Unexpected fetch: ${u}`);
+  });
+
+  const res = await app.request('https://api.fxbsky.app/2/trends', {
+    headers: { 'User-Agent': 'FxEmbedTest/1.0' }
+  });
+  expect(res.status).toBe(500);
 });
 
 test('GET /2/search passes cursor and feed=top as sort', async () => {

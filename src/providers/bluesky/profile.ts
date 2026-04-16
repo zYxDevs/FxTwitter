@@ -53,9 +53,9 @@ export const blueskyProfileToApiUser = (profile: BlueskyProfileViewDetailed): AP
 
 export const blueskyUserProfileAPI = async (
   actor: string,
-  _c: Context
+  c: Context
 ): Promise<UserAPIResponse> => {
-  const result = await fetchActorProfile(actor);
+  const result = await fetchActorProfile(actor, { credentialKey: c.env?.CREDENTIAL_KEY });
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
       return { code: 404, message: 'User not found' };

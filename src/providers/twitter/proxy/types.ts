@@ -4,10 +4,18 @@ export type TwitterCredentials = {
   username: string;
 };
 
+/** Bluesky proxy: app password auth against the account PDS (entryway or *.host.bsky.network). */
+export type BlueskyProxyCredentials = {
+  identifier: string;
+  appPassword: string;
+  service: string;
+};
+
 /** Per-provider credential buckets; extend with instagram, etc. */
 export type CredentialStore = {
-  twitter: { accounts: TwitterCredentials[] };
-} & Record<string, { accounts: unknown[] }>;
+  twitter?: { accounts: TwitterCredentials[] };
+  bluesky?: { accounts: BlueskyProxyCredentials[] };
+};
 
 export type ErrorResponse = {
   error: string;

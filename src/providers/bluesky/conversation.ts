@@ -29,14 +29,15 @@ export type BlueskyConversationResult =
 export const fetchBlueskyThread = async (
   post: string,
   author: string,
-  processThread = false
+  processThread = false,
+  credentialKey?: string
 ): Promise<BlueskyThreadResponse | null> => {
   if (!author || !post) {
     return null;
   }
   const uri = atUriForFeedPost(author, post);
   const depth = processThread ? THREAD_FETCH_DEPTH : 1;
-  return fetchPostThread(uri, depth);
+  return fetchPostThread(uri, depth, undefined, { credentialKey });
 };
 
 const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
@@ -61,7 +62,8 @@ const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
 /** Walk parents + focal + same-author reply continuation (matches `/2/thread` semantics). */
 const collectProcessedThreadPosts = async (
   thread: BlueskyThread,
-  author: string
+  author: string,
+  credentialKey?: string
 ): Promise<BlueskyPost[]> => {
   const bucket: BlueskyPost[] = [];
 
@@ -84,7 +86,7 @@ const collectProcessedThreadPosts = async (
       const nextId = last.uri?.match(/(?<=post\/)([^/]+)/)?.[1] ?? '';
       if (!nextId) break;
 
-      const more = await fetchBlueskyThread(nextId, author, true);
+      const more = await fetchBlueskyThread(nextId, author, true, credentialKey);
       if (!more?.thread) break;
 
       threadPiece = more.thread;
@@ -184,7 +186,8 @@ export const constructBlueskyThread = async (
   c: Context,
   language: string | undefined
 ): Promise<SocialThreadBluesky> => {
-  const _thread = await fetchBlueskyThread(id, author, processThread);
+  const credentialKey = c.env?.CREDENTIAL_KEY;
+  const _thread = await fetchBlueskyThread(id, author, processThread, credentialKey);
 
   if (!_thread?.thread?.post) {
     return {
@@ -197,7 +200,7 @@ export const constructBlueskyThread = async (
 
   const thread = _thread.thread;
   const bucket: BlueskyPost[] = processThread
-    ? await collectProcessedThreadPosts(thread, author)
+    ? await collectProcessedThreadPosts(thread, author, credentialKey)
     : [thread.post];
 
   const consumedPost = (await buildAPIBlueskyPost(c, thread.post, language)) as APIBlueskyStatus;
@@ -224,6 +227,7 @@ export const constructBlueskyConversation = async (
     language?: string;
   }
 ): Promise<BlueskyConversationResult> => {
+  const credentialKey = c.env?.CREDENTIAL_KEY;
   const count = Math.min(100, Math.max(1, Math.floor(options.count)));
   let focalUri: string;
   let mode: 'likes' | 'recency';
@@ -263,8 +267,12 @@ export const constructBlueskyConversation = async (
   }
 
   const raw = isContinuation
-    ? await fetchPostThread(focalUri, CONVERSATION_PAGE_DEPTH, CONVERSATION_PAGE_PARENT_HEIGHT)
-    : await fetchPostThread(focalUri, THREAD_FETCH_DEPTH, THREAD_PARENT_HEIGHT_FIRST_PAGE);
+    ? await fetchPostThread(focalUri, CONVERSATION_PAGE_DEPTH, CONVERSATION_PAGE_PARENT_HEIGHT, {
+        credentialKey
+      })
+    : await fetchPostThread(focalUri, THREAD_FETCH_DEPTH, THREAD_PARENT_HEIGHT_FIRST_PAGE, {
+        credentialKey
+      });
 
   if (!raw?.thread?.post) {
     return {
@@ -285,7 +293,7 @@ export const constructBlueskyConversation = async (
 
   const threadPosts: BlueskyPost[] = isContinuation
     ? [focalNode.post]
-    : await collectProcessedThreadPosts(focalNode, author);
+    : await collectProcessedThreadPosts(focalNode, author, credentialKey);
 
   const directBluesky = collectDirectReplyPosts(focalNode);
   const sorted = sortDirectReplies(directBluesky, mode);

@@ -65,6 +65,10 @@ export const blueskyStatusV2Route = createRoute({
       description: 'Not found',
       content: { 'application/json': { schema: SocialThreadBlueskySchema } }
     },
+    503: {
+      description: 'Bluesky upstream timeout or error (post may still exist)',
+      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+    },
     500: {
       description: 'Server or upstream failure',
       content: { 'application/json': { schema: SocialThreadBlueskySchema } }
@@ -194,6 +198,10 @@ export const blueskyThreadV2Route = createRoute({
       description: 'Not found',
       content: { 'application/json': { schema: SocialThreadBlueskySchema } }
     },
+    503: {
+      description: 'Bluesky upstream timeout or error (post may still exist)',
+      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+    },
     500: {
       description: 'Server or upstream failure',
       content: { 'application/json': { schema: SocialThreadBlueskySchema } }
@@ -244,6 +252,10 @@ export const blueskyConversationV2Route = createRoute({
     },
     404: {
       description: 'Not found',
+      content: { 'application/json': { schema: SocialConversationBlueskySchema } }
+    },
+    503: {
+      description: 'Bluesky upstream timeout or error (post may still exist)',
       content: { 'application/json': { schema: SocialConversationBlueskySchema } }
     },
     500: {

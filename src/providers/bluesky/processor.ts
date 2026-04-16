@@ -291,7 +291,7 @@ const resolveQuote = async (
     return undefined;
   }
 
-  const q = await buildAPIBlueskyPost(c, post, language, quoteDepth + 1);
+  const q = await buildAPIBlueskyPost(c, post, language, quoteDepth + 1, fetchOpts);
   return q;
 };
 
@@ -299,9 +299,13 @@ export const buildAPIBlueskyPost = async (
   c: Context,
   status: BlueskyPost,
   language: string | undefined,
-  quoteDepth = 0
+  quoteDepth = 0,
+  fetchOpts?: BlueskyFetchOpts
 ): Promise<APIStatus> => {
-  const bskyFetchOpts: BlueskyFetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
+  const bskyFetchOpts: BlueskyFetchOpts = {
+    ...fetchOpts,
+    credentialKey: c.env?.CREDENTIAL_KEY
+  };
   const rkey = rkeyFromPostAtUri(status.uri) ?? status.cid;
   const record = status.record ?? status.value;
   const rawText = record?.text ?? '';

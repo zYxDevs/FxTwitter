@@ -121,6 +121,8 @@ export const handleStatus = async (
     useActivity = true;
   }
 
+  let blueskyActivityPdsOut: { pdsHostHint?: string } | undefined;
+
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(
       statusId,
@@ -130,12 +132,15 @@ export const handleStatus = async (
       flags?.api ?? false
     );
   } else if (provider === DataProvider.Bluesky) {
+    blueskyActivityPdsOut = useActivity ? {} : undefined;
     thread = await constructBlueskyThread(
       statusId,
       authorHandle ?? '',
       fetchWithThreads,
       c,
-      useActivity ? undefined : useLanguage
+      useActivity ? undefined : useLanguage,
+      undefined,
+      blueskyActivityPdsOut
     );
   } else if (provider === DataProvider.TikTok) {
     // Get proxy base URL from the current request for TikTok video proxy
@@ -164,6 +169,9 @@ export const handleStatus = async (
     case 404:
       api.message = 'NOT_FOUND';
       break;
+    case 503:
+      api.message = 'UPSTREAM_UNAVAILABLE';
+      break;
     case 500:
       console.log(api);
       api.message = 'API_FAIL';
@@ -182,7 +190,10 @@ export const handleStatus = async (
 
   if (status === null) {
     if (provider === DataProvider.Bluesky) {
-      return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
+      return returnError(
+        c,
+        thread.code === 404 ? Strings.ERROR_BLUESKY_POST_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
+      );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
     }
@@ -193,11 +204,12 @@ export const handleStatus = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
+    return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+    case 503:
       if (provider === DataProvider.Bluesky) {
-        return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
-      } else {
-        return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+        return returnError(c, Strings.ERROR_BLUESKY_UNAVAILABLE);
       }
+      return returnError(c, Strings.ERROR_API_FAIL);
     case 500:
       console.log(api);
       return returnError(c, Strings.ERROR_API_FAIL);
@@ -750,7 +762,15 @@ export const handleStatus = async (
   }
 
   if (useActivity) {
-    const data: { i: string; l?: string; h?: string; t?: number; m?: number; n?: number } = {
+    const data: {
+      i: string;
+      l?: string;
+      h?: string;
+      p?: string;
+      t?: number;
+      m?: number;
+      n?: number;
+    } = {
       i: statusId
     };
     /* Convert necessary flags into snowcode data */
@@ -759,6 +779,9 @@ export const handleStatus = async (
     }
     if (status.provider === DataProvider.Bluesky) {
       data.h = status.author.id;
+      if (blueskyActivityPdsOut?.pdsHostHint) {
+        data.p = blueskyActivityPdsOut.pdsHostHint;
+      }
     }
     if (flags.textOnly) {
       data.t = 1;
@@ -769,7 +792,17 @@ export const handleStatus = async (
     if (mediaNumber) {
       data.n = mediaNumber;
     }
-    const snowflake = encodeSnowcode(data);
+    let snowflake: string;
+    try {
+      snowflake = encodeSnowcode(data);
+    } catch (e) {
+      if (data.p !== undefined) {
+        const { p: _omit, ...rest } = data;
+        snowflake = encodeSnowcode(rest);
+      } else {
+        throw e;
+      }
+    }
     console.log('snowflake', snowflake);
     let base: string;
     switch (status.provider) {

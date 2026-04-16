@@ -193,12 +193,19 @@ export const constructBlueskyThread = async (
 
   const uri = atUriForFeedPost(author, id);
   const depth = processThread ? THREAD_FETCH_DEPTH : 1;
-  const { data: _thread, proxyHostHint } = await fetchPostThreadResult(
-    uri,
-    depth,
-    undefined,
-    fetchOpts
-  );
+  const threadFetch = await fetchPostThreadResult(uri, depth, undefined, fetchOpts);
+
+  if (!threadFetch.ok) {
+    return {
+      status: null,
+      thread: [],
+      author: null,
+      code: threadFetch.notFound ? 404 : 503
+    };
+  }
+
+  const _thread = threadFetch.data;
+  const proxyHostHint = threadFetch.proxyHostHint;
 
   if (!_thread?.thread?.post) {
     return {
@@ -288,19 +295,35 @@ export const constructBlueskyConversation = async (
   }
 
   const convoFetchOpts: BlueskyFetchOpts = { credentialKey };
-  const raw = isContinuation
-    ? await fetchPostThread(
+  const rawResult = isContinuation
+    ? await fetchPostThreadResult(
         focalUri,
         CONVERSATION_PAGE_DEPTH,
         CONVERSATION_PAGE_PARENT_HEIGHT,
         convoFetchOpts
       )
-    : await fetchPostThread(
+    : await fetchPostThreadResult(
         focalUri,
         THREAD_FETCH_DEPTH,
         THREAD_PARENT_HEIGHT_FIRST_PAGE,
         convoFetchOpts
       );
+
+  if (!rawResult.ok) {
+    return {
+      ok: true,
+      data: {
+        code: rawResult.notFound ? 404 : 503,
+        status: null,
+        thread: null,
+        replies: null,
+        author: null,
+        cursor: null
+      }
+    };
+  }
+
+  const raw = rawResult.data;
 
   if (!raw?.thread?.post) {
     return {

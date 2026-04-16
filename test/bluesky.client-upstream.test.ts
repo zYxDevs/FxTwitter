@@ -86,6 +86,49 @@ test('fetchPostThread uses PDS proxy when public API returns 503', async () => {
   expect(credMocks.initCredentials).toHaveBeenCalledWith('dummy-key');
 });
 
+test('fetchPostThreadResult marks explicit NotFound separately from upstream failure', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if (url.includes('public.api.bsky.app')) {
+      return new Response(JSON.stringify({ error: 'NotFound', message: 'Not found' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  });
+
+  const notFoundResult = await fetchPostThreadResult(
+    'at://did:plc:x/app.bsky.feed.post/missing',
+    1,
+    undefined,
+    { credentialKey: 'dummy-key' }
+  );
+  expect(notFoundResult.ok).toBe(false);
+  if (!notFoundResult.ok) {
+    expect(notFoundResult.notFound).toBe(true);
+  }
+
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if (url.includes('public.api.bsky.app')) {
+      return new Response('unavailable', { status: 503 });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  });
+
+  const outageResult = await fetchPostThreadResult(
+    'at://did:plc:x/app.bsky.feed.post/rkey',
+    1,
+    undefined,
+    { credentialKey: undefined }
+  );
+  expect(outageResult.ok).toBe(false);
+  if (!outageResult.ok) {
+    expect(outageResult.notFound).toBe(false);
+  }
+});
+
 test('fetchPostThread does not call proxy when public returns NotFound', async () => {
   const calls: string[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
@@ -125,15 +168,18 @@ test('fetchPostThreadResult includes proxyHostHint when proxy fallback succeeds'
     throw new Error(`Unexpected fetch: ${url}`);
   });
 
-  const { data, proxyHostHint } = await fetchPostThreadResult(
+  const result = await fetchPostThreadResult(
     'at://did:plc:x/app.bsky.feed.post/rkey',
     1,
     undefined,
     { credentialKey: 'dummy-key' }
   );
 
-  expect(data).not.toBeNull();
-  expect(proxyHostHint).toBe('pds.example');
+  expect(result.ok).toBe(true);
+  if (result.ok) {
+    expect(result.data).not.toBeNull();
+    expect(result.proxyHostHint).toBe('pds.example');
+  }
 });
 
 test('fetchPostThread passes preferredProxyServiceHost into proxy shuffle', async () => {

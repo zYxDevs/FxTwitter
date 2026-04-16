@@ -123,11 +123,17 @@ async function executeBlueskyXrpc<T>(
   const proxyTimeoutMs = BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS;
 
   const first = await fetchXrpcOnce<T>(publicBase, path, params, { timeoutMs: publicTimeoutMs });
+  const publicUpstreamTimedOut = !first.ok && Boolean(first.aborted);
   if (first.ok) {
     return { ok: true, data: first.data };
   }
   if (isNotFoundError(first.status, first.body)) {
     return { ok: false, status: first.status, body: first.body };
+  }
+  if (publicUpstreamTimedOut) {
+    console.log(
+      `Bluesky XRPC public AppView (${trimBaseUrl(publicBase)}) timed out after ${publicTimeoutMs}ms`
+    );
   }
   if (
     !isFallbackEligible(first.status, first.body, first.aborted) ||
@@ -157,9 +163,15 @@ async function executeBlueskyXrpc<T>(
     return h || undefined;
   };
 
-  for (const cred of getShuffledBlueskyAccounts(opts?.preferredProxyServiceHost)) {
+  const proxyAccounts = getShuffledBlueskyAccounts(opts?.preferredProxyServiceHost);
+  for (const cred of proxyAccounts) {
     const accessJwt = await getBlueskyAccessJwt(cred);
     if (!accessJwt) continue;
+
+    const proxyHost = blueskyProxyServiceHostname(cred.service) || trimBaseUrl(cred.service);
+    if (publicUpstreamTimedOut) {
+      console.log(`Bluesky XRPC attempting PDS proxy fallback via ${proxyHost}`);
+    }
 
     let attempt = await fetchXrpcOnce<T>(cred.service, path, params, {
       authorization: `Bearer ${accessJwt}`,
@@ -176,6 +188,13 @@ async function executeBlueskyXrpc<T>(
       continue;
     }
 
+    if (attempt.aborted) {
+      console.log(
+        `Bluesky XRPC PDS proxy ${proxyHost} timed out after ${proxyTimeoutMs}ms; trying next proxy account if any`
+      );
+      continue;
+    }
+
     if (attempt.status === 401) {
       invalidateBlueskySession(cred);
       const freshJwt = await getBlueskyAccessJwt(cred);
@@ -185,15 +204,23 @@ async function executeBlueskyXrpc<T>(
           timeoutMs: proxyTimeoutMs
         });
         if (attempt.ok) {
+          console.log(`Bluesky XRPC successfully fetched from proxy PDS ${proxyHost}`);
           return { ok: true, data: attempt.data, proxyHostHint: proxyHostHintFor(cred.service) };
         }
         if (isNotFoundError(attempt.status, attempt.body)) {
           continue;
         }
+        if (attempt.aborted) {
+          console.log(
+            `Bluesky XRPC PDS proxy ${proxyHost} timed out after ${proxyTimeoutMs}ms (after session refresh); trying next proxy account if any`
+          );
+        }
       }
       continue;
     }
   }
+
+  console.log('Bluesky XRPC proxy fallback failed: all proxy PDSes exhausted');
 
   return { ok: false, status: first.status, body: first.body };
 }
@@ -209,12 +236,16 @@ async function executeBlueskyGetJson<T>(
   return r.data;
 }
 
+export type FetchPostThreadResult =
+  | { ok: true; data: BlueskyThreadResponse; proxyHostHint?: string }
+  | { ok: false; data: null; notFound: boolean; status: number; body: string };
+
 export const fetchPostThreadResult = async (
   atUri: string,
   depth = 10,
   parentHeight?: number,
   opts?: BlueskyFetchOpts
-): Promise<{ data: BlueskyThreadResponse | null; proxyHostHint?: string }> => {
+): Promise<FetchPostThreadResult> => {
   const result = await executeBlueskyXrpc<BlueskyThreadResponse>(
     'app.bsky.feed.getPostThread',
     {
@@ -225,10 +256,11 @@ export const fetchPostThreadResult = async (
     opts
   );
   if (!result.ok) {
+    const notFound = isNotFoundError(result.status, result.body);
     console.log('Bluesky getPostThread failed', result.status, result.body?.slice?.(0, 200));
-    return { data: null };
+    return { ok: false, data: null, notFound, status: result.status, body: result.body };
   }
-  return { data: result.data, proxyHostHint: result.proxyHostHint };
+  return { ok: true, data: result.data, proxyHostHint: result.proxyHostHint };
 };
 
 export const fetchPostThread = async (
@@ -237,8 +269,8 @@ export const fetchPostThread = async (
   parentHeight?: number,
   opts?: BlueskyFetchOpts
 ): Promise<BlueskyThreadResponse | null> => {
-  const { data } = await fetchPostThreadResult(atUri, depth, parentHeight, opts);
-  return data;
+  const r = await fetchPostThreadResult(atUri, depth, parentHeight, opts);
+  return r.ok ? r.data : null;
 };
 
 /** Batch-resolve post views (quotes not hydrated in thread, etc.). */

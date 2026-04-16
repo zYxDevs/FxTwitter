@@ -169,6 +169,9 @@ export const handleStatus = async (
     case 404:
       api.message = 'NOT_FOUND';
       break;
+    case 503:
+      api.message = 'UPSTREAM_UNAVAILABLE';
+      break;
     case 500:
       console.log(api);
       api.message = 'API_FAIL';
@@ -187,7 +190,10 @@ export const handleStatus = async (
 
   if (status === null) {
     if (provider === DataProvider.Bluesky) {
-      return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
+      return returnError(
+        c,
+        thread.code === 404 ? Strings.ERROR_BLUESKY_POST_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
+      );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
     }
@@ -198,11 +204,12 @@ export const handleStatus = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
+    return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+    case 503:
       if (provider === DataProvider.Bluesky) {
-        return returnError(c, Strings.ERROR_BLUESKY_POST_NOT_FOUND);
-      } else {
-        return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+        return returnError(c, Strings.ERROR_BLUESKY_UNAVAILABLE);
       }
+      return returnError(c, Strings.ERROR_API_FAIL);
     case 500:
       console.log(api);
       return returnError(c, Strings.ERROR_API_FAIL);

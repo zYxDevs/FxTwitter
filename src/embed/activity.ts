@@ -417,6 +417,12 @@ export const handleActivity = async (
   });
 
   if (!thread.status) {
+    if (provider === DataProvider.Bluesky) {
+      return returnError(
+        c,
+        thread.code === 404 ? Strings.ERROR_TWEET_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
+      );
+    }
     return returnError(c, Strings.ERROR_API_FAIL);
   }
 

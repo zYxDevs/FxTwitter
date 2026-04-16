@@ -310,3 +310,21 @@ export const fetchGetLikes = async (params: {
   }
   return result;
 };
+
+/** Public AppView; `limit` is typically 1–25 per upstream. */
+export const fetchTrendingTopics = async (params: {
+  limit: number;
+}): Promise<
+  { ok: true; data: BlueskyGetTrendingTopicsResponse } | { ok: false; status: number; body: string }
+> => {
+  const result = await fetchXrpc<BlueskyGetTrendingTopicsResponse>(
+    'app.bsky.unspecced.getTrendingTopics',
+    {
+      limit: params.limit
+    }
+  );
+  if (!result.ok) {
+    console.log('Bluesky getTrendingTopics failed', result.status, result.body?.slice?.(0, 200));
+  }
+  return result;
+};

@@ -4,10 +4,15 @@ import {
   APIUserListResultsSchema,
   ApiQueryErrorSchema,
   APISearchResultsBlueskySchema,
+  APITrendsResponseSchema,
   SocialConversationBlueskySchema,
   SocialThreadBlueskySchema,
   UserAPIResponseSchema
 } from '../api/schemas';
+import {
+  BLUESKY_TRENDS_FEED_KINDS,
+  type BlueskyTrendsFeedKind
+} from '../../providers/bluesky/trends';
 
 const langQuery = z.object({
   lang: z.string().optional().openapi({
@@ -292,6 +297,50 @@ export const blueskySearchV2Route = createRoute({
     500: {
       description: 'Upstream or processing error',
       content: { 'application/json': { schema: APISearchResultsBlueskySchema } }
+    }
+  }
+});
+
+const blueskyTrendsTypeDescription = `Trend list. \`trending\` returns Bluesky live topics first, then suggested topic feeds to fill \`count\`. \`suggested\` returns only suggested feeds. Upstream: \`app.bsky.unspecced.getTrendingTopics\` (max 25 rows per request).`;
+
+export const blueskyTrendsV2Route = createRoute({
+  method: 'get',
+  path: '/2/trends',
+  summary: 'Trending topics (Bluesky)',
+  description:
+    'Returns trending topic labels and suggested topic feeds from the Bluesky public AppView, in the same envelope as FxTwitter `GET /2/trends` (`code`, `timeline_type`, `trends`, `cursor`). Each trend’s `context` includes a bsky.app URL to the topic feed when the upstream provides a `link`.',
+  request: {
+    query: z.object({
+      type: z
+        .enum(BLUESKY_TRENDS_FEED_KINDS as [BlueskyTrendsFeedKind, ...BlueskyTrendsFeedKind[]])
+        .optional()
+        .openapi({
+          description: blueskyTrendsTypeDescription,
+          default: 'trending',
+          example: 'trending'
+        }),
+      count: z.coerce.number().int().min(1).max(50).optional().openapi({
+        description: 'Number of trends (default 20, max 50)',
+        default: 20
+      })
+    })
+  },
+  responses: {
+    200: {
+      description: 'Trends payload',
+      content: { 'application/json': { schema: APITrendsResponseSchema } }
+    },
+    400: {
+      description: 'Invalid query parameters (e.g. `type` or `count` out of allowed range)',
+      content: { 'application/json': { schema: ApiQueryErrorSchema } }
+    },
+    404: {
+      description: 'Trends unavailable or empty upstream list',
+      content: { 'application/json': { schema: APITrendsResponseSchema } }
+    },
+    500: {
+      description: 'Upstream or processing error',
+      content: { 'application/json': { schema: APITrendsResponseSchema } }
     }
   }
 });

@@ -280,6 +280,17 @@ declare type BlueskySearchPostsResponse = {
   hitsTotal?: number;
 };
 
+/** `app.bsky.unspecced.getTrendingTopics` (subset; public AppView). */
+declare type BlueskyTrendingTopicRow = {
+  topic: string;
+  link?: string;
+};
+
+declare type BlueskyGetTrendingTopicsResponse = {
+  topics?: BlueskyTrendingTopicRow[];
+  suggested?: BlueskyTrendingTopicRow[];
+};
+
 /** `app.bsky.feed.getAuthorFeed` `filter` lexicon values used by FxBluesky. */
 declare type BlueskyAuthorFeedFilter =
   | 'posts_no_replies'

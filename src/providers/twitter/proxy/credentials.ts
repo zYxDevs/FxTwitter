@@ -94,10 +94,7 @@ export function hasBlueskyProxyAccounts(): boolean {
   return (credentialStore?.bluesky?.accounts?.length ?? 0) > 0;
 }
 
-/** Fisher–Yates shuffle copy for spreading load across PDS proxy accounts. */
-export function getShuffledBlueskyAccounts(): BlueskyProxyCredentials[] {
-  const acc = credentialStore?.bluesky?.accounts ?? [];
-  if (!acc.length) return [];
+function shuffleBlueskyAccountsCopy(acc: BlueskyProxyCredentials[]): BlueskyProxyCredentials[] {
   const copy = [...acc];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -106,4 +103,38 @@ export function getShuffledBlueskyAccounts(): BlueskyProxyCredentials[] {
     copy[j] = t;
   }
   return copy;
+}
+
+/** Hostname of a Bluesky proxy `service` URL (PDS), lowercased; empty if unparseable. */
+export function blueskyProxyServiceHostname(service: string): string {
+  try {
+    const s = service.trim();
+    const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+    return new URL(withProto).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Fisher–Yates shuffle for spreading load across PDS proxy accounts.
+ * When `preferredHostname` matches one or more accounts' service host, those are shuffled first,
+ * then the rest (Discord activity hint path).
+ */
+export function getShuffledBlueskyAccounts(preferredHostname?: string): BlueskyProxyCredentials[] {
+  const acc = credentialStore?.bluesky?.accounts ?? [];
+  if (!acc.length) return [];
+  const pref = preferredHostname?.trim().toLowerCase();
+  if (!pref) {
+    return shuffleBlueskyAccountsCopy(acc);
+  }
+  const preferred: BlueskyProxyCredentials[] = [];
+  const rest: BlueskyProxyCredentials[] = [];
+  for (const a of acc) {
+    (blueskyProxyServiceHostname(a.service) === pref ? preferred : rest).push(a);
+  }
+  if (!preferred.length) {
+    return shuffleBlueskyAccountsCopy(acc);
+  }
+  return [...shuffleBlueskyAccountsCopy(preferred), ...shuffleBlueskyAccountsCopy(rest)];
 }

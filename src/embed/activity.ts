@@ -384,6 +384,9 @@ export const handleActivity = async (
     mediaNumber = decoded.n;
   }
 
+  const preferredProxyServiceHost =
+    typeof decoded.p === 'string' && decoded.p.length > 0 ? decoded.p : undefined;
+
   console.log('snowcode params', JSON.stringify(decoded));
 
   let thread: SocialThread;
@@ -395,7 +398,8 @@ export const handleActivity = async (
       authorHandle ?? '',
       false,
       c,
-      language ?? undefined
+      language ?? undefined,
+      preferredProxyServiceHost ? { preferredProxyServiceHost } : undefined
     );
   } else if (provider === DataProvider.TikTok) {
     // Get proxy base URL from the current request for TikTok video proxy

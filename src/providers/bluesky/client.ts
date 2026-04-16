@@ -1,5 +1,6 @@
 import { Constants } from '../../constants';
 import {
+  blueskyProxyServiceHostname,
   getShuffledBlueskyAccounts,
   hasBlueskyProxyAccounts,
   hasBundledEncryptedCredentials,
@@ -10,10 +11,12 @@ import { getBlueskyAccessJwt, invalidateBlueskySession } from './session';
 /** Per-upstream request cap for public AppView (fail fast, then try proxy PDS). */
 export const BLUESKY_UPSTREAM_TIMEOUT_MS = 3_000;
 /** Authenticated PDS calls are often slower than bsky.app; use a higher cap so backup can succeed. */
-export const BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS = 15_000;
+export const BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS = 3_000;
 
 export type BlueskyFetchOpts = {
   credentialKey?: string;
+  /** When set (e.g. from Discord activity snowcode), try proxy accounts on this PDS host first. */
+  preferredProxyServiceHost?: string;
 };
 
 export type XrpcErrorBody = {
@@ -110,8 +113,11 @@ function isFallbackEligible(status: number, body: string, aborted?: boolean): bo
 async function executeBlueskyXrpc<T>(
   path: string,
   params: BlueskyXrpcParams,
-  credentialKey: string | undefined
-): Promise<{ ok: true; data: T } | { ok: false; status: number; body: string }> {
+  opts?: BlueskyFetchOpts
+): Promise<
+  { ok: true; data: T; proxyHostHint?: string } | { ok: false; status: number; body: string }
+> {
+  const credentialKey = opts?.credentialKey;
   const publicBase = Constants.BLUESKY_API_ROOT;
   const publicTimeoutMs = BLUESKY_UPSTREAM_TIMEOUT_MS;
   const proxyTimeoutMs = BLUESKY_PROXY_UPSTREAM_TIMEOUT_MS;
@@ -146,7 +152,12 @@ async function executeBlueskyXrpc<T>(
     return { ok: false, status: first.status, body: first.body };
   }
 
-  for (const cred of getShuffledBlueskyAccounts()) {
+  const proxyHostHintFor = (service: string): string | undefined => {
+    const h = blueskyProxyServiceHostname(service);
+    return h || undefined;
+  };
+
+  for (const cred of getShuffledBlueskyAccounts(opts?.preferredProxyServiceHost)) {
     const accessJwt = await getBlueskyAccessJwt(cred);
     if (!accessJwt) continue;
 
@@ -156,7 +167,7 @@ async function executeBlueskyXrpc<T>(
     });
 
     if (attempt.ok) {
-      return { ok: true, data: attempt.data };
+      return { ok: true, data: attempt.data, proxyHostHint: proxyHostHintFor(cred.service) };
     }
 
     // Public already failed with a non-NotFound error (outage, timeout, etc.); do not let a
@@ -174,7 +185,7 @@ async function executeBlueskyXrpc<T>(
           timeoutMs: proxyTimeoutMs
         });
         if (attempt.ok) {
-          return { ok: true, data: attempt.data };
+          return { ok: true, data: attempt.data, proxyHostHint: proxyHostHintFor(cred.service) };
         }
         if (isNotFoundError(attempt.status, attempt.body)) {
           continue;
@@ -191,19 +202,19 @@ async function executeBlueskyXrpc<T>(
 async function executeBlueskyGetJson<T>(
   path: string,
   params: BlueskyXrpcParams,
-  credentialKey: string | undefined
+  opts?: BlueskyFetchOpts
 ): Promise<T | null> {
-  const r = await executeBlueskyXrpc<T>(path, params, credentialKey);
+  const r = await executeBlueskyXrpc<T>(path, params, opts);
   if (!r.ok) return null;
   return r.data;
 }
 
-export const fetchPostThread = async (
+export const fetchPostThreadResult = async (
   atUri: string,
   depth = 10,
   parentHeight?: number,
   opts?: BlueskyFetchOpts
-): Promise<BlueskyThreadResponse | null> => {
+): Promise<{ data: BlueskyThreadResponse | null; proxyHostHint?: string }> => {
   const result = await executeBlueskyXrpc<BlueskyThreadResponse>(
     'app.bsky.feed.getPostThread',
     {
@@ -211,13 +222,23 @@ export const fetchPostThread = async (
       depth,
       parentHeight
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getPostThread failed', result.status, result.body?.slice?.(0, 200));
-    return null;
+    return { data: null };
   }
-  return result.data;
+  return { data: result.data, proxyHostHint: result.proxyHostHint };
+};
+
+export const fetchPostThread = async (
+  atUri: string,
+  depth = 10,
+  parentHeight?: number,
+  opts?: BlueskyFetchOpts
+): Promise<BlueskyThreadResponse | null> => {
+  const { data } = await fetchPostThreadResult(atUri, depth, parentHeight, opts);
+  return data;
 };
 
 /** Batch-resolve post views (quotes not hydrated in thread, etc.). */
@@ -229,7 +250,7 @@ export const fetchPostsByUris = async (
   const j = await executeBlueskyGetJson<{ posts?: BlueskyPost[] }>(
     'app.bsky.feed.getPosts',
     { uris },
-    opts?.credentialKey
+    opts
   );
   return j?.posts ?? [];
 };
@@ -247,7 +268,7 @@ export const fetchProfilesByActors = async (
       displayName?: string;
       avatar?: string;
     }[];
-  }>('app.bsky.actor.getProfiles', { actors }, opts?.credentialKey);
+  }>('app.bsky.actor.getProfiles', { actors }, opts);
   for (const p of j?.profiles ?? []) {
     out.set(p.did, { handle: p.handle, displayName: p.displayName, avatar: p.avatar });
   }
@@ -263,7 +284,7 @@ export const fetchActorProfile = async (
   const result = await executeBlueskyXrpc<BlueskyProfileViewDetailed>(
     'app.bsky.actor.getProfile',
     { actor },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getProfile failed', result.status, result.body?.slice?.(0, 200));
@@ -290,7 +311,7 @@ export const fetchAuthorFeed = async (
       cursor: params.cursor,
       filter: params.filter
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getAuthorFeed failed', result.status, result.body?.slice?.(0, 200));
@@ -315,7 +336,7 @@ export const fetchActorLikes = async (
       limit: params.limit,
       cursor: params.cursor
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getActorLikes failed', result.status, result.body?.slice?.(0, 200));
@@ -343,7 +364,7 @@ export const fetchSearchPosts = async (
       limit: params.limit,
       cursor: params.cursor
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky searchPosts failed', result.status, result.body?.slice?.(0, 200));
@@ -367,7 +388,7 @@ export const fetchProfilesDetailedBatched = async (
     const j = await executeBlueskyGetJson<{ profiles?: BlueskyProfileViewDetailed[] }>(
       'app.bsky.actor.getProfiles',
       { actors: chunk },
-      opts?.credentialKey
+      opts
     );
     for (const p of j?.profiles ?? []) {
       if (p?.did) out.set(p.did, p);
@@ -394,7 +415,7 @@ export const fetchFollowers = async (
       limit: params.limit,
       cursor: params.cursor
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getFollowers failed', result.status, result.body?.slice?.(0, 200));
@@ -419,7 +440,7 @@ export const fetchFollows = async (
       limit: params.limit,
       cursor: params.cursor
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getFollows failed', result.status, result.body?.slice?.(0, 200));
@@ -446,7 +467,7 @@ export const fetchRepostedBy = async (
       cursor: params.cursor,
       cid: params.cid
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getRepostedBy failed', result.status, result.body?.slice?.(0, 200));
@@ -473,7 +494,7 @@ export const fetchGetLikes = async (
       cursor: params.cursor,
       cid: params.cid
     },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getLikes failed', result.status, result.body?.slice?.(0, 200));

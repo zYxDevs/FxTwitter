@@ -121,6 +121,8 @@ export const handleStatus = async (
     useActivity = true;
   }
 
+  let blueskyActivityPdsOut: { pdsHostHint?: string } | undefined;
+
   if (provider === DataProvider.Twitter) {
     thread = await constructTwitterThread(
       statusId,
@@ -130,12 +132,15 @@ export const handleStatus = async (
       flags?.api ?? false
     );
   } else if (provider === DataProvider.Bluesky) {
+    blueskyActivityPdsOut = useActivity ? {} : undefined;
     thread = await constructBlueskyThread(
       statusId,
       authorHandle ?? '',
       fetchWithThreads,
       c,
-      useActivity ? undefined : useLanguage
+      useActivity ? undefined : useLanguage,
+      undefined,
+      blueskyActivityPdsOut
     );
   } else if (provider === DataProvider.TikTok) {
     // Get proxy base URL from the current request for TikTok video proxy
@@ -750,7 +755,15 @@ export const handleStatus = async (
   }
 
   if (useActivity) {
-    const data: { i: string; l?: string; h?: string; t?: number; m?: number; n?: number } = {
+    const data: {
+      i: string;
+      l?: string;
+      h?: string;
+      p?: string;
+      t?: number;
+      m?: number;
+      n?: number;
+    } = {
       i: statusId
     };
     /* Convert necessary flags into snowcode data */
@@ -759,6 +772,9 @@ export const handleStatus = async (
     }
     if (status.provider === DataProvider.Bluesky) {
       data.h = status.author.id;
+      if (blueskyActivityPdsOut?.pdsHostHint) {
+        data.p = blueskyActivityPdsOut.pdsHostHint;
+      }
     }
     if (flags.textOnly) {
       data.t = 1;
@@ -769,7 +785,17 @@ export const handleStatus = async (
     if (mediaNumber) {
       data.n = mediaNumber;
     }
-    const snowflake = encodeSnowcode(data);
+    let snowflake: string;
+    try {
+      snowflake = encodeSnowcode(data);
+    } catch (e) {
+      if (data.p !== undefined) {
+        const { p: _omit, ...rest } = data;
+        snowflake = encodeSnowcode(rest);
+      } else {
+        throw e;
+      }
+    }
     console.log('snowflake', snowflake);
     let base: string;
     switch (status.provider) {

@@ -21,14 +21,18 @@ export const blueskyStatusRepostsAPI = async (
   handle: string,
   rkey: string,
   options: { count: number; cursor: string | null },
-  _c: Context
+  c: Context
 ): Promise<APIUserListResults> => {
+  const fetchOpts = { credentialKey: c.env?.CREDENTIAL_KEY };
   const uri = atUriForFeedPost(handle, rkey);
-  const result = await fetchRepostedBy({
-    uri,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const result = await fetchRepostedBy(
+    {
+      uri,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    fetchOpts
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
@@ -41,7 +45,7 @@ export const blueskyStatusRepostsAPI = async (
   const nextCursor = result.data.cursor ?? null;
 
   const dids = repostedBy.map(p => p.did);
-  const detailedByDid = await fetchProfilesDetailedBatched(dids);
+  const detailedByDid = await fetchProfilesDetailedBatched(dids, fetchOpts);
 
   const results = repostedBy.map(p => {
     const detailed = detailedByDid.get(p.did);

@@ -43,7 +43,7 @@ export const blueskyStatusAPIRequest: RouteHandler<typeof blueskyStatusV2Route> 
   const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyStatusAPIRequest'
   );
   c.status(httpStatus);
@@ -101,7 +101,7 @@ export const blueskyThreadAPIRequest: RouteHandler<typeof blueskyThreadV2Route> 
   const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyThreadAPIRequest'
   );
   c.status(httpStatus);
@@ -134,7 +134,7 @@ export const blueskyConversationAPIRequest: RouteHandler<
   const processedResponse = result.data;
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyConversationAPIRequest'
   );
   c.status(httpStatus);

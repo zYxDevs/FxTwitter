@@ -4,7 +4,7 @@ import type {
   SocialConversationBluesky,
   SocialThreadBluesky
 } from '../../realms/api/schemas';
-import { fetchPostThread } from './client';
+import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client';
 import { buildAPIBlueskyPost } from './processor';
 import { atUriForFeedPost } from './uris';
 
@@ -29,14 +29,15 @@ export type BlueskyConversationResult =
 export const fetchBlueskyThread = async (
   post: string,
   author: string,
-  processThread = false
+  processThread = false,
+  opts?: BlueskyFetchOpts
 ): Promise<BlueskyThreadResponse | null> => {
   if (!author || !post) {
     return null;
   }
   const uri = atUriForFeedPost(author, post);
   const depth = processThread ? THREAD_FETCH_DEPTH : 1;
-  return fetchPostThread(uri, depth);
+  return fetchPostThread(uri, depth, undefined, opts);
 };
 
 const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
@@ -61,7 +62,8 @@ const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
 /** Walk parents + focal + same-author reply continuation (matches `/2/thread` semantics). */
 const collectProcessedThreadPosts = async (
   thread: BlueskyThread,
-  author: string
+  author: string,
+  fetchOpts?: BlueskyFetchOpts
 ): Promise<BlueskyPost[]> => {
   const bucket: BlueskyPost[] = [];
 
@@ -84,7 +86,7 @@ const collectProcessedThreadPosts = async (
       const nextId = last.uri?.match(/(?<=post\/)([^/]+)/)?.[1] ?? '';
       if (!nextId) break;
 
-      const more = await fetchBlueskyThread(nextId, author, true);
+      const more = await fetchBlueskyThread(nextId, author, true, fetchOpts);
       if (!more?.thread) break;
 
       threadPiece = more.thread;
@@ -182,9 +184,28 @@ export const constructBlueskyThread = async (
   author: string,
   processThread = false,
   c: Context,
-  language: string | undefined
+  language: string | undefined,
+  extraFetchOpts?: BlueskyFetchOpts,
+  out?: { pdsHostHint?: string }
 ): Promise<SocialThreadBluesky> => {
-  const _thread = await fetchBlueskyThread(id, author, processThread);
+  const credentialKey = c.env?.CREDENTIAL_KEY;
+  const fetchOpts: BlueskyFetchOpts = { credentialKey, ...extraFetchOpts };
+
+  const uri = atUriForFeedPost(author, id);
+  const depth = processThread ? THREAD_FETCH_DEPTH : 1;
+  const threadFetch = await fetchPostThreadResult(uri, depth, undefined, fetchOpts);
+
+  if (!threadFetch.ok) {
+    return {
+      status: null,
+      thread: [],
+      author: null,
+      code: threadFetch.notFound ? 404 : 503
+    };
+  }
+
+  const _thread = threadFetch.data;
+  const proxyHostHint = threadFetch.proxyHostHint;
 
   if (!_thread?.thread?.post) {
     return {
@@ -195,14 +216,24 @@ export const constructBlueskyThread = async (
     };
   }
 
+  if (proxyHostHint && out) {
+    out.pdsHostHint = proxyHostHint;
+  }
+
   const thread = _thread.thread;
   const bucket: BlueskyPost[] = processThread
-    ? await collectProcessedThreadPosts(thread, author)
+    ? await collectProcessedThreadPosts(thread, author, fetchOpts)
     : [thread.post];
 
-  const consumedPost = (await buildAPIBlueskyPost(c, thread.post, language)) as APIBlueskyStatus;
+  const consumedPost = (await buildAPIBlueskyPost(
+    c,
+    thread.post,
+    language,
+    0,
+    fetchOpts
+  )) as APIBlueskyStatus;
   const consumedPosts = (await Promise.all(
-    bucket.map(post => buildAPIBlueskyPost(c, post, language))
+    bucket.map(post => buildAPIBlueskyPost(c, post, language, 0, fetchOpts))
   )) as APIBlueskyStatus[];
 
   return {
@@ -224,6 +255,7 @@ export const constructBlueskyConversation = async (
     language?: string;
   }
 ): Promise<BlueskyConversationResult> => {
+  const credentialKey = c.env?.CREDENTIAL_KEY;
   const count = Math.min(100, Math.max(1, Math.floor(options.count)));
   let focalUri: string;
   let mode: 'likes' | 'recency';
@@ -262,9 +294,36 @@ export const constructBlueskyConversation = async (
     isContinuation = false;
   }
 
-  const raw = isContinuation
-    ? await fetchPostThread(focalUri, CONVERSATION_PAGE_DEPTH, CONVERSATION_PAGE_PARENT_HEIGHT)
-    : await fetchPostThread(focalUri, THREAD_FETCH_DEPTH, THREAD_PARENT_HEIGHT_FIRST_PAGE);
+  const convoFetchOpts: BlueskyFetchOpts = { credentialKey };
+  const rawResult = isContinuation
+    ? await fetchPostThreadResult(
+        focalUri,
+        CONVERSATION_PAGE_DEPTH,
+        CONVERSATION_PAGE_PARENT_HEIGHT,
+        convoFetchOpts
+      )
+    : await fetchPostThreadResult(
+        focalUri,
+        THREAD_FETCH_DEPTH,
+        THREAD_PARENT_HEIGHT_FIRST_PAGE,
+        convoFetchOpts
+      );
+
+  if (!rawResult.ok) {
+    return {
+      ok: true,
+      data: {
+        code: rawResult.notFound ? 404 : 503,
+        status: null,
+        thread: null,
+        replies: null,
+        author: null,
+        cursor: null
+      }
+    };
+  }
+
+  const raw = rawResult.data;
 
   if (!raw?.thread?.post) {
     return {
@@ -285,19 +344,25 @@ export const constructBlueskyConversation = async (
 
   const threadPosts: BlueskyPost[] = isContinuation
     ? [focalNode.post]
-    : await collectProcessedThreadPosts(focalNode, author);
+    : await collectProcessedThreadPosts(focalNode, author, convoFetchOpts);
 
   const directBluesky = collectDirectReplyPosts(focalNode);
   const sorted = sortDirectReplies(directBluesky, mode);
   const pageSlice = sorted.slice(skip, skip + pageCount);
 
   const statusPost = focalNode.post;
-  const consumedStatus = (await buildAPIBlueskyPost(c, statusPost, lang)) as APIBlueskyStatus;
+  const consumedStatus = (await buildAPIBlueskyPost(
+    c,
+    statusPost,
+    lang,
+    0,
+    convoFetchOpts
+  )) as APIBlueskyStatus;
   const threadApi = (await Promise.all(
-    threadPosts.map(p => buildAPIBlueskyPost(c, p, lang))
+    threadPosts.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
   )) as APIBlueskyStatus[];
   const repliesApi = (await Promise.all(
-    pageSlice.map(p => buildAPIBlueskyPost(c, p, lang))
+    pageSlice.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
   )) as APIBlueskyStatus[];
 
   const canonicalUri = statusPost.uri ?? focalUri;

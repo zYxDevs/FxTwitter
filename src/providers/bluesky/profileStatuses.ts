@@ -68,12 +68,15 @@ async function blueskyAuthorFeedSearchPage(
   },
   c: Context
 ): Promise<APISearchResultsBluesky> {
-  const result = await fetchAuthorFeed({
-    actor,
-    limit: options.count,
-    cursor: options.cursor ?? undefined,
-    filter: options.filter
-  });
+  const result = await fetchAuthorFeed(
+    {
+      actor,
+      limit: options.count,
+      cursor: options.cursor ?? undefined,
+      filter: options.filter
+    },
+    { credentialKey: c.env?.CREDENTIAL_KEY }
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {
@@ -135,11 +138,14 @@ export const blueskyProfileLikesAPI = async (
   options: { count: number; cursor: string | null; language?: string },
   c: Context
 ): Promise<APISearchResultsBluesky> => {
-  const result = await fetchActorLikes({
-    actor,
-    limit: options.count,
-    cursor: options.cursor ?? undefined
-  });
+  const result = await fetchActorLikes(
+    {
+      actor,
+      limit: options.count,
+      cursor: options.cursor ?? undefined
+    },
+    { credentialKey: c.env?.CREDENTIAL_KEY }
+  );
 
   if (!result.ok) {
     if (result.status === 400 || result.status === 404) {

@@ -240,6 +240,51 @@ export const fetchByRestIds = async (
   }) as Promise<TweetResultsByRestIdsResponse>;
 };
 
+/**
+ * ConversationTimeline returns a compact ArticleEntity (title/preview/cover) without
+ * `content_state.blocks`. TweetResultsByRestId usually includes the full body; merge it in
+ * without discarding fields from the first parse.
+ */
+const enrichArticleWithFullContent = async (
+  c: Context,
+  status: APITwitterStatus,
+  tweetRestId: string,
+  language: string | undefined,
+  legacyAPI: boolean,
+  manualTranslationFallback = true
+): Promise<APITwitterStatus> => {
+  if (!status.article || (status.article.content?.blocks?.length ?? 0) > 0 || !tweetRestId) {
+    return status;
+  }
+
+  console.log('Article lacks content blocks, re-fetching with TweetResultsByRestId...');
+  const articleResponse = await fetchByRestIds([tweetRestId], c, undefined, language);
+  const raw = articleResponse?.data?.tweetResult?.[0]?.result;
+  if (!raw || !isGraphQLTwitterStatus(raw)) {
+    return status;
+  }
+
+  const rebuilt = await buildAPITwitterStatus(
+    c,
+    raw,
+    language,
+    null,
+    legacyAPI,
+    manualTranslationFallback
+  );
+
+  if ((rebuilt as FetchResults)?.status || !rebuilt) {
+    return status;
+  }
+
+  const enriched = rebuilt as APITwitterStatus;
+  if (!enriched.article || (enriched.article.content?.blocks?.length ?? 0) === 0) {
+    return status;
+  }
+
+  return { ...status, article: enriched.article };
+};
+
 export const fetchByIds = async (
   statuses: string[],
   c: Context,
@@ -728,28 +773,14 @@ export const constructTwitterThread = async (
       return { status: null, thread: null, author: null, code: 404 };
     }
 
-    status = buildStatus as APITwitterStatus;
-
-    // Check if article exists but lacks content blocks (TweetResultsByIds doesn't include full article data)
-    if (
-      status.article &&
-      (!status.article.content?.blocks || status.article.content.blocks.length === 0)
-    ) {
-      console.log('Article lacks content blocks, re-fetching with TweetResultByRestId...');
-      const articleResponse = await fetchByRestIds([id], c, undefined, language);
-      if (articleResponse?.data?.tweetResult?.[0]?.result) {
-        const rebuiltStatus = await buildAPITwitterStatus(
-          c,
-          articleResponse.data.tweetResult[0].result as GraphQLTwitterStatus,
-          language,
-          null,
-          legacyAPI
-        );
-        if (rebuiltStatus && !(rebuiltStatus as FetchResults)?.status) {
-          status = rebuiltStatus as APITwitterStatus;
-        }
-      }
-    }
+    status = await enrichArticleWithFullContent(
+      c,
+      buildStatus as APITwitterStatus,
+      id,
+      language,
+      legacyAPI,
+      true
+    );
 
     // If not processing thread, return single tweet
     if (!processThread) {
@@ -806,6 +837,8 @@ export const constructTwitterThread = async (
     writeDataPoint(c, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
+
+  status = await enrichArticleWithFullContent(c, status, id, language, legacyAPI, true);
 
   const author = status.author;
 
@@ -962,14 +995,27 @@ export const constructTwitterThread = async (
   };
 
   await Promise.all(
-    threadStatuses.map(async status => {
-      const builtStatus = (await buildAPITwitterStatus(
+    threadStatuses.map(async graphqlStatus => {
+      const tweetId = graphqlStatus.rest_id ?? graphqlStatus.legacy?.id_str ?? '';
+      if (tweetId === id) {
+        socialThread.thread?.push(status);
+        return;
+      }
+      let builtStatus = (await buildAPITwitterStatus(
         c,
-        status,
+        graphqlStatus,
         language,
         author,
         false
       )) as APITwitterStatus;
+      builtStatus = await enrichArticleWithFullContent(
+        c,
+        builtStatus,
+        tweetId,
+        language,
+        false,
+        true
+      );
       socialThread.thread?.push(builtStatus);
     })
   );
@@ -1019,7 +1065,7 @@ export const constructTwitterConversation = async (
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
   }
 
-  const status = (await buildAPITwitterStatus(
+  let status = (await buildAPITwitterStatus(
     c,
     originalStatus,
     language,
@@ -1031,6 +1077,8 @@ export const constructTwitterConversation = async (
   if (status === null) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
   }
+
+  status = await enrichArticleWithFullContent(c, status, id, language, false, false);
 
   const author = status.author;
 
@@ -1053,7 +1101,12 @@ export const constructTwitterConversation = async (
 
   await Promise.all(
     threadStatuses.map(async s => {
-      const builtStatus = (await buildAPITwitterStatus(
+      const tweetId = s.rest_id ?? s.legacy?.id_str ?? '';
+      if (tweetId === id) {
+        socialConversation.thread?.push(status);
+        return;
+      }
+      let builtStatus = (await buildAPITwitterStatus(
         c,
         s,
         language,
@@ -1061,6 +1114,14 @@ export const constructTwitterConversation = async (
         false,
         false
       )) as APITwitterStatus;
+      builtStatus = await enrichArticleWithFullContent(
+        c,
+        builtStatus,
+        tweetId,
+        language,
+        false,
+        false
+      );
       socialConversation.thread?.push(builtStatus);
     })
   );
@@ -1076,7 +1137,8 @@ export const constructTwitterConversation = async (
   /* Build the replies (from conversationthread-* modules) */
   await Promise.all(
     bucket.replyStatuses.map(async s => {
-      const builtStatus = (await buildAPITwitterStatus(
+      const tweetId = s.rest_id ?? s.legacy?.id_str ?? '';
+      let builtStatus = (await buildAPITwitterStatus(
         c,
         s,
         language,
@@ -1085,6 +1147,14 @@ export const constructTwitterConversation = async (
         false
       )) as APITwitterStatus;
       if (builtStatus) {
+        builtStatus = await enrichArticleWithFullContent(
+          c,
+          builtStatus,
+          tweetId,
+          language,
+          false,
+          false
+        );
         socialConversation.replies?.push(builtStatus);
       }
     })

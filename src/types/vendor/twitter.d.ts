@@ -202,10 +202,18 @@ type TranslationPartial = {
   entities: TweetEntities;
 };
 
+type GraphQLUserUnavailable = {
+  __typename: 'UserUnavailable';
+  message?: string;
+  unavailable_reason?: string;
+  reason?: string;
+};
+
 type GraphQLUserResponse = {
   data: {
     user: {
-      result: GraphQLUser;
+      rest_id?: string;
+      result: GraphQLUser | GraphQLUserUnavailable;
     };
   };
 };
@@ -221,7 +229,8 @@ type UserResultByScreenNameQueryResponse = {
 type UserResultByScreenNameResponse = {
   data: {
     user_results: {
-      result: GraphQLUser;
+      rest_id?: string;
+      result: GraphQLUser | GraphQLUserUnavailable;
     };
   };
 };

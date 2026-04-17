@@ -1,0 +1,12 @@
+{
+  "data": {
+    "user": {
+      "rest_id": "2040364845615173632",
+      "result": {
+        "__typename": "UserUnavailable",
+        "message": "User is suspended",
+        "reason": "Suspended"
+      }
+    }
+  }
+}

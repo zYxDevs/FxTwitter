@@ -46,7 +46,10 @@ export const handleProfile = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
-      return returnError(c, Strings.ERROR_USER_NOT_FOUND);
+      return returnError(
+        c,
+        api.reason === 'suspended' ? Strings.ERROR_USER_SUSPENDED : Strings.ERROR_USER_NOT_FOUND
+      );
     case 500:
       return returnError(c, Strings.ERROR_API_FAIL);
   }

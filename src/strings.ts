@@ -214,6 +214,7 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
   ERROR_TWEET_NOT_FOUND: `Sorry, that post doesn't exist :(`,
   ERROR_BLUESKY_UNAVAILABLE: `We couldn't load this post from Bluesky. Try again in a moment or check https://status.bsky.app for updates.`,
   ERROR_USER_NOT_FOUND: `Sorry, that user doesn't exist :(`,
+  ERROR_USER_SUSPENDED: `Sorry, that user is suspended :(`,
   ERROR_UNKNOWN: `Unknown error occurred, sorry about that :(`,
 
   ROBOTS_TXT: `# /-------------------------------------------\\

@@ -279,7 +279,8 @@ export const profileV2Route = createRoute({
       content: { 'application/json': { schema: ApiQueryErrorSchema } }
     },
     404: {
-      description: 'User not found',
+      description:
+        'User not found, suspended (`reason`: `suspended`, `message`: User is suspended), or unavailable',
       content: { 'application/json': { schema: UserAPIResponseSchema } }
     }
   }

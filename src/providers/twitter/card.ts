@@ -83,7 +83,6 @@ export const renderCard = async (
     }
   });
 
-  console.log('rendering card');
   // console.log('binding_values', JSON.stringify(binding_values));
 
   if (binding_values.broadcast_url?.string_value) {

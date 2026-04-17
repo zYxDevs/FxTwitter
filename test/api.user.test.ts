@@ -54,6 +54,24 @@ test('API fetch user that does not exist', async () => {
   expect(response.user).toBeUndefined();
 });
 
+test('API v2 profile suspended user', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/profile/testsuspendeduser', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(404);
+  const response = (await result.json()) as UserAPIResponse;
+  expect(response.code).toEqual(404);
+  expect(response.message).toEqual('User is suspended');
+  expect(response.reason).toEqual('suspended');
+  expect(response.id).toEqual('2040364845615173632');
+  expect(response.user).toBeUndefined();
+});
+
 test('API fetch user about_account info', async () => {
   const result = await app.request(
     new Request('https://api.fxtwitter.com/2/profile/x?about_account=true', {

@@ -13,6 +13,74 @@ import {
 import { validateAboutAccountQuery, validateUserProfileAboutQuery } from './graphql/validators';
 import { graphQLOrchestrator, type GraphQLOrchestratorRequest } from './graphql/orchestrator';
 
+function asUnknownRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value !== null && typeof value === 'object') {
+    return value as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+/** Normalize `data.user.result` vs `data.user_results.{rest_id,result}`. */
+export function extractUserResultNode(
+  response: GraphQLUserResponse | UserResultByScreenNameResponse | null | undefined
+): { restId?: string; result: unknown } | null {
+  if (!response) {
+    return null;
+  }
+  const d = asUnknownRecord((response as { data?: unknown }).data);
+  if (!d) {
+    return null;
+  }
+  const user = asUnknownRecord(d['user']);
+  if (user && 'result' in user) {
+    const restId = typeof user['rest_id'] === 'string' ? user['rest_id'] : undefined;
+    return { restId, result: user['result'] };
+  }
+  const userResults = asUnknownRecord(d['user_results']);
+  if (userResults && 'result' in userResults) {
+    const restId = typeof userResults['rest_id'] === 'string' ? userResults['rest_id'] : undefined;
+    return { restId, result: userResults['result'] };
+  }
+  return null;
+}
+
+export function isUserUnavailableResult(result: unknown): boolean {
+  const r = asUnknownRecord(result);
+  return r?.['__typename'] === 'UserUnavailable';
+}
+
+export function isSuspendedUserUnavailable(result: unknown): boolean {
+  if (!isUserUnavailableResult(result)) {
+    return false;
+  }
+  const r = asUnknownRecord(result)!;
+  const reason =
+    `${r['unavailable_reason'] ?? ''} ${r['reason'] ?? ''} ${r['message'] ?? ''}`.toLowerCase();
+  return reason.includes('suspend');
+}
+
+function userByScreenNameResultValid(result: unknown): boolean {
+  const r = asUnknownRecord(result);
+  if (!r) {
+    return false;
+  }
+  if (r['__typename'] === 'UserUnavailable') {
+    return true;
+  }
+  return r['__typename'] === 'User' || Boolean(r['rest_id'] || r['core']);
+}
+
+function userResultByScreenNameResultValid(result: unknown): boolean {
+  const r = asUnknownRecord(result);
+  if (!r) {
+    return false;
+  }
+  if (r['__typename'] === 'UserUnavailable') {
+    return true;
+  }
+  return r['__typename'] === 'User' && Boolean(r['legacy'] || r['rest_id']);
+}
+
 function descriptionEntitiesToFacets(
   entities: UserProfileBioDescriptionEntities | undefined
 ): APIFacet[] {
@@ -265,8 +333,8 @@ const populateUserProperties = async (
   const user =
     (response as GraphQLUserResponse).data?.user?.result ??
     (response as UserResultByScreenNameResponse).data?.user_results?.result;
-  if (user) {
-    return convertToApiUser(user, legacyAPI);
+  if (user && (user as GraphQLUser).__typename === 'User') {
+    return convertToApiUser(user as GraphQLUser, legacyAPI);
   }
 
   return null;
@@ -294,7 +362,7 @@ const fetchUser = async (
         validator: (response: unknown) => {
           const userResponse = response as GraphQLUserResponse;
           const result = userResponse?.data?.user?.result;
-          return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
+          return userByScreenNameResultValid(result);
         }
       },
       {
@@ -304,9 +372,7 @@ const fetchUser = async (
         validator: (response: unknown) => {
           const userResponse = response as UserResultByScreenNameResponse;
           const result = userResponse?.data?.user_results?.result;
-          return Boolean(
-            result && result.__typename === 'User' && (result.legacy || result.rest_id)
-          );
+          return userResultByScreenNameResultValid(result);
         }
       }
     ],
@@ -361,7 +427,7 @@ const fetchUserById = async (
         validator: (response: unknown) => {
           const userResponse = response as GraphQLUserResponse;
           const result = userResponse?.data?.user?.result;
-          return Boolean(result && (result.__typename === 'User' || result.rest_id || result.core));
+          return userByScreenNameResultValid(result);
         }
       },
       {
@@ -371,9 +437,7 @@ const fetchUserById = async (
         validator: (response: unknown) => {
           const userResponse = response as UserResultByScreenNameResponse;
           const result = userResponse?.data?.user_results?.result;
-          return Boolean(
-            result && result.__typename === 'User' && (result.legacy || result.rest_id)
-          );
+          return userResultByScreenNameResultValid(result);
         }
       }
     ],
@@ -417,10 +481,12 @@ export const getTwitterUserRestIdByScreenName = async (
   if (!userResponse) {
     return null;
   }
-  const user =
-    (userResponse as GraphQLUserResponse).data?.user?.result ??
-    (userResponse as UserResultByScreenNameResponse).data?.user_results?.result;
-  return user?.rest_id ?? null;
+  const node = extractUserResultNode(userResponse);
+  if (!node || isUserUnavailableResult(node.result)) {
+    return null;
+  }
+  const user = node.result as GraphQLUser;
+  return user.rest_id ?? null;
 };
 
 /* API for Twitter profiles (Users)
@@ -440,20 +506,47 @@ export const userAPI = async (
     };
   }
 
+  const node = extractUserResultNode(userResponse);
+  if (!node) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+  if (isSuspendedUserUnavailable(node.result)) {
+    const id = node.restId;
+    return {
+      code: 404,
+      message: 'User is suspended',
+      reason: 'suspended',
+      ...(id ? { id } : {})
+    };
+  }
+  if (isUserUnavailableResult(node.result)) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+
   /* Creating the response objects */
   const response: UserAPIResponse = { code: 200, message: 'OK' } as UserAPIResponse;
-  let apiUser: APIUser = (await populateUserProperties(
-    userResponse,
-    legacyApiUserCounts
-  )) as APIUser;
+  const apiUser = await populateUserProperties(userResponse, legacyApiUserCounts);
+  if (!apiUser) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+  let mergedUser: APIUser = apiUser;
 
   /* Merge AboutAccountQuery data if available */
   if (aboutAccountResponse) {
-    apiUser = mergeAboutAccountData(apiUser, aboutAccountResponse);
+    mergedUser = mergeAboutAccountData(mergedUser, aboutAccountResponse);
   }
 
   /* Finally, staple the User to the response and return it */
-  response.user = apiUser;
+  response.user = mergedUser;
 
   return response;
 };
@@ -524,17 +617,44 @@ export const userAPIById = async (
     };
   }
 
-  const response: UserAPIResponse = { code: 200, message: 'OK' } as UserAPIResponse;
-  let apiUser: APIUser = (await populateUserProperties(
-    userResponse,
-    legacyApiUserCounts
-  )) as APIUser;
-
-  if (aboutProfileResponse) {
-    apiUser = mergeUserProfileAboutData(apiUser, aboutProfileResponse);
+  const node = extractUserResultNode(userResponse);
+  if (!node) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+  if (isSuspendedUserUnavailable(node.result)) {
+    const id = node.restId ?? userId;
+    return {
+      code: 404,
+      message: 'User is suspended',
+      reason: 'suspended',
+      ...(id ? { id } : {})
+    };
+  }
+  if (isUserUnavailableResult(node.result)) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
   }
 
-  response.user = apiUser;
+  const response: UserAPIResponse = { code: 200, message: 'OK' } as UserAPIResponse;
+  const apiUser = await populateUserProperties(userResponse, legacyApiUserCounts);
+  if (!apiUser) {
+    return {
+      code: 404,
+      message: 'User not found'
+    };
+  }
+  let mergedUser: APIUser = apiUser;
+
+  if (aboutProfileResponse) {
+    mergedUser = mergeUserProfileAboutData(mergedUser, aboutProfileResponse);
+  }
+
+  response.user = mergedUser;
 
   return response;
 };

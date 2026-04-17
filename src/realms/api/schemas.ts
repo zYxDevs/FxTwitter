@@ -9,12 +9,10 @@ const indicesTuple = z
   .openapi({ description: 'Start and end UTF-16 indices' });
 
 export const APIFacetSchema = z.object({
-  type: z
-    .string()
-    .openapi({
-      description:
-        'Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)'
-    }),
+  type: z.string().openapi({
+    description:
+      'Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)'
+  }),
   indices: indicesTuple,
   original: z.string().optional(),
   replacement: z.string().optional(),
@@ -665,7 +663,16 @@ export const UserAPIResponseSchema = z
   .object({
     code: z.number(),
     message: z.string(),
-    user: APIUserSchema.optional()
+    user: APIUserSchema.optional(),
+    /** Present when the account exists on X but is suspended (`code` 404). */
+    reason: z.literal('suspended').optional().openapi({
+      description: 'Set to `suspended` when the user is suspended; omitted for plain not found.'
+    }),
+    /** X `rest_id` when known (e.g. from `user_results.rest_id` on suspended lookups). */
+    id: z
+      .string()
+      .optional()
+      .openapi({ description: 'Numeric user id when the upstream payload includes it.' })
   })
   .openapi('UserAPIResponse');
 

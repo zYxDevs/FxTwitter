@@ -15,6 +15,21 @@ function truncateForDiscordField(s: string): string {
 }
 
 /**
+ * Twitter GraphQL URLs look like `.../graphql/{queryId}/{operationName}`. For Discord alerts we only show
+ * `operationName` so the embed stays readable (matches test harness path parsing in test/helpers/harness.ts).
+ */
+function formatProxyEndpointForDiscord(pathname: string): string {
+  const trimmed = (pathname ?? '').replace(/^\//, '');
+  if (!trimmed) return 'idk';
+  const parts = trimmed.split('/').filter(Boolean);
+  const graphqlIdx = parts.indexOf('graphql');
+  if (graphqlIdx >= 0 && parts[graphqlIdx + 2]) {
+    return parts[graphqlIdx + 2]!;
+  }
+  return trimmed;
+}
+
+/**
  * Wraps a GraphQL variables string in a fenced code block or returns a placeholder when the input is empty.
  *
  * @param variablesDisplay - The raw variables text to format (may be empty or contain JSON/other text)
@@ -37,7 +52,7 @@ function variablesCodeBlock(variablesDisplay: string): string {
  *
  * @param env - Environment object that must include `EXCEPTION_DISCORD_WEBHOOK` (the webhook URL)
  * @param username - Account identifier to display (will be obfuscated in the embed)
- * @param requestPath - Original request path used to produce the "Endpoint" embed field
+ * @param requestPath - Request pathname; GraphQL paths are shortened to the operation name only
  * @param errors - Error payload to include in the "Errors" embed field (serialized as JSON)
  * @param variablesDisplay - Raw GraphQL variables string to include in the "Variables" embed field (may be wrapped or replaced with a placeholder)
  */
@@ -51,7 +66,7 @@ export async function sendDiscordAlert(
   if (!env.EXCEPTION_DISCORD_WEBHOOK) return;
 
   console.log('Sending Discord webhook');
-  const endpointDisplay = truncateForDiscordField((requestPath ?? '').replace(/^\//, '') || 'idk');
+  const endpointDisplay = truncateForDiscordField(formatProxyEndpointForDiscord(requestPath ?? ''));
   const body = JSON.stringify({
     content: `@everyone`,
     embeds: [

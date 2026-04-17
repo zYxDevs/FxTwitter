@@ -12,6 +12,18 @@ Environment variables are generally set in .env, not in Wrangler, except for cer
 - `src/types/env.d.ts` (for type documentation)
 - `src/constants.ts` (We typically load all environment variables under the Constants object)
 
+## Formatting
+
+We use Prettier for formatting. To format the code, run `npm run prettier`.
+
+## Linting
+
+We use ESLint for linting. To lint the code, run `npm run lint:eslint`.
+
+## Testing
+
+We use Vitest for testing. To test the full suite of code, run `npm test`.
+
 ## Cursor Cloud specific instructions
 
 ### Prerequisites

@@ -284,9 +284,6 @@ export const buildAPITwitterStatus = async (
   } else {
     apiStatus.views = null;
   }
-  if (status.note_tweet) {
-    console.log('Note tweet found', JSON.stringify(status.note_tweet));
-  }
   const noteTweetText = status.note_tweet?.note_tweet_results?.result?.text;
 
   if (noteTweetText) {

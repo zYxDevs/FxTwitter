@@ -173,6 +173,25 @@ app.use('*', async (c, next) => {
 app.use('*', cacheMiddleware());
 app.use('*', timing({ enabled: false }));
 
+app.get('/', c => {
+  c.header('cache-control', noCache);
+  return c.text(
+    `You're running FxEmbed locally without a host header set to a valid realm domain. This means instead of falling back to Twitter realm, we expose all of them for you to poke at.
+
+    To get responses from a particular realm, set the Host header (set in .env), for example:
+      curl -H "Host: fxtwitter.com" "http://localhost:8787/user/status/123"
+    
+    Or you can access all realms by their path prefix:
+      /twitter/...     FxTwitter / FixupX
+      /bluesky/...     FxBluesky
+      /tiktok/...      TikTok realm
+      /api/...         FxTwitter API
+      /blueskyapi/...  FxBluesky API
+    `,
+    200
+  );
+});
+
 app.route(`/api`, api);
 app.route(`/blueskyapi`, blueskyApi);
 app.route(`/genericapi`, genericApi);

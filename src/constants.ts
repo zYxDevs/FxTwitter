@@ -1,5 +1,5 @@
 export const Constants = {
-  /* These constants are populated by variables in .env, then set by Webpack */
+  /* These constants are populated by variables in .env, then set by esbuild */
   STANDARD_DOMAIN_LIST: STANDARD_DOMAIN_LIST.split(','),
   STANDARD_BSKY_DOMAIN_LIST: STANDARD_BSKY_DOMAIN_LIST.split(','),
   STANDARD_TIKTOK_DOMAIN_LIST: STANDARD_TIKTOK_DOMAIN_LIST.split(','),

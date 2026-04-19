@@ -67,9 +67,6 @@ for (let envVar of envVariables) {
   defines[envVar] = `"${process.env[envVar]}"`;
 }
 
-defines['BLUESKY_API_HOST_LIST'] = JSON.stringify(process.env.BLUESKY_API_HOST_LIST ?? '');
-defines['GENERIC_API_HOST_LIST'] = JSON.stringify(process.env.GENERIC_API_HOST_LIST ?? '');
-
 defines['RELEASE_NAME'] = `"${releaseName}"`;
 
 try {
